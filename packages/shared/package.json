@@ -3,12 +3,13 @@
   "version": "0.0.0",
   "private": true,
   "author": "Vit Salomon (salik1992)",
-  "description": "Shared theme for the iRacing overlay widgets.",
+  "description": "Shared theme and widget manifest for the iRacing overlay.",
   "type": "module",
   "engines": {
     "node": ">=22"
   },
   "exports": {
+    ".": "./src/index.ts",
     "./theme/base.css": "./src/theme/base.css",
     "./theme/tokens.css": "./src/theme/tokens.css",
     "./theme/tokens": "./src/theme/tokens.ts"

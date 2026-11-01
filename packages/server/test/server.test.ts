@@ -20,8 +20,12 @@ test("fixture publishes a joined standings frame", async () => {
     const body = (await health.json()) as { ok: boolean; source: string; phase: string; clients: number };
     assert.deepEqual(body, { ok: true, source: "fixture", phase: "live", clients: 0 });
 
-    const missing = await fetch(`http://127.0.0.1:${port}/telemetry`);
+    const missing = await fetch(`http://127.0.0.1:${port}/standings`);
     assert.equal(missing.status, 404);
+    assert.deepEqual(await missing.json(), {
+      error: "widget files are not built",
+      widgetId: "standings",
+    });
 
     const messages = await hello(port, "standings", 3);
     assert.equal(messages[0]?.type, "status");

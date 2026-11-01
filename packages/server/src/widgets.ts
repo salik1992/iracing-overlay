@@ -1,19 +1,17 @@
 import { join } from "node:path";
 
+import { manifest as telemetry } from "@salik1992/iracing-overlay-widget-telemetry";
+
 import { packagesRoot } from "./paths.js";
 import type { WidgetServe } from "./types.js";
 
 /**
- * The telemetry and standings packages are not in the repo yet.
- * These entries already publish both streams and will serve each route
- * once that package's dist directory exists.
+ * Standings stays inline until packages/widget-standings exists.
+ * staticDir is server-only; the widget manifest does not know where files are written.
  */
 export const widgets: readonly WidgetServe[] = [
   {
-    id: "telemetry",
-    route: "/telemetry",
-    hz: 60,
-    session: true,
+    ...telemetry,
     staticDir: join(packagesRoot, "widget-telemetry", "dist"),
   },
   {

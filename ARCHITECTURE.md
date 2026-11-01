@@ -59,19 +59,23 @@ Every package is private. Root `package.json` is `@salik1992/iracing-overlay-mon
 
 | Package | Role |
 |---|---|
-| `shared` | Protocol types, session and frame types, flag and session-state decode, SI formatters, widget manifest type, the browser stream client, theme tokens, and the base stylesheet. |
+| `shared` | Theme tokens, the base stylesheet, and the widget manifest type. |
 | `server` | SDK or fixture source, snapshot store, HTTP routes, websocket fan-out, stream rates. |
-| `widget-telemetry` | Page for pedals, gear, steering, speed, rpm, and the driver's lap times. 60 Hz. |
+| `widget-telemetry` | Numeral page for pedals, steering angle, speed, and gear. 60 Hz. |
 | `widget-standings` | Page for the race order, intervals, pit state, and session clock. 10 Hz. |
 
 A new overlay is a new workspace package. The server keeps an explicit list of widget manifests, so a widget that fails to build fails the server build with it.
 
 ```ts
 import { manifest as telemetry } from "@salik1992/iracing-overlay-widget-telemetry";
-import { manifest as standings } from "@salik1992/iracing-overlay-widget-standings";
 
-export const widgets = [telemetry, standings];
+export const widgets = [
+  { ...telemetry, staticDir: "packages/widget-telemetry/dist" },
+  { id: "standings", route: "/standings", hz: 10, session: true, staticDir: "packages/widget-standings/dist" },
+];
 ```
+
+`staticDir` is added by the server. Standings stays inline until that package exists.
 
 ## Widget package
 
@@ -319,7 +323,7 @@ type ServerMessage =
   | { type: "standings"; tick: number; frame: StandingsFrame };
 ```
 
-`shared` exports these types and a `connectWidget(widgetId, handlers)` helper used by every page. The helper owns reconnect, the hello message, and the parse step. Widgets see typed callbacks.
+These types still live in the server. `shared` exports the `WidgetManifest` type. The telemetry page parses the status, session units, and telemetry fields it draws, and it owns the socket: reconnect, the hello message, and dispatch.
 
 `SessionSnapshot` is the normalized slice of the YAML document:
 
@@ -381,7 +385,7 @@ Fields above are the ones the first two widgets need. The same snapshot store ca
 * Other cars, live arrays of up to 64: position, class position, lap, lap distance percent, estimated time, gap to leader, last and best lap, gear, RPM, steer, tire compound, on pit road, track surface.
 * Camera label while spectating: `CamCarIdx` joined to the driver list. Replay state: `IsReplayPlaying`, `ReplayPlaySpeed`, `ReplaySessionTime`.
 
-`Speed` is m/s. `shared` formats speed, lap time, gaps, and temperatures. `DisplayUnits` from the session selects metric or imperial.
+`Speed` is m/s. The telemetry page formats it from `DisplayUnits`: metric is km/h, imperial is mph. Lap time, gaps, and temperatures stay in SI until a widget draws them.
 
 ## Limits of the SDK
 
@@ -402,7 +406,7 @@ One Browser Source per widget.
 
 | Source URL | Rate | Suggested starting size |
 |---|---|---|
-| `http://127.0.0.1:8080/telemetry` | 60 Hz | 640×200 |
+| `http://127.0.0.1:8080/telemetry` | 60 Hz | 440×176 |
 | `http://127.0.0.1:8080/standings` | 10 Hz | 480×640 |
 
 In the source properties: set the width and height to the widget, enable "Shutdown source when not visible", and enable "Refresh browser when scene becomes active". Leave the page background transparent. Custom CSS in the source is unnecessary because each widget ships its own stylesheet.
