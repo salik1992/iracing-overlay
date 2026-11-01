@@ -6,6 +6,7 @@ import { join } from "node:path";
 import { WebSocketServer } from "ws";
 
 import type { Hub } from "./hub.js";
+import { fontPath, fontRoute } from "./paths.js";
 import type { WidgetServe } from "./types.js";
 import { assertWidgets } from "./widgets.js";
 
@@ -117,6 +118,10 @@ async function handle(
     });
     return;
   }
+  if (path === fontRoute) {
+    await sendFont(response);
+    return;
+  }
   const widget = options.widgets.find(
     (item) => path === item.route || path.startsWith(`${item.route}/`),
   );
@@ -154,6 +159,23 @@ function requestPath(request: IncomingMessage): string | null {
     return decodeURIComponent(url.pathname);
   } catch {
     return null;
+  }
+}
+
+async function sendFont(response: ServerResponse): Promise<void> {
+  try {
+    const body = await readFile(fontPath);
+    response.writeHead(200, {
+      "content-type": "font/woff2",
+      "cache-control": "no-store",
+    });
+    response.end(body);
+  } catch (error) {
+    if (isNotFound(error)) {
+      sendJson(response, 404, { error: "not found" });
+      return;
+    }
+    throw error;
   }
 }
 

@@ -14,7 +14,7 @@
   "scripts": {
     "dev": "npm run dev -w @salik1992/iracing-overlay-server",
     "start": "npm run start -w @salik1992/iracing-overlay-server",
-    "test": "npm run test -w @salik1992/iracing-overlay-server",
-    "typecheck": "npm run typecheck -w @salik1992/iracing-overlay-server"
+    "test": "npm run test -w @salik1992/iracing-overlay-shared -w @salik1992/iracing-overlay-server",
+    "typecheck": "npm run typecheck -w @salik1992/iracing-overlay-shared -w @salik1992/iracing-overlay-server"
   }
 }

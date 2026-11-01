@@ -76,6 +76,24 @@ test("samples telemetry every tick and standings every sixth tick", async () => 
   }
 });
 
+test("serves the shared Fira Code file", async () => {
+  const hub = new Hub(widgets);
+  const app = createOverlayServer({ hub, widgets, sourceName: "fixture" });
+  const port = await listen(app.http, 0, "127.0.0.1");
+  try {
+    const font = await fetch(`http://127.0.0.1:${port}/fonts/FiraCode-VF.woff2`);
+    assert.equal(font.status, 200);
+    assert.equal(font.headers.get("content-type"), "font/woff2");
+    const bytes = Buffer.from(await font.arrayBuffer());
+    assert.equal(bytes.subarray(0, 4).toString("ascii"), "wOF2");
+
+    const license = await fetch(`http://127.0.0.1:${port}/fonts/OFL.txt`);
+    assert.equal(license.status, 404);
+  } finally {
+    await app.close();
+  }
+});
+
 test("closes an unknown widget subscription", async () => {
   const source = new FixtureSource();
   const hub = new Hub(widgets);

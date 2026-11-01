@@ -14,6 +14,7 @@ Custom overlays for iRacing, shown in OBS through Browser Source. A Node process
 * The race PC runs `git pull`, `npm install`, and `npm start`. esbuild and the `irsdk-node` native addon both ship prebuilt binaries.
 * The overlay is read-only. Camera, replay, pit, and chat commands stay out of this program.
 * Values on the wire are SI units. Display formatting lives in the shared package and uses the driver's `DisplayUnits`.
+* Shared visuals are a terminal panel: Fira Code, the Tokyo Night Night palette, and a flat translucent fill on a transparent page. Widget READMEs own layout.
 
 ## System
 
@@ -58,7 +59,7 @@ Every package is private. Root `package.json` is `@salik1992/iracing-overlay-mon
 
 | Package | Role |
 |---|---|
-| `shared` | Protocol types, session and frame types, flag and session-state decode, SI formatters, widget manifest type, the browser stream client. |
+| `shared` | Protocol types, session and frame types, flag and session-state decode, SI formatters, widget manifest type, the browser stream client, theme tokens, and the base stylesheet. |
 | `server` | SDK or fixture source, snapshot store, HTTP routes, websocket fan-out, stream rates. |
 | `widget-telemetry` | Page for pedals, gear, steering, speed, rpm, and the driver's lap times. 60 Hz. |
 | `widget-standings` | Page for the race order, intervals, pit state, and session clock. 10 Hz. |
@@ -106,7 +107,132 @@ esbuild bundles `src/main.ts` and everything it imports from `shared` into one `
 
 The page creates its DOM in `view.ts` and holds onto the nodes. Frame handlers write `textContent`, widths, and transforms. They do not rebuild the tree and they do not assign `innerHTML` on the hot path. 60 Hz makes that rule matter.
 
-`style.css` starts from a shared overlay base: transparent background, `box-sizing: border-box`, and a single font. Each widget owns the rest of its layout. The OBS source's width and height are the widget's viewport.
+`style.css` imports the shared base stylesheet and then only describes that widget's layout. The OBS source's width and height are the widget's viewport. Type, color, and the panel are specified under Shared visuals.
+
+## Shared visuals
+
+The page background stays transparent. The visible chrome is one terminal panel: Fira Code, Tokyo Night Night, and a flat translucent fill. A widget README owns that widget's layout, including which fields exist, column order, meters, and shift lights. It does not choose a font, a palette, or a second background treatment.
+
+### Font
+
+Fira Code 6.2 is vendored. The race PC does not have the font installed, and the pages do not load a CDN.
+
+```text
+packages/shared/fonts/
+  FiraCode-VF.woff2          variable roman, weight axis 300–700, 113 KB
+  OFL.txt                    SIL Open Font License 1.1
+```
+
+The variable file is the one the browser needs. Static OTF, TTF, and WOFF copies stay out of the repo. The OFL requires the license to travel with the font, so `OFL.txt` is the upstream `LICENSE` from the 6.2 tag.
+
+The server serves `GET /fonts/FiraCode-VF.woff2` from that directory. Every widget points at that one URL. `font-display: block` keeps OBS from flashing a fallback face when a scene activates.
+
+```css
+@font-face {
+  font-family: "Fira Code";
+  src: url("/fonts/FiraCode-VF.woff2") format("woff2");
+  font-weight: 300 700;
+  font-style: normal;
+  font-display: block;
+}
+```
+
+Shared text is weight 400. A widget's primary figure, the one number that should read first, is weight 600. There is no italic. The default is 14px with line-height 1.25. A widget may set `--font-size` on its own root when the OBS source is an unusual size. It does not introduce another family or another size scale.
+
+Ligatures are off (`font-variant-ligatures: none`). A HUD is not source code. The slashed zero is on (`font-feature-settings: "zero"`), so a car number or a lap time does not mix `0` with `O`.
+
+The file includes Fira Code's box-drawing and its progress-bar glyphs (U+EE00–U+EE0B). A widget may use the progress glyphs for a meter. The shared sheet does not style them.
+
+### Palette
+
+Tokyo Night, the Night variant (`#1a1b26` background). Storm, Moon, and Day are not used. Widgets use role tokens. A Tokyo Night hex is written only in the shared token file.
+
+| Token | Hex | Role |
+|---|---|---|
+| `--bg` | `#1a1b26` | Panel fill, before alpha |
+| `--fg` | `#c0caf5` | Values and body text |
+| `--muted` | `#565f89` | Labels |
+| `--dim` | `#737aa2` | Units and secondary text |
+| `--border` | `#414868` | Outer frame. Terminal black, so the frame stays visible on the translucent fill |
+| `--rule` | `#3b4261` | Rules inside the frame |
+| `--accent` | `#7aa2f7` | Player row, selection |
+| `--good` | `#9ece6a` | Faster, gain, personal best |
+| `--bad` | `#f7768e` | Slower, loss, warning |
+| `--caution` | `#e0af68` | Caution, pits, yellow flag |
+| `--info` | `#7dcfff` | Neutral status, session clock |
+| `--number` | `#ff9e64` | The primary figure. Tokyo Night's number color |
+
+Colors the theme defines and this table does not (purple, magenta, teal, the blue ramp) are not tokens. A widget that needs a new role adds it here, rather than pasting a hex into its stylesheet.
+
+Class color is the session's own hex. Shared styles do not remap it onto this palette.
+
+### Opacity
+
+`html` and `body` use `background: transparent`. The track shows through everywhere the panel does not cover.
+
+The panel fill is `--bg` at `--panel-alpha: 0.82`, exposed as `--panel`. Text, borders, and role colors stay fully opaque, so the glyphs do not blend into the track. There is no backdrop blur and no gradient. A washed-out scene is handled by raising `--panel-alpha`, not by changing the text color.
+
+```css
+:root {
+  --bg: #1a1b26;
+  --panel-alpha: 0.82;
+  --panel: rgb(26 27 38 / var(--panel-alpha));
+  --idle-opacity: 0.55;
+  --font-family: "Fira Code", monospace;
+  --font-size: 14px;
+  --line-height: 1.25;
+  --font-weight: 400;
+  --font-weight-strong: 600;
+}
+```
+
+When status `phase` is `"idle"`, the page adds `is-idle` to the panel. That class sets `opacity: var(--idle-opacity)` on the whole panel, text included, and leaves the last frame in place. The fill alpha compounds with it (0.82 × 0.55). Widgets do not invent a second dim.
+
+### Frame
+
+Chrome is one shared panel, drawn with CSS borders rather than box-drawing characters. A border stays put when a value changes width. That matters at 60 Hz.
+
+```css
+.panel {
+  box-sizing: border-box;
+  background: var(--panel);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  padding: 0.5ch 1ch;
+  font-family: "Fira Code", monospace;
+  font-size: var(--font-size);
+  line-height: var(--line-height);
+  font-weight: 400;
+  font-variant-ligatures: none;
+  font-feature-settings: "zero";
+  user-select: none;
+}
+
+.panel.is-idle {
+  opacity: var(--idle-opacity);
+}
+```
+
+Corners are square. There is no shadow and no radius. `.panel-title` is a muted label with a 1px rule in `--rule`. `.label` uses `--muted`, `.unit` uses `--dim`, and `.figure` is the primary figure (`--number` at weight 600). Horizontal padding is in `ch`, so columns share the character grid. `user-select: none` keeps a click in OBS from highlighting a lap time.
+
+### Where the files live
+
+```text
+packages/shared/
+  fonts/FiraCode-VF.woff2
+  fonts/OFL.txt
+  src/theme/tokens.css       custom properties, the only hex values
+  src/theme/base.css         font-face, page reset, .panel, .is-idle
+  src/theme/tokens.ts        the same roles, for SVG or canvas drawing
+```
+
+`base.css` imports `tokens.css`. A widget `style.css` imports `base.css` and then only adds layout. esbuild emits one `style.css` per widget, so OBS still requests a single stylesheet plus the font.
+
+`tokens.ts` repeats the same roles for a widget that draws into SVG or canvas. The two files carry the same values. A widget does not declare its own color.
+
+### Left to each widget
+
+`packages/widget-<name>/README.md` owns the layout: fields, column order, meters, shift lights, and which role a number uses. The shared sheet gives it the font, the tokens, the panel, and the idle dim.
 
 ## Server
 
@@ -120,6 +246,7 @@ HTTP:
 | `GET /telemetry/index.js`, `style.css` | That widget's built files |
 | `GET /standings` | Same pattern for the standings widget |
 | `GET /health` | `{ ok, source, clients }` for a quick check on the race PC |
+| `GET /fonts/FiraCode-VF.woff2` | The shared Fira Code file, from `packages/shared/fonts/` |
 
 Websocket endpoint: `GET /ws`.
 
@@ -172,7 +299,7 @@ Delivery follows the sim clock.
 * A standings subscriber receives every sixth tick, which is 10 Hz.
 * A session subscriber receives a session message when the version changes, including once on hello.
 
-Paused or disconnected sim means ticks stop. The server then sends `{ type: "status", phase: "idle" }` and the widgets keep the last frame on screen, dimmed, until ticks resume. Sockets with no subscriber do no work for that channel. One shared-memory read serves every OBS source.
+Paused or disconnected sim means ticks stop. The server then sends `{ type: "status", phase: "idle" }` and the widgets keep the last frame on screen, dimmed with the shared `is-idle` class, until ticks resume. Sockets with no subscriber do no work for that channel. One shared-memory read serves every OBS source.
 
 ### Race-PC run
 
@@ -295,7 +422,7 @@ Unit tests for gap math, flag decode, lap-time format, and the fixture clock run
 1. Create `packages/widget-<name>` with a manifest (`id`, `route`, `hz`, `session`).
 2. Add the frame type to `shared` and the field copy to the snapshot in `server`.
 3. Register the manifest in the server's widget list.
-4. Build a view that creates its DOM once.
+4. Build a view that creates its DOM once, on the shared panel.
 5. Add an OBS Browser Source pointed at the route.
 
 ## Out of scope

@@ -9,3 +9,7 @@ export const serverPackageRoot = join(sourceDir, "..");
 export const packagesRoot = join(serverPackageRoot, "..");
 
 export const fixturePath = join(serverPackageRoot, "fixtures", "demo.json");
+
+export const fontRoute = "/fonts/FiraCode-VF.woff2";
+
+export const fontPath = join(packagesRoot, "shared", "fonts", "FiraCode-VF.woff2");

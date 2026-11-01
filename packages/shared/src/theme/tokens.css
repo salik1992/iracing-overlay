@@ -1,0 +1,24 @@
+/* Tokyo Night, Night variant. Keep the values aligned with tokens.ts. */
+
+:root {
+  --bg: #1a1b26;
+  --fg: #c0caf5;
+  --muted: #565f89;
+  --dim: #737aa2;
+  --border: #414868;
+  --rule: #3b4261;
+  --accent: #7aa2f7;
+  --good: #9ece6a;
+  --bad: #f7768e;
+  --caution: #e0af68;
+  --info: #7dcfff;
+  --number: #ff9e64;
+  --panel-alpha: 0.82;
+  --panel: rgb(26 27 38 / var(--panel-alpha));
+  --idle-opacity: 0.55;
+  --font-family: "Fira Code", monospace;
+  --font-size: 14px;
+  --line-height: 1.25;
+  --font-weight: 400;
+  --font-weight-strong: 600;
+}

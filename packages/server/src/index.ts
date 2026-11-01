@@ -1,6 +1,7 @@
 import { loadConfig } from "./config.js";
 import { attachSource, Hub } from "./hub.js";
 import { createOverlayServer, listen } from "./http.js";
+import { fontRoute } from "./paths.js";
 import { openSource } from "./sources/select.js";
 import { widgets } from "./widgets.js";
 
@@ -33,6 +34,7 @@ async function main(): Promise<void> {
   for (const widget of widgets) {
     console.log(`  ${widget.route}  ${widget.hz} Hz`);
   }
+  console.log(`  ${fontRoute}`);
 
   let closing = false;
   const shutdown = (): void => {
