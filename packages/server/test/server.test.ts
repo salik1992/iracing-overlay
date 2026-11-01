@@ -43,6 +43,14 @@ test("fixture publishes a joined standings frame", async () => {
     assert.ok((ahead.gapToPlayerSec ?? 0) < 0);
     const player = messages[2].frame.rows.find((row) => row.isPlayer);
     assert.equal(player?.driverName, "Vit Salomon");
+
+    const flags = await hello(port, "digiflag", 2);
+    assert.equal(flags[0]?.type, "status");
+    assert.equal(flags[1]?.type, "flags");
+    if (flags[1]?.type !== "flags") {
+      return;
+    }
+    assert.deepEqual(flags[1].frame.flags, ["green"]);
   } finally {
     await source.stop();
     await app.close();

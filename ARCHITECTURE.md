@@ -6,7 +6,7 @@ Custom overlays for iRacing, shown in OBS through Browser Source. A Node process
 
 * npm workspaces. One package for the server, one shared package, and one package per browser widget.
 * Widgets are vanilla functional TypeScript. Each widget creates its DOM once and writes into those nodes when a frame arrives.
-* Each widget has its own URL and its own stream rate. The first two are `/telemetry` at 60 Hz and `/standings` at 10 Hz.
+* Each widget has its own URL and its own stream rate. `/telemetry` is 60 Hz. `/digiflag` and `/standings` are 10 Hz.
 * The server reads shared memory once, at the sim's tick, into a snapshot. Widget timers sample that snapshot. Widgets do not read the SDK.
 * The websocket carries small, widget-specific messages. Session data is a separate message, sent when the YAML version changes.
 * The server binds to `127.0.0.1` only.
@@ -14,7 +14,7 @@ Custom overlays for iRacing, shown in OBS through Browser Source. A Node process
 * The race PC runs `git pull`, `npm install`, and `npm start`. esbuild and the `irsdk-node` native addon both ship prebuilt binaries.
 * The overlay is read-only. Camera, replay, pit, and chat commands stay out of this program.
 * Values on the wire are SI units. Display formatting lives in the shared package and uses the driver's `DisplayUnits`.
-* Shared visuals are a terminal panel: Fira Code, the Tokyo Night Night palette, and a flat translucent fill on a transparent page. Widget READMEs own layout.
+* Shared visuals are a terminal panel: Fira Code, the Tokyo Night Night palette, and a flat translucent fill on a transparent page. Widget READMEs own layout. Digiflag is the exception: a lamp matrix with no panel, in signal colors.
 
 ## System
 
@@ -24,8 +24,9 @@ Windows race PC                              OBS
 │ iRacing                  │                 │ Browser Source          │
 │  Local\IRSDKMemMapFileName                 │  http://127.0.0.1:8080/ │
 │  60 Hz telemetry + YAML  │                 │  telemetry              │
-└────────────▲─────────────┘                 │  standings              │
-             │ read                          └────────────▲────────────┘
+└────────────▲─────────────┘                 │  digiflag               │
+             │ read                          │  standings              │
+             │                               └────────────▲────────────┘
 ┌────────────┴───────────────────────┐                     │ websocket
 │ @salik1992/iracing-overlay-server  │─────────────────────┘
 │  snapshot store                    │
@@ -52,6 +53,7 @@ packages/
   shared/                    @salik1992/iracing-overlay-shared
   server/                    @salik1992/iracing-overlay-server
   widget-telemetry/          @salik1992/iracing-overlay-widget-telemetry
+  widget-digiflag/           @salik1992/iracing-overlay-widget-digiflag
   widget-standings/          @salik1992/iracing-overlay-widget-standings
 ```
 
@@ -62,15 +64,18 @@ Every package is private. Root `package.json` is `@salik1992/iracing-overlay-mon
 | `shared` | Theme tokens, the base stylesheet, and the widget manifest type. |
 | `server` | SDK or fixture source, snapshot store, HTTP routes, websocket fan-out, stream rates. |
 | `widget-telemetry` | Numeral page for pedals, steering angle, speed, and gear. 60 Hz. |
+| `widget-digiflag` | Cove 16 lamp matrix for session flags, with no panel. 10 Hz. |
 | `widget-standings` | Page for the race order, intervals, pit state, and session clock. 10 Hz. |
 
 A new overlay is a new workspace package. The server keeps an explicit list of widget manifests, so a widget that fails to build fails the server build with it.
 
 ```ts
+import { manifest as digiflag } from "@salik1992/iracing-overlay-widget-digiflag";
 import { manifest as telemetry } from "@salik1992/iracing-overlay-widget-telemetry";
 
 export const widgets = [
   { ...telemetry, staticDir: "packages/widget-telemetry/dist" },
+  { ...digiflag, staticDir: "packages/widget-digiflag/dist" },
   { id: "standings", route: "/standings", hz: 10, session: true, staticDir: "packages/widget-standings/dist" },
 ];
 ```
@@ -301,6 +306,7 @@ Delivery follows the sim clock.
 
 * A telemetry subscriber receives every tick, which is 60 Hz while iRacing is producing ticks.
 * A standings subscriber receives every sixth tick, which is 10 Hz.
+* A digiflag subscriber receives that same sixth tick. The frame is only the decoded flag names.
 * A session subscriber receives a session message when the version changes, including once on hello.
 
 Paused or disconnected sim means ticks stop. The server then sends `{ type: "status", phase: "idle" }` and the widgets keep the last frame on screen, dimmed with the shared `is-idle` class, until ticks resume. Sockets with no subscriber do no work for that channel. One shared-memory read serves every OBS source.
@@ -320,10 +326,11 @@ type ServerMessage =
   | { type: "status"; phase: "idle" | "live" | "replay"; simMode: string | null }
   | { type: "session"; version: number; session: SessionSnapshot }
   | { type: "telemetry"; tick: number; frame: TelemetryFrame }
-  | { type: "standings"; tick: number; frame: StandingsFrame };
+  | { type: "standings"; tick: number; frame: StandingsFrame }
+  | { type: "flags"; tick: number; frame: FlagsFrame };
 ```
 
-These types still live in the server. `shared` exports the `WidgetManifest` type. The telemetry page parses the status, session units, and telemetry fields it draws, and it owns the socket: reconnect, the hello message, and dispatch.
+These types still live in the server. `shared` exports the `WidgetManifest` type. Each page owns its socket: reconnect, the hello message, and dispatch. The telemetry page parses the status, session units, and telemetry fields it draws. The digiflag page parses the status and the flag names. `FlagsFrame` is `flags: string[]`, the same names standings carries.
 
 `SessionSnapshot` is the normalized slice of the YAML document:
 
@@ -407,6 +414,7 @@ One Browser Source per widget.
 | Source URL | Rate | Suggested starting size |
 |---|---|---|
 | `http://127.0.0.1:8080/telemetry` | 60 Hz | 440×176 |
+| `http://127.0.0.1:8080/digiflag` | 10 Hz | 288×288 |
 | `http://127.0.0.1:8080/standings` | 10 Hz | 480×640 |
 
 In the source properties: set the width and height to the widget, enable "Shutdown source when not visible", and enable "Refresh browser when scene becomes active". Leave the page background transparent. Custom CSS in the source is unnecessary because each widget ships its own stylesheet.

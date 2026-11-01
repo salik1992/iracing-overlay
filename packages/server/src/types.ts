@@ -116,11 +116,16 @@ export interface StandingsFrame {
   rows: StandingRow[];
 }
 
+export interface FlagsFrame {
+  flags: string[];
+}
+
 export type ServerMessage =
   | { type: "status"; phase: SourcePhase; simMode: string | null }
   | { type: "session"; version: number; session: SessionSnapshot }
   | { type: "telemetry"; tick: number; frame: TelemetryFrame }
   | { type: "standings"; tick: number; frame: StandingsFrame }
+  | { type: "flags"; tick: number; frame: FlagsFrame }
   | { type: "error"; message: string };
 
 export interface ClientHello {
@@ -129,7 +134,7 @@ export interface ClientHello {
 }
 
 export interface WidgetServe {
-  id: "telemetry" | "standings";
+  id: "telemetry" | "standings" | "digiflag";
   route: string;
   hz: number;
   session: boolean;

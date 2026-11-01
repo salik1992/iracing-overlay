@@ -1,6 +1,6 @@
 import { decodeFlags, sessionStateName } from "./flags.js";
 import type { Tick } from "./tick.js";
-import type { SessionSnapshot, StandingRow, StandingsFrame, TelemetryFrame } from "./types.js";
+import type { FlagsFrame, SessionSnapshot, StandingRow, StandingsFrame, TelemetryFrame } from "./types.js";
 
 const NOT_IN_WORLD = -1;
 
@@ -20,6 +20,10 @@ export function buildTelemetry(tick: Tick): TelemetryFrame {
     lapBestSec: lapTime(tick.lapBestSec),
     onTrack: tick.onTrack,
   };
+}
+
+export function buildFlags(tick: Tick): FlagsFrame {
+  return { flags: decodeFlags(tick.sessionFlags) };
 }
 
 export function buildStandings(tick: Tick, session: SessionSnapshot | null): StandingsFrame {

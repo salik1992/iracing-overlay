@@ -1,6 +1,6 @@
 import type { RawData, WebSocket } from "ws";
 
-import { buildStandings, buildTelemetry } from "./frames.js";
+import { buildFlags, buildStandings, buildTelemetry } from "./frames.js";
 import type { TelemetrySource } from "./sources/telemetry-source.js";
 import type { Tick } from "./tick.js";
 import type { ServerMessage, SessionSnapshot, SourceStatus, WidgetServe } from "./types.js";
@@ -160,6 +160,9 @@ function frameMessage(
   }
   if (widget.id === "standings") {
     return { type: "standings", tick: tick.sessionTick, frame: buildStandings(tick, session) };
+  }
+  if (widget.id === "digiflag") {
+    return { type: "flags", tick: tick.sessionTick, frame: buildFlags(tick) };
   }
   return null;
 }
