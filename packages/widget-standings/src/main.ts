@@ -1,7 +1,9 @@
-import { connectWidget } from "./connect.js";
+import { connectWidget } from "@salik1992/iracing-overlay-shared/connect";
+
 import { TEAM_MS } from "./constants.js";
 import { manifest } from "./manifest.js";
 import { buildBoard } from "./model.js";
+import { parseMessage } from "./parse.js";
 import { previewBoard } from "./preview.js";
 import type { SessionFields, StandingsWire } from "./types.js";
 import { createView } from "./view.js";
@@ -20,25 +22,22 @@ if (pinned) {
   view.setTeam(hash === "team");
 }
 
-connectWidget(manifest.id, {
-  onStatus(phase) {
-    view.setIdle(phase === "idle");
-  },
-  onSession(next) {
-    if (pinned) {
-      return;
-    }
-    session = next;
-    syncTeam(next.teamRacing);
+connectWidget(manifest.id, parseMessage, (message) => {
+  if (message.type === "status") {
+    view.setIdle(message.phase === "idle");
+    return;
+  }
+  if (pinned) {
+    return;
+  }
+  if (message.type === "session") {
+    session = message.session;
+    syncTeam(message.session.teamRacing);
     paint();
-  },
-  onStandings(next) {
-    if (pinned) {
-      return;
-    }
-    frame = next;
-    paint();
-  },
+    return;
+  }
+  frame = message.frame;
+  paint();
 });
 
 function paint(): void {

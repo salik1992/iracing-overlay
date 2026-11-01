@@ -12,8 +12,8 @@
     ".": "./src/manifest.ts"
   },
   "scripts": {
-    "build": "node build.mjs",
-    "prepare": "node build.mjs",
+    "build": "node ../shared/scripts/build-widget.mjs",
+    "prepare": "node ../shared/scripts/build-widget.mjs",
     "test": "node --import tsx --test test/*.test.ts",
     "typecheck": "tsc --noEmit"
   },

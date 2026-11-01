@@ -1,20 +1,14 @@
-export type Phase = "idle" | "live" | "replay";
+import { asRecord, parseRecord, parseStatus, type Phase } from "@salik1992/iracing-overlay-shared/json";
 
 export type Incoming =
   | { type: "status"; phase: Phase }
   | { type: "flags"; flags: string[] };
 
 export function parseMessage(text: string): Incoming | null {
-  let value: unknown;
-  try {
-    value = JSON.parse(text);
-  } catch {
+  const record = parseRecord(text);
+  if (!record) {
     return null;
   }
-  if (!value || typeof value !== "object") {
-    return null;
-  }
-  const record = value as Record<string, unknown>;
   if (record.type === "status") {
     return parseStatus(record.phase);
   }
@@ -24,18 +18,9 @@ export function parseMessage(text: string): Incoming | null {
   return null;
 }
 
-function parseStatus(phase: unknown): Incoming | null {
-  if (phase === "idle" || phase === "live" || phase === "replay") {
-    return { type: "status", phase };
-  }
-  return null;
-}
-
 function parseFlags(frame: unknown): Incoming | null {
-  if (!frame || typeof frame !== "object") {
-    return null;
-  }
-  const flags = (frame as Record<string, unknown>).flags;
+  const record = asRecord(frame);
+  const flags = record?.flags;
   if (!Array.isArray(flags) || flags.some((item) => typeof item !== "string")) {
     return null;
   }

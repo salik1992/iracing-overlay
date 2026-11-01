@@ -61,7 +61,7 @@ Every package is private. Root `package.json` is `@salik1992/iracing-overlay-mon
 
 | Package | Role |
 |---|---|
-| `shared` | Theme tokens, the base stylesheet, and the widget manifest type. |
+| `shared` | Theme tokens, the base stylesheet, the widget manifest, the websocket client, and the JSON readers. |
 | `server` | SDK or fixture source, snapshot store, HTTP routes, websocket fan-out, stream rates. |
 | `widget-telemetry` | Numeral page for pedals, steering angle, speed, and gear. 60 Hz. |
 | `widget-digiflag` | Cove 16 lamp matrix for session flags, with no panel. 10 Hz. |
@@ -113,7 +113,7 @@ export const manifest = {
 
 `widget-standings` uses `id: "standings"`, `route: "/standings"`, and `hz: 10`.
 
-esbuild bundles `src/main.ts` and everything it imports from `shared` into one `dist/index.js`. The HTML file references that script. OBS Browser Source then needs a single script request and no import map.
+esbuild bundles `src/main.ts` and everything it imports from `shared` into one `dist/index.js`. Each widget runs `packages/shared/scripts/build-widget.mjs`. The HTML file references that script. OBS Browser Source then needs a single script request and no import map.
 
 The page creates its DOM in `view.ts` and holds onto the nodes. Frame handlers write `textContent`, widths, and transforms. They do not rebuild the tree and they do not assign `innerHTML` on the hot path. 60 Hz makes that rule matter.
 
@@ -331,7 +331,7 @@ type ServerMessage =
   | { type: "flags"; tick: number; frame: FlagsFrame };
 ```
 
-These types still live in the server. `shared` exports the `WidgetManifest` type. Each page owns its socket: reconnect, the hello message, and dispatch. The telemetry page parses the status, session units, and telemetry fields it draws. The digiflag page parses the status and the flag names. The standings page parses the status, the session type, the lap and time limits, the team-racing flag, and the standings frame. `FlagsFrame` is `flags: string[]`, the same names standings carries.
+These types still live in the server. `shared` exports the `WidgetManifest` type, the websocket client, and the JSON readers. The client sends hello, reconnects, and hands each text frame to the page. The telemetry page parses the status, session units, and telemetry fields it draws. The digiflag page parses the status and the flag names. The standings page parses the status, the session type, the lap and time limits, the team-racing flag, and the standings frame. `FlagsFrame` is `flags: string[]`, the same names standings carries.
 
 `SessionSnapshot` is the normalized slice of the YAML document:
 

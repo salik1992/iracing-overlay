@@ -1,8 +1,7 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": "../../tsconfig.widget.json",
   "compilerOptions": {
-    "rootDir": ".",
-    "noEmit": true
+    "rootDir": "."
   },
   "include": ["src", "test"]
 }

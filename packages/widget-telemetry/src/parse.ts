@@ -1,6 +1,6 @@
-import type { DisplayUnits } from "./format.js";
+import { asFinite, asRecord, parseRecord, parseStatus, type Phase } from "@salik1992/iracing-overlay-shared/json";
 
-export type Phase = "idle" | "live" | "replay";
+import type { DisplayUnits } from "./format.js";
 
 export interface TelemetrySample {
   speedMps: number;
@@ -17,16 +17,10 @@ export type Incoming =
   | { type: "telemetry"; frame: TelemetrySample };
 
 export function parseMessage(text: string): Incoming | null {
-  let value: unknown;
-  try {
-    value = JSON.parse(text);
-  } catch {
+  const record = parseRecord(text);
+  if (!record) {
     return null;
   }
-  if (!value || typeof value !== "object") {
-    return null;
-  }
-  const record = value as Record<string, unknown>;
   if (record.type === "status") {
     return parseStatus(record.phase);
   }
@@ -39,22 +33,13 @@ export function parseMessage(text: string): Incoming | null {
   return null;
 }
 
-function parseStatus(phase: unknown): Incoming | null {
-  if (phase === "idle" || phase === "live" || phase === "replay") {
-    return { type: "status", phase };
-  }
-  return null;
-}
-
 function parseSession(session: unknown): Incoming | null {
-  if (!session || typeof session !== "object") {
+  const record = asRecord(session);
+  const player = record ? asRecord(record.player) : null;
+  if (!player) {
     return null;
   }
-  const player = (session as Record<string, unknown>).player;
-  if (!player || typeof player !== "object") {
-    return null;
-  }
-  const units = (player as Record<string, unknown>).displayUnits;
+  const units = player.displayUnits;
   if (units !== 0 && units !== 1) {
     return null;
   }
@@ -62,16 +47,16 @@ function parseSession(session: unknown): Incoming | null {
 }
 
 function parseTelemetry(frame: unknown): Incoming | null {
-  if (!frame || typeof frame !== "object") {
+  const record = asRecord(frame);
+  if (!record) {
     return null;
   }
-  const record = frame as Record<string, unknown>;
-  const speedMps = finite(record.speedMps);
-  const gear = finite(record.gear);
-  const throttle = finite(record.throttle);
-  const brake = finite(record.brake);
-  const clutch = finite(record.clutch);
-  const steeringWheelAngleRad = finite(record.steeringWheelAngleRad);
+  const speedMps = asFinite(record.speedMps);
+  const gear = asFinite(record.gear);
+  const throttle = asFinite(record.throttle);
+  const brake = asFinite(record.brake);
+  const clutch = asFinite(record.clutch);
+  const steeringWheelAngleRad = asFinite(record.steeringWheelAngleRad);
   if (
     speedMps === null ||
     gear === null ||
@@ -86,8 +71,4 @@ function parseTelemetry(frame: unknown): Incoming | null {
     type: "telemetry",
     frame: { speedMps, gear, throttle, brake, clutch, steeringWheelAngleRad },
   };
-}
-
-function finite(value: unknown): number | null {
-  return typeof value === "number" && Number.isFinite(value) ? value : null;
 }

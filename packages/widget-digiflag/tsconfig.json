@@ -1,9 +1,7 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": "../../tsconfig.widget.json",
   "compilerOptions": {
-    "rootDir": ".",
-    "noEmit": true,
-    "lib": ["ES2023", "DOM"]
+    "rootDir": "."
   },
   "include": ["src", "test"]
 }

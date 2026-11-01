@@ -1,6 +1,6 @@
-import type { SessionFields, StandingWire, StandingsWire } from "./types.js";
+import { asFinite, asFiniteOr, asRecord, asText, parseRecord, parseStatus, type Phase } from "@salik1992/iracing-overlay-shared/json";
 
-export type Phase = "idle" | "live" | "replay";
+import type { SessionFields, StandingWire, StandingsWire } from "./types.js";
 
 export type Incoming =
   | { type: "status"; phase: Phase }
@@ -8,16 +8,10 @@ export type Incoming =
   | { type: "standings"; frame: StandingsWire };
 
 export function parseMessage(text: string): Incoming | null {
-  let value: unknown;
-  try {
-    value = JSON.parse(text);
-  } catch {
+  const record = parseRecord(text);
+  if (!record) {
     return null;
   }
-  if (!value || typeof value !== "object") {
-    return null;
-  }
-  const record = value as Record<string, unknown>;
   if (record.type === "status") {
     return parseStatus(record.phase);
   }
@@ -30,20 +24,10 @@ export function parseMessage(text: string): Incoming | null {
   return null;
 }
 
-function parseStatus(phase: unknown): Incoming | null {
-  if (phase === "idle" || phase === "live" || phase === "replay") {
-    return { type: "status", phase };
-  }
-  return null;
-}
-
 function parseSession(session: unknown): Incoming | null {
-  if (!session || typeof session !== "object") {
-    return null;
-  }
-  const record = session as Record<string, unknown>;
-  const current = asRecord(record.session);
-  const weekend = asRecord(record.weekend);
+  const record = asRecord(session);
+  const current = record ? asRecord(record.session) : null;
+  const weekend = record ? asRecord(record.weekend) : null;
   if (!current || !weekend) {
     return null;
   }
@@ -70,49 +54,30 @@ function parseStandings(frame: unknown): Incoming | null {
       continue;
     }
     rows.push({
-      carIdx: asNum(row.carIdx, 0),
-      position: asNum(row.position, 0),
-      classPosition: asNum(row.classPosition, 0),
-      classId: asNum(row.classId, 0),
+      carIdx: asFiniteOr(row.carIdx, 0),
+      position: asFiniteOr(row.position, 0),
+      classPosition: asFiniteOr(row.classPosition, 0),
+      classId: asFiniteOr(row.classId, 0),
       className: asText(row.className),
       classColor: asText(row.classColor),
       carNumber: asText(row.carNumber),
       driverName: asText(row.driverName),
-      lap: asNum(row.lap, 0),
-      bestLapSec: asNumOrNull(row.bestLapSec),
+      lap: asFiniteOr(row.lap, 0),
+      bestLapSec: asFinite(row.bestLapSec),
       teamName: asText(row.teamName),
       tire: asText(row.tire),
-      pitStops: asNum(row.pitStops, 0),
-      startClassPosition: asNum(row.startClassPosition, 0),
-      intervalSec: asNumOrNull(row.intervalSec),
-      lapsDown: asNum(row.lapsDown, 0),
+      pitStops: asFiniteOr(row.pitStops, 0),
+      startClassPosition: asFiniteOr(row.startClassPosition, 0),
+      intervalSec: asFinite(row.intervalSec),
+      lapsDown: asFiniteOr(row.lapsDown, 0),
       isPlayer: row.isPlayer === true,
     });
   }
   return {
     type: "standings",
     frame: {
-      sessionTimeRemainSec: asNum(record.sessionTimeRemainSec, 0),
+      sessionTimeRemainSec: asFiniteOr(record.sessionTimeRemainSec, 0),
       rows,
     },
   };
-}
-
-function asRecord(value: unknown): Record<string, unknown> | null {
-  if (!value || typeof value !== "object" || Array.isArray(value)) {
-    return null;
-  }
-  return value as Record<string, unknown>;
-}
-
-function asText(value: unknown): string {
-  return typeof value === "string" ? value : "";
-}
-
-function asNum(value: unknown, fallback: number): number {
-  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
-}
-
-function asNumOrNull(value: unknown): number | null {
-  return typeof value === "number" && Number.isFinite(value) ? value : null;
 }

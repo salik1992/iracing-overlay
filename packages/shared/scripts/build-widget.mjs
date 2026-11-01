@@ -1,11 +1,13 @@
+import { createRequire } from "node:module";
 import { copyFile, mkdir, readFile } from "node:fs/promises";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { join } from "node:path";
+import { pathToFileURL } from "node:url";
 
-import * as esbuild from "esbuild";
-
-const root = dirname(fileURLToPath(import.meta.url));
+// npm runs this with the widget package as the working directory.
+const root = process.cwd();
 const dist = join(root, "dist");
+const require = createRequire(join(root, "package.json"));
+const esbuild = await import(pathToFileURL(require.resolve("esbuild")).href);
 
 await mkdir(dist, { recursive: true });
 

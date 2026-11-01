@@ -1,16 +1,15 @@
-import type { DisplayUnits } from "./format.js";
-import { parseMessage, type Incoming, type Phase, type TelemetrySample } from "./parse.js";
-
 const RETRY_MIN_MS = 250;
 const RETRY_MAX_MS = 4000;
 
-export interface WidgetHandlers {
-  onStatus(phase: Phase): void;
-  onUnits(units: DisplayUnits): void;
-  onFrame(frame: TelemetrySample): void;
-}
-
-export function connectWidget(widgetId: string, handlers: WidgetHandlers): void {
+/**
+ * Open the overlay socket, say hello, and pass each text frame through `parse`.
+ * A dropped socket waits 250 ms, then doubles that wait up to 4 s.
+ */
+export function connectWidget<T>(
+  widgetId: string,
+  parse: (text: string) => T | null,
+  handle: (message: T) => void,
+): void {
   let delay = RETRY_MIN_MS;
   let active: WebSocket | null = null;
 
@@ -26,7 +25,10 @@ export function connectWidget(widgetId: string, handlers: WidgetHandlers): void 
       if (typeof event.data !== "string") {
         return;
       }
-      dispatch(parseMessage(event.data), handlers);
+      const message = parse(event.data);
+      if (message !== null) {
+        handle(message);
+      }
     });
     socket.addEventListener("close", () => {
       if (active !== socket) {
@@ -38,19 +40,4 @@ export function connectWidget(widgetId: string, handlers: WidgetHandlers): void 
   };
 
   open();
-}
-
-function dispatch(message: Incoming | null, handlers: WidgetHandlers): void {
-  if (!message) {
-    return;
-  }
-  if (message.type === "status") {
-    handlers.onStatus(message.phase);
-    return;
-  }
-  if (message.type === "session") {
-    handlers.onUnits(message.displayUnits);
-    return;
-  }
-  handlers.onFrame(message.frame);
 }
