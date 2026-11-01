@@ -1,0 +1,112 @@
+{
+  "WeekendInfo": {
+    "TrackDisplayName": "Test Circuit",
+    "TrackConfigName": "Short",
+    "TrackLength": "1.60 km",
+    "SeriesID": 0,
+    "EventType": "Practice",
+    "SimMode": "fixture",
+    "TeamRacing": 0,
+    "Official": 0
+  },
+  "DriverInfo": {
+    "DriverCarIdx": 2,
+    "DriverCarIdleRPM": 1100,
+    "DriverCarRedLine": 8000,
+    "DriverCarFuelMaxLtr": 89,
+    "DriverCarSLFirstRPM": 6000,
+    "DriverCarSLShiftRPM": 7000,
+    "DriverCarSLLastRPM": 7500,
+    "DriverCarSLBlinkRPM": 7800,
+    "Drivers": [
+      {
+        "CarIdx": 0,
+        "UserName": "Pace Car",
+        "CarNumber": "0",
+        "CarPath": "pacecar",
+        "CarClassID": 0,
+        "CarClassShortName": "Pace",
+        "CarClassColor": 11184810,
+        "IRating": 0,
+        "LicString": "",
+        "IsSpectator": 0,
+        "CarIsPaceCar": 1,
+        "CarIsAI": 1
+      },
+      {
+        "CarIdx": 1,
+        "UserName": "A. Nielsen",
+        "CarNumber": "2",
+        "CarPath": "testgtp",
+        "CarClassID": 100,
+        "CarClassShortName": "GTP",
+        "CarClassColor": 14747136,
+        "IRating": 2450,
+        "LicString": "A 3.40",
+        "IsSpectator": 0,
+        "CarIsPaceCar": 0,
+        "CarIsAI": 0
+      },
+      {
+        "CarIdx": 2,
+        "UserName": "Vit Salomon",
+        "CarNumber": "22",
+        "CarPath": "testgtp",
+        "CarClassID": 100,
+        "CarClassShortName": "GTP",
+        "CarClassColor": 14747136,
+        "IRating": 2100,
+        "LicString": "A 2.80",
+        "IsSpectator": 0,
+        "CarIsPaceCar": 0,
+        "CarIsAI": 0
+      },
+      {
+        "CarIdx": 7,
+        "UserName": "M. Okada",
+        "CarNumber": "45",
+        "CarPath": "testlmp2",
+        "CarClassID": 200,
+        "CarClassShortName": "LMP2",
+        "CarClassColor": 37072,
+        "IRating": 1800,
+        "LicString": "B 3.10",
+        "IsSpectator": 0,
+        "CarIsPaceCar": 0,
+        "CarIsAI": 0
+      },
+      {
+        "CarIdx": 9,
+        "UserName": "Spectator",
+        "CarNumber": "",
+        "CarPath": "",
+        "CarClassID": 0,
+        "CarClassShortName": "",
+        "CarClassColor": 0,
+        "IRating": 0,
+        "LicString": "",
+        "IsSpectator": 1,
+        "CarIsPaceCar": 0,
+        "CarIsAI": 0
+      }
+    ]
+  },
+  "SessionInfo": {
+    "Sessions": [
+      {
+        "SessionNum": 0,
+        "SessionName": "PRACTICE",
+        "SessionType": "Practice",
+        "SessionLaps": "unlimited",
+        "SessionTime": "1800.000 sec"
+      }
+    ]
+  },
+  "motion": {
+    "cars": [
+      { "carIdx": 1, "lap": 3, "lapDistPct": 0.32, "paceMps": 51, "lastLapSec": 31.2, "bestLapSec": 30.8 },
+      { "carIdx": 2, "lap": 3, "lapDistPct": 0.2, "paceMps": 49.5, "lastLapSec": 31.8, "bestLapSec": 31.1 },
+      { "carIdx": 7, "lap": 3, "lapDistPct": 0.55, "paceMps": 46, "lastLapSec": 34.4, "bestLapSec": 33.9 }
+    ]
+  }
+}

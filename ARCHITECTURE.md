@@ -25,11 +25,11 @@ Windows race PC                              OBS
 │  60 Hz telemetry + YAML  │                 │  telemetry              │
 └────────────▲─────────────┘                 │  standings              │
              │ read                          └────────────▲────────────┘
-┌────────────┴─────────────┐                               │ websocket
-│ @iracing-overlay/server  │                               │
-│  snapshot store          │───────────────────────────────┘
-│  static pages            │
-└──────────────────────────┘
+┌────────────┴───────────────────────┐                     │ websocket
+│ @salik1992/iracing-overlay-server  │─────────────────────┘
+│  snapshot store                    │
+│  static pages                      │
+└────────────────────────────────────┘
 
 Linux dev machine
 ┌──────────────────────────┐
@@ -44,17 +44,17 @@ OBS never talks to iRacing. The browser page is a normal local web page. Transpa
 ## Repository
 
 ```text
-package.json                 workspaces: packages/*
+package.json                 @salik1992/iracing-overlay-monorepo
 tsconfig.base.json
 ARCHITECTURE.md
 packages/
-  shared/                    @iracing-overlay/shared
-  server/                    @iracing-overlay/server
-  widget-telemetry/          @iracing-overlay/widget-telemetry
-  widget-standings/          @iracing-overlay/widget-standings
+  shared/                    @salik1992/iracing-overlay-shared
+  server/                    @salik1992/iracing-overlay-server
+  widget-telemetry/          @salik1992/iracing-overlay-widget-telemetry
+  widget-standings/          @salik1992/iracing-overlay-widget-standings
 ```
 
-Root `package.json` is private, with `"workspaces": ["packages/*"]` and `"engines": { "node": ">=22" }`. A `.nvmrc` pins the same major.
+Every package is private. Root `package.json` is `@salik1992/iracing-overlay-monorepo`, with `"workspaces": ["packages/*"]` and `"engines": { "node": ">=22" }`. A `.nvmrc` pins the same major.
 
 | Package | Role |
 |---|---|
@@ -66,8 +66,8 @@ Root `package.json` is private, with `"workspaces": ["packages/*"]` and `"engine
 A new overlay is a new workspace package. The server keeps an explicit list of widget manifests, so a widget that fails to build fails the server build with it.
 
 ```ts
-import { manifest as telemetry } from "@iracing-overlay/widget-telemetry";
-import { manifest as standings } from "@iracing-overlay/widget-standings";
+import { manifest as telemetry } from "@salik1992/iracing-overlay-widget-telemetry";
+import { manifest as standings } from "@salik1992/iracing-overlay-widget-standings";
 
 export const widgets = [telemetry, standings];
 ```
@@ -90,7 +90,7 @@ packages/widget-telemetry/
 `src/manifest.ts` is the contract the server imports:
 
 ```ts
-import type { WidgetManifest } from "@iracing-overlay/shared";
+import type { WidgetManifest } from "@salik1992/iracing-overlay-shared";
 
 export const manifest = {
   id: "telemetry",

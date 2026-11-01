@@ -1,0 +1,166 @@
+import { parseTrackLengthMeters } from "./track-length.js";
+import type { DisplayUnits, DriverSnapshot, SessionSnapshot } from "./types.js";
+
+export interface NormalizeOptions {
+  sessionNum: number;
+  displayUnits: DisplayUnits;
+}
+
+export function normalizeSession(input: unknown, options: NormalizeOptions): SessionSnapshot | null {
+  const root = asRecord(input);
+  if (!root) {
+    return null;
+  }
+
+  const weekend = asRecord(root["WeekendInfo"]) ?? {};
+  const driverInfo = asRecord(root["DriverInfo"]) ?? {};
+  const sessionInfo = asRecord(root["SessionInfo"]) ?? {};
+  const playerCarIdx = asNumber(driverInfo["DriverCarIdx"]) ?? 0;
+  const drivers = readDrivers(driverInfo["Drivers"]);
+  const player = drivers[String(playerCarIdx)];
+  const current = selectSession(sessionInfo["Sessions"], options.sessionNum);
+  const trackLength = parseTrackLengthMeters(asText(weekend["TrackLength"], "")) ?? 0;
+
+  return {
+    weekend: {
+      trackDisplayName: asText(weekend["TrackDisplayName"], ""),
+      trackConfigName: asText(weekend["TrackConfigName"], ""),
+      trackLengthMeters: trackLength,
+      seriesId: asNumber(weekend["SeriesID"]) ?? 0,
+      eventType: asText(weekend["EventType"], ""),
+      simMode: asText(weekend["SimMode"], ""),
+      teamRacing: asBool(weekend["TeamRacing"]),
+      official: asBool(weekend["Official"]),
+    },
+    player: {
+      carIdx: playerCarIdx,
+      carNumber: player?.carNumber ?? "",
+      driverName: player?.name ?? "",
+      shiftLight: {
+        firstRpm: asNumber(driverInfo["DriverCarSLFirstRPM"]) ?? 0,
+        shiftRpm: asNumber(driverInfo["DriverCarSLShiftRPM"]) ?? 0,
+        lastRpm: asNumber(driverInfo["DriverCarSLLastRPM"]) ?? 0,
+        blinkRpm: asNumber(driverInfo["DriverCarSLBlinkRPM"]) ?? 0,
+      },
+      redlineRpm: asNumber(driverInfo["DriverCarRedLine"]) ?? 0,
+      idleRpm: asNumber(driverInfo["DriverCarIdleRPM"]) ?? 0,
+      maxFuelLiters: asNumber(driverInfo["DriverCarFuelMaxLtr"]) ?? 0,
+      displayUnits: options.displayUnits,
+    },
+    drivers,
+    session: {
+      number: asNumber(current?.["SessionNum"]) ?? options.sessionNum,
+      name: asText(current?.["SessionName"], ""),
+      type: asText(current?.["SessionType"], ""),
+      laps: asText(current?.["SessionLaps"], ""),
+      time: asText(current?.["SessionTime"], ""),
+    },
+  };
+}
+
+function readDrivers(value: unknown): Record<string, DriverSnapshot> {
+  const drivers: Record<string, DriverSnapshot> = {};
+  if (!Array.isArray(value)) {
+    return drivers;
+  }
+  for (const entry of value) {
+    const record = asRecord(entry);
+    const carIdx = record ? asNumber(record["CarIdx"]) : null;
+    if (!record || carIdx === null || carIdx < 0) {
+      continue;
+    }
+    drivers[String(carIdx)] = {
+      carIdx,
+      name: asText(record["UserName"], ""),
+      carNumber: asText(record["CarNumber"], ""),
+      carPath: asText(record["CarPath"], ""),
+      classId: asNumber(record["CarClassID"]) ?? 0,
+      className: asText(record["CarClassShortName"], ""),
+      classColor: classColor(record["CarClassColor"]),
+      iRating: asNumber(record["IRating"]) ?? 0,
+      license: asText(record["LicString"], ""),
+      spectator: asBool(record["IsSpectator"]),
+      paceCar: asBool(record["CarIsPaceCar"]),
+      ai: asBool(record["CarIsAI"]),
+    };
+  }
+  return drivers;
+}
+
+function selectSession(value: unknown, sessionNum: number): Record<string, unknown> | null {
+  if (!Array.isArray(value)) {
+    return null;
+  }
+  let fallback: Record<string, unknown> | null = null;
+  for (const entry of value) {
+    const record = asRecord(entry);
+    if (!record) {
+      continue;
+    }
+    fallback ??= record;
+    if (asNumber(record["SessionNum"]) === sessionNum) {
+      return record;
+    }
+  }
+  return fallback;
+}
+
+function classColor(value: unknown): string {
+  const numeric = asNumber(value);
+  if (numeric !== null) {
+    const rgb = (numeric >>> 0) & 0xffffff;
+    return `#${rgb.toString(16).padStart(6, "0")}`;
+  }
+  if (typeof value === "string") {
+    const match = /^\s*(?:#|0x)([0-9a-f]{6})\s*$/i.exec(value);
+    const hex = match?.[1];
+    if (hex) {
+      return `#${hex.toLowerCase()}`;
+    }
+  }
+  return "#888888";
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return null;
+  }
+  return value as Record<string, unknown>;
+}
+
+function asNumber(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value === "string" && value.trim() !== "") {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+  return null;
+}
+
+function asText(value: unknown, fallback: string): string {
+  if (typeof value === "string") {
+    return value;
+  }
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return String(value);
+  }
+  return fallback;
+}
+
+function asBool(value: unknown): boolean {
+  if (typeof value === "boolean") {
+    return value;
+  }
+  if (typeof value === "number") {
+    return value !== 0;
+  }
+  if (typeof value === "string") {
+    const text = value.trim().toLowerCase();
+    return text === "1" || text === "true" || text === "yes";
+  }
+  return false;
+}
