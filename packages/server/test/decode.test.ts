@@ -38,9 +38,12 @@ test("normalizes the demo session", () => {
   assert.equal(session.player.shiftLight.blinkRpm, 7800);
   assert.equal(session.player.displayUnits, 1);
   assert.equal(session.drivers["2"]?.classColor, "#e10600");
+  assert.equal(session.drivers["2"]?.teamName, "Salomon Racing");
+  assert.deepEqual(session.tires, ["Dry", "Wet"]);
   assert.equal(session.drivers["0"]?.paceCar, true);
   assert.equal(session.drivers["9"]?.spectator, true);
   assert.equal(session.session.name, "PRACTICE");
+  assert.deepEqual(session.session.results, []);
 });
 
 test("standings drop pace cars, spectators, and cars not in the world", () => {
@@ -119,6 +122,13 @@ test("standings drop pace cars, spectators, and cars not in the world", () => {
   assert.equal(frame.rows[0]?.gapToPlayerSec, -0.4);
   assert.equal(frame.rows[0]?.driverName, "Ahead");
   assert.equal(frame.rows[0]?.classColor, "#0000ff");
+  assert.equal(frame.rows[0]?.teamName, "");
+  assert.equal(frame.rows[0]?.tire, "");
+  assert.equal(frame.rows[0]?.pitStops, 0);
+  assert.equal(frame.rows[0]?.startClassPosition, 0);
+  assert.equal(frame.rows[0]?.intervalSec, null);
+  assert.equal(frame.rows[0]?.lapsDown, 0);
+  assert.equal(frame.rows[1]?.intervalSec, 0.4);
   assert.equal(frame.rows[1]?.isPlayer, true);
   assert.equal(frame.rows[1]?.lastLapSec, null);
 
@@ -134,11 +144,13 @@ function car(carIdx: number, position: number, estTimeSec: number): Tick["cars"]
     position,
     classPosition: position,
     lap: 3,
+    lapCompleted: 2,
     lapDistPct: 0.5,
     estTimeSec,
     lastLapSec: -1,
     bestLapSec: 30,
     onPitRoad: false,
     trackSurface: 3,
+    tireCompound: -1,
   };
 }

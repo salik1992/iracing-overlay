@@ -142,15 +142,17 @@ export class IRacingSource implements TelemetrySource {
     const positions = numberArray(sdk, "CarIdxPosition");
     const classPositions = numberArray(sdk, "CarIdxClassPosition");
     const laps = numberArray(sdk, "CarIdxLap");
+    const lapsCompleted = numberArray(sdk, "CarIdxLapCompleted");
     const lapDist = numberArray(sdk, "CarIdxLapDistPct");
     const estTimes = numberArray(sdk, "CarIdxEstTime");
     const lastLaps = numberArray(sdk, "CarIdxLastLapTime");
     const bestLaps = numberArray(sdk, "CarIdxBestLapTime");
     const surfaces = numberArray(sdk, "CarIdxTrackSurface");
     const onPitRoad = boolArray(sdk, "CarIdxOnPitRoad");
+    const compounds = numberArray(sdk, "CarIdxTireCompound");
     const count = Math.min(
       CAR_LIMIT,
-      Math.max(positions.length, laps.length, lapDist.length, estTimes.length),
+      Math.max(positions.length, laps.length, lapsCompleted.length, lapDist.length, estTimes.length),
     );
     const cars: CarSample[] = [];
     for (let carIdx = 0; carIdx < count; carIdx += 1) {
@@ -159,12 +161,14 @@ export class IRacingSource implements TelemetrySource {
         position: atOr(positions, carIdx, 0),
         classPosition: atOr(classPositions, carIdx, 0),
         lap: atOr(laps, carIdx, 0),
+        lapCompleted: atOr(lapsCompleted, carIdx, -1),
         lapDistPct: atOr(lapDist, carIdx, 0),
         estTimeSec: atOr(estTimes, carIdx, Number.NaN),
         lastLapSec: atOr(lastLaps, carIdx, -1),
         bestLapSec: atOr(bestLaps, carIdx, -1),
         onPitRoad: onPitRoad[carIdx] === true,
         trackSurface: atOr(surfaces, carIdx, NOT_IN_WORLD),
+        tireCompound: atOr(compounds, carIdx, -1),
       });
     }
 

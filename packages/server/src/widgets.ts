@@ -1,15 +1,13 @@
 import { join } from "node:path";
 
 import { manifest as digiflag } from "@salik1992/iracing-overlay-widget-digiflag";
+import { manifest as standings } from "@salik1992/iracing-overlay-widget-standings";
 import { manifest as telemetry } from "@salik1992/iracing-overlay-widget-telemetry";
 
 import { packagesRoot } from "./paths.js";
 import type { WidgetServe } from "./types.js";
 
-/**
- * Standings stays inline until packages/widget-standings exists.
- * staticDir is server-only; the widget manifest does not know where files are written.
- */
+/** staticDir is server-only; the widget manifest does not know where files are written. */
 export const widgets: readonly WidgetServe[] = [
   {
     ...telemetry,
@@ -20,10 +18,7 @@ export const widgets: readonly WidgetServe[] = [
     staticDir: join(packagesRoot, "widget-digiflag", "dist"),
   },
   {
-    id: "standings",
-    route: "/standings",
-    hz: 10,
-    session: true,
+    ...standings,
     staticDir: join(packagesRoot, "widget-standings", "dist"),
   },
 ];

@@ -1,6 +1,8 @@
 import type { RawData, WebSocket } from "ws";
 
 import { buildFlags, buildStandings, buildTelemetry } from "./frames.js";
+import { LiveOrder } from "./live-order.js";
+import { EMPTY_NOTE, RaceMemory, type RaceNote } from "./race-memory.js";
 import type { TelemetrySource } from "./sources/telemetry-source.js";
 import type { Tick } from "./tick.js";
 import type { ServerMessage, SessionSnapshot, SourceStatus, WidgetServe } from "./types.js";
@@ -16,6 +18,10 @@ export class Hub {
   private session: SessionSnapshot | null = null;
   private sessionVersion = 0;
   private tick: Tick | null = null;
+  private readonly race = new RaceMemory();
+  private raceNote: RaceNote = EMPTY_NOTE;
+  private readonly live = new LiveOrder();
+  private liveRanks: ReadonlyMap<number, number> | null = null;
   private delivered = 0;
 
   constructor(private readonly widgets: readonly WidgetServe[]) {}
@@ -72,6 +78,8 @@ export class Hub {
 
   publishTick(tick: Tick): void {
     this.tick = tick;
+    this.raceNote = this.race.note(tick);
+    this.liveRanks = this.live.note(tick, this.session);
     this.delivered += 1;
     for (const client of this.clients) {
       const widget = client.widget;
@@ -82,7 +90,7 @@ export class Hub {
       if (this.delivered % every !== 0) {
         continue;
       }
-      const message = frameMessage(widget, tick, this.session);
+      const message = frameMessage(widget, tick, this.session, this.raceNote, this.liveRanks);
       if (message) {
         this.send(client.socket, message);
       }
@@ -117,7 +125,7 @@ export class Hub {
       });
     }
     if (this.tick) {
-      const message = frameMessage(widget, this.tick, this.session);
+      const message = frameMessage(widget, this.tick, this.session, this.raceNote, this.liveRanks);
       if (message) {
         this.send(client.socket, message);
       }
@@ -154,12 +162,18 @@ function frameMessage(
   widget: WidgetServe,
   tick: Tick,
   session: SessionSnapshot | null,
+  note: RaceNote,
+  liveClassPosition: ReadonlyMap<number, number> | null,
 ): ServerMessage | null {
   if (widget.id === "telemetry") {
     return { type: "telemetry", tick: tick.sessionTick, frame: buildTelemetry(tick) };
   }
   if (widget.id === "standings") {
-    return { type: "standings", tick: tick.sessionTick, frame: buildStandings(tick, session) };
+    return {
+      type: "standings",
+      tick: tick.sessionTick,
+      frame: buildStandings(tick, session, note, liveClassPosition),
+    };
   }
   if (widget.id === "digiflag") {
     return { type: "flags", tick: tick.sessionTick, frame: buildFlags(tick) };

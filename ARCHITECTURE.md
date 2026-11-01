@@ -71,16 +71,17 @@ A new overlay is a new workspace package. The server keeps an explicit list of w
 
 ```ts
 import { manifest as digiflag } from "@salik1992/iracing-overlay-widget-digiflag";
+import { manifest as standings } from "@salik1992/iracing-overlay-widget-standings";
 import { manifest as telemetry } from "@salik1992/iracing-overlay-widget-telemetry";
 
 export const widgets = [
   { ...telemetry, staticDir: "packages/widget-telemetry/dist" },
   { ...digiflag, staticDir: "packages/widget-digiflag/dist" },
-  { id: "standings", route: "/standings", hz: 10, session: true, staticDir: "packages/widget-standings/dist" },
+  { ...standings, staticDir: "packages/widget-standings/dist" },
 ];
 ```
 
-`staticDir` is added by the server. Standings stays inline until that package exists.
+`staticDir` is added by the server. The widget manifest does not know where the files are written.
 
 ## Widget package
 
@@ -330,13 +331,14 @@ type ServerMessage =
   | { type: "flags"; tick: number; frame: FlagsFrame };
 ```
 
-These types still live in the server. `shared` exports the `WidgetManifest` type. Each page owns its socket: reconnect, the hello message, and dispatch. The telemetry page parses the status, session units, and telemetry fields it draws. The digiflag page parses the status and the flag names. `FlagsFrame` is `flags: string[]`, the same names standings carries.
+These types still live in the server. `shared` exports the `WidgetManifest` type. Each page owns its socket: reconnect, the hello message, and dispatch. The telemetry page parses the status, session units, and telemetry fields it draws. The digiflag page parses the status and the flag names. The standings page parses the status, the session type, the lap and time limits, the team-racing flag, and the standings frame. `FlagsFrame` is `flags: string[]`, the same names standings carries.
 
 `SessionSnapshot` is the normalized slice of the YAML document:
 
 * Weekend: track display name, config, track length in meters, series, event type, `simMode`, team racing, official flag.
 * Player: `playerCarIdx`, car number, driver name, shift-light RPM points (`DriverCarSLFirstRPM`, `DriverCarSLShiftRPM`, `DriverCarSLLastRPM`, `DriverCarSLBlinkRPM`), redline, idle RPM, max fuel in liters, `displayUnits`.
-* Drivers, keyed by `carIdx`: name, car number, car path, class id, class name, class color, iRating, license string, spectator, pace car, AI.
+* Drivers, keyed by `carIdx`: name, car number, team name, car path, class id, class name, class color, iRating, license string, spectator, pace car, AI.
+* Tire catalog: `DriverInfo.TireCompounds` when the session publishes it, indexed by `CarIdxTireCompound`.
 * Current session: number, name, type, laps or time limit.
 
 `TelemetryFrame`, 60 Hz:
@@ -365,9 +367,17 @@ Shift-light thresholds travel in the session message. The telemetry view caches 
 | `flags` | `SessionFlags`, decoded to names in `shared` |
 | `rows[]` | One row per car that is in the world |
 
-Each row contains `carIdx`, overall position, class position, class name and color, car number, driver name, lap, last and best lap seconds, gap to the player in seconds, `onPitRoad`, track surface, and `isPlayer`.
+Each row contains `carIdx`, overall position, class position, class name and color, car number, driver name, team name, lap, last and best lap seconds, gap to the player in seconds, class interval in seconds, laps down to the class leader, tire letter, pit stops observed since the server attached, class position at the start of racing, `onPitRoad`, track surface, and `isPlayer`.
 
-Gap math uses `CarIdxEstTime`: the estimated time for that car to reach the player's point on the racing line. Subtract the player's value. Negative means ahead. Empty slots, spectators, and the pace car are dropped before send. Class filtering happens in the widget from the class fields, so one stream feeds every filter.
+Overall position stays the position iRacing publishes. In a race, once the state is racing, each class is ordered by laps completed plus the fraction of the current lap (`CarIdxLapCompleted` + `CarIdxLapDistPct`). That order is the class position on the row, and the interval is the estimated-time gap to the car now ahead, so a pass shows up where it happens. Parade laps keep iRacing's class position. Under the checkered flag the live order continues until the results leader completes another lap. Cars that have taken the flag then lock to `ResultsPositions`, and cars still running stay in live order. The lock reads the latest session YAML, so it follows the official classification as the sim updates it. A car towed into its pit stall keeps the progress it had on track. Practice, qualifying, warmup, and any session that is not a race keep iRacing's class position.
+
+Gap to the player uses `CarIdxEstTime`: the estimated time for that car to reach the player's point on the racing line. Subtract the player's value. Negative means ahead. The class interval is the difference of those gaps between a car and the class car ahead. The class leader's interval is null. Laps down compares lap and lap distance percent with the class leader, and drops one when the car is further through the lap than the leader. Empty slots, spectators, and the pace car are dropped before send.
+
+The SDK does not publish a pit-stop count or a grid position. Pit stops count a rising edge of track surface `InPitStall` after the server has already seen that car, and the count resets when the session number changes. A stall already in progress on the first sight of the car stays uncounted. The arrow baseline is iRacing's class position on the first tick whose session state is racing, including a server that attaches after the green flag, so the delta opens at zero. Cars that appear later take their first seen official class position. The arrow compares that baseline with the class position on the row.
+
+The tire letter is the first letter of the catalog name when `DriverInfo.TireCompounds` names that index. Without a catalog, index 0 is D and index 1 is W. Any other index is blank.
+
+The standings page draws the Composite layout from this frame and retunes each class color toward Tokyo Night Night. Column order, the row window, and the team-name cycle live in `packages/widget-standings/README.md`.
 
 `SessionState` values the standings widget cares about: get in car, warmup, parade laps, racing, checkered, cool down.
 
@@ -389,7 +399,7 @@ Fields above are the ones the first two widgets need. The same snapshot store ca
 * Deltas: `LapDeltaToBestLap`, `LapDeltaToOptimalLap`, `LapDeltaToSessionBestLap`, each with an `_OK` flag. The widget hides the bar when `_OK` is false.
 * Weather: air temp, track temp, humidity, wind, skies, `TrackWetness`, `WeatherDeclaredWet`.
 * Spotter: `CarLeftRight` (clear, car left, car right, both sides, two left, two right).
-* Other cars, live arrays of up to 64: position, class position, lap, lap distance percent, estimated time, gap to leader, last and best lap, gear, RPM, steer, tire compound, on pit road, track surface.
+* Other cars, live arrays of up to 64: position, class position, lap, laps completed, lap distance percent, estimated time, gap to leader, last and best lap, gear, RPM, steer, tire compound, on pit road, track surface.
 * Camera label while spectating: `CamCarIdx` joined to the driver list. Replay state: `IsReplayPlaying`, `ReplayPlaySpeed`, `ReplaySessionTime`.
 
 `Speed` is m/s. The telemetry page formats it from `DisplayUnits`: metric is km/h, imperial is mph. Lap time, gaps, and temperatures stay in SI until a widget draws them.
@@ -423,7 +433,7 @@ Several sources share one server process and one shared-memory reader.
 
 ## Development
 
-On Linux, `npm run dev` starts the fixture source and the pages. Open the two URLs in a browser. The fixture is a captured live tick stream plus one session snapshot, checked into `packages/server/fixtures/`, so standings and telemetry both move. An `.ibt` file can later drive the player's own car, because the file uses the same row layout. It is a weak standings fixture: most `CarIdx*` arrays are omitted from disk telemetry.
+On Linux, `npm run dev` starts the fixture source and the pages. Open `/telemetry`, `/digiflag`, and `/standings` in a browser. The fixture is a short practice at Test Circuit, checked into `packages/server/fixtures/demo.json`, so the pages move without the sim. An `.ibt` file can later drive the player's own car, because the file uses the same row layout. The demo field is three cars. `/standings#preview` paints a generated multiclass race through the same layout.
 
 On the race PC, `npm start` attaches to iRacing. The first real session is also how a fixture gets recorded: a server flag writes the reduced ticks and the session snapshot, and that file comes back through git.
 

@@ -18,6 +18,7 @@
     "DriverCarSLShiftRPM": 7000,
     "DriverCarSLLastRPM": 7500,
     "DriverCarSLBlinkRPM": 7800,
+    "TireCompounds": ["Dry", "Wet"],
     "Drivers": [
       {
         "CarIdx": 0,
@@ -43,6 +44,7 @@
         "CarClassColor": 14747136,
         "IRating": 2450,
         "LicString": "A 3.40",
+        "TeamName": "Nielsen Racing",
         "IsSpectator": 0,
         "CarIsPaceCar": 0,
         "CarIsAI": 0
@@ -57,6 +59,7 @@
         "CarClassColor": 14747136,
         "IRating": 2100,
         "LicString": "A 2.80",
+        "TeamName": "Salomon Racing",
         "IsSpectator": 0,
         "CarIsPaceCar": 0,
         "CarIsAI": 0
@@ -71,6 +74,7 @@
         "CarClassColor": 37072,
         "IRating": 1800,
         "LicString": "B 3.10",
+        "TeamName": "Okada Racing",
         "IsSpectator": 0,
         "CarIsPaceCar": 0,
         "CarIsAI": 0
@@ -104,9 +108,9 @@
   },
   "motion": {
     "cars": [
-      { "carIdx": 1, "lap": 3, "lapDistPct": 0.32, "paceMps": 51, "lastLapSec": 31.2, "bestLapSec": 30.8 },
-      { "carIdx": 2, "lap": 3, "lapDistPct": 0.2, "paceMps": 49.5, "lastLapSec": 31.8, "bestLapSec": 31.1 },
-      { "carIdx": 7, "lap": 3, "lapDistPct": 0.55, "paceMps": 46, "lastLapSec": 34.4, "bestLapSec": 33.9 }
+      { "carIdx": 1, "lap": 3, "lapDistPct": 0.32, "paceMps": 51, "lastLapSec": 31.2, "bestLapSec": 30.8, "tireCompound": 0 },
+      { "carIdx": 2, "lap": 3, "lapDistPct": 0.2, "paceMps": 49.5, "lastLapSec": 31.8, "bestLapSec": 31.1, "tireCompound": 1 },
+      { "carIdx": 7, "lap": 3, "lapDistPct": 0.55, "paceMps": 46, "lastLapSec": 34.4, "bestLapSec": 33.9, "tireCompound": 0 }
     ]
   }
 }

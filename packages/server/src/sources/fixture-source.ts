@@ -23,6 +23,7 @@ interface MovingCar {
   paceMps: number;
   lastLapSec: number;
   bestLapSec: number;
+  tireCompound: number;
 }
 
 /**
@@ -142,12 +143,14 @@ export class FixtureSource implements TelemetrySource {
       position: overall.get(car.carIdx) ?? 0,
       classPosition: classPosition.get(car.carIdx) ?? 0,
       lap: car.lap,
+      lapCompleted: Math.max(0, car.lap - 1),
       lapDistPct: car.lapDistPct,
       estTimeSec: player ? estTimeSec(car, player, this.trackLengthMeters) : 0,
       lastLapSec: car.lastLapSec,
       bestLapSec: car.bestLapSec,
       onPitRoad: false,
       trackSurface: ON_TRACK,
+      tireCompound: car.tireCompound,
     }));
     const leaderLap = ordered[0]?.lap ?? 0;
     return {
@@ -263,6 +266,7 @@ function readMotion(value: unknown): MovingCar[] {
     const paceMps = finite(record?.["paceMps"]);
     const lastLapSec = finite(record?.["lastLapSec"]);
     const bestLapSec = finite(record?.["bestLapSec"]);
+    const tireCompound = finite(record?.["tireCompound"]) ?? -1;
     if (
       carIdx === null ||
       lap === null ||
@@ -273,7 +277,7 @@ function readMotion(value: unknown): MovingCar[] {
     ) {
       throw new Error(`Fixture motion.cars[${index}] is missing a numeric field`);
     }
-    return { carIdx, lap, lapDistPct, paceMps, lastLapSec, bestLapSec };
+    return { carIdx, lap, lapDistPct, paceMps, lastLapSec, bestLapSec, tireCompound };
   });
 }
 

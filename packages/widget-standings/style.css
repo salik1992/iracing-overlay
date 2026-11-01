@@ -1,0 +1,262 @@
+@import "@salik1992/iracing-overlay-shared/theme/base.css";
+
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+}
+
+.panel {
+  width: 100%;
+  max-height: 100%;
+  overflow: hidden;
+  padding: 6px 8px 4px;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+  padding-bottom: 4px;
+  margin-bottom: 2px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.session {
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.meta {
+  color: var(--fg);
+  font-weight: 400;
+}
+
+.row {
+  display: grid;
+  align-items: center;
+  column-gap: 8px;
+  height: 20px;
+}
+
+.panel[data-mode="race"] .row {
+  grid-template-columns: 2.4ch 4ch minmax(5.5ch, 1fr) 2ch 16px 4.6ch 6.2ch;
+}
+
+.panel[data-mode="other"] .row {
+  grid-template-columns: 2.4ch 4ch minmax(5.5ch, 1fr) 16px 8.6ch;
+}
+
+.panel.is-team .row {
+  grid-template-columns: 2.4ch 4ch minmax(8ch, 1fr);
+}
+
+.panel[data-mode="other"] .stops,
+.panel[data-mode="other"] .delta {
+  display: none;
+}
+
+.panel.is-team .driver,
+.panel.is-team .stops,
+.panel.is-team .tire,
+.panel.is-team .delta,
+.panel.is-team .gap {
+  display: none;
+}
+
+.row.is-player {
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+.pos,
+.stops,
+.gap {
+  text-align: right;
+}
+
+.pos {
+  font-weight: 600;
+}
+
+.initial {
+  font-weight: 400;
+}
+
+.tri {
+  font-weight: 600;
+}
+
+.stops {
+  color: var(--dim);
+}
+
+.driver,
+.team {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.team {
+  display: none;
+}
+
+.panel.is-team .team {
+  display: block;
+}
+
+.num {
+  justify-self: stretch;
+  align-self: center;
+  display: grid;
+  place-items: center;
+  height: 14px;
+  background: var(--plate, var(--rule));
+  text-align: center;
+  line-height: 1;
+}
+
+.row.is-class .num {
+  color: #1a1b26;
+}
+
+.gap {
+  font-weight: 600;
+  color: var(--fg);
+}
+
+.delta {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 4px;
+}
+
+.delta i {
+  width: 0;
+  height: 0;
+  border-left: 3.5px solid transparent;
+  border-right: 3.5px solid transparent;
+}
+
+.delta.is-up {
+  color: var(--good);
+}
+
+.delta.is-up i {
+  border-bottom: 5px solid var(--good);
+}
+
+.delta.is-down {
+  color: var(--bad);
+}
+
+.delta.is-down i {
+  border-top: 5px solid var(--bad);
+}
+
+.delta.is-flat {
+  color: var(--muted);
+}
+
+.delta.is-flat i {
+  display: none;
+}
+
+.tire {
+  justify-self: center;
+  display: grid;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  background: var(--rule);
+  color: var(--fg);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.tire[data-role="h"] {
+  background: #f4f4f4;
+  color: #1a1b26;
+}
+
+.tire[data-role="m"] {
+  background: #ffd200;
+  color: #1a1b26;
+}
+
+.tire[data-role="s"] {
+  background: #e10600;
+  color: #f4f4f4;
+}
+
+.tire[data-role="i"] {
+  background: #3dcc4a;
+  color: #1a1b26;
+}
+
+.tire[data-role="w"] {
+  background: #2f6bff;
+  color: #f4f4f4;
+}
+
+.omit {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 16px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.omit-line {
+  flex: 1;
+  height: 1px;
+  background: var(--rule);
+}
+
+.omit-count {
+  font-weight: 400;
+}
+
+.classhead {
+  display: grid;
+  grid-template-columns: 2.4ch minmax(0, 1fr);
+  column-gap: 8px;
+  align-items: center;
+  height: 16px;
+  margin-top: 8px;
+  font-size: 13px;
+  letter-spacing: 0;
+  color: var(--class);
+}
+
+.classrest {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.classline {
+  height: 1px;
+  background: var(--class);
+}
+
+.classrest .classline {
+  flex: 1;
+}
+
+.classname {
+  flex: none;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}

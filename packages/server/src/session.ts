@@ -1,5 +1,5 @@
 import { parseTrackLengthMeters } from "./track-length.js";
-import type { DisplayUnits, DriverSnapshot, SessionSnapshot } from "./types.js";
+import type { DisplayUnits, DriverSnapshot, SessionResult, SessionSnapshot } from "./types.js";
 
 export interface NormalizeOptions {
   sessionNum: number;
@@ -48,12 +48,14 @@ export function normalizeSession(input: unknown, options: NormalizeOptions): Ses
       displayUnits: options.displayUnits,
     },
     drivers,
+    tires: readTires(driverInfo["TireCompounds"]),
     session: {
       number: asNumber(current?.["SessionNum"]) ?? options.sessionNum,
       name: asText(current?.["SessionName"], ""),
       type: asText(current?.["SessionType"], ""),
       laps: asText(current?.["SessionLaps"], ""),
       time: asText(current?.["SessionTime"], ""),
+      results: readResults(current?.["ResultsPositions"]),
     },
   };
 }
@@ -79,12 +81,51 @@ function readDrivers(value: unknown): Record<string, DriverSnapshot> {
       classColor: classColor(record["CarClassColor"]),
       iRating: asNumber(record["IRating"]) ?? 0,
       license: asText(record["LicString"], ""),
+      teamName: asText(record["TeamName"], ""),
       spectator: asBool(record["IsSpectator"]),
       paceCar: asBool(record["CarIsPaceCar"]),
       ai: asBool(record["CarIsAI"]),
     };
   }
   return drivers;
+}
+
+function readResults(value: unknown): SessionResult[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  const results: SessionResult[] = [];
+  for (const entry of value) {
+    const record = asRecord(entry);
+    const carIdx = record ? asNumber(record["CarIdx"]) : null;
+    if (!record || carIdx === null || carIdx < 0) {
+      continue;
+    }
+    results.push({
+      carIdx,
+      position: asNumber(record["Position"]) ?? 0,
+      classPosition: asNumber(record["ClassPosition"]) ?? 0,
+      lapsComplete: asNumber(record["LapsComplete"]) ?? -1,
+    });
+  }
+  return results;
+}
+
+function readTires(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value.map((entry) => {
+    if (typeof entry === "string") {
+      return entry;
+    }
+    const record = asRecord(entry);
+    if (!record) {
+      return "";
+    }
+    const name = asText(record["Name"], "");
+    return name || asText(record["CompoundName"], "");
+  });
 }
 
 function selectSession(value: unknown, sessionNum: number): Record<string, unknown> | null {

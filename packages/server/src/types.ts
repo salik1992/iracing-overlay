@@ -22,9 +22,18 @@ export interface DriverSnapshot {
   classColor: string;
   iRating: number;
   license: string;
+  teamName: string;
   spectator: boolean;
   paceCar: boolean;
   ai: boolean;
+}
+
+/** One ResultsPositions entry. Class position is 0-based, as the sim publishes it. */
+export interface SessionResult {
+  carIdx: number;
+  position: number;
+  classPosition: number;
+  lapsComplete: number;
 }
 
 export interface SessionSnapshot {
@@ -55,12 +64,16 @@ export interface SessionSnapshot {
   };
   /** Keyed by car index. JSON object keys arrive as strings. */
   drivers: Record<string, DriverSnapshot>;
+  /** Compound names indexed by CarIdxTireCompound, when the session publishes them. */
+  tires: string[];
   session: {
     number: number;
     name: string;
     type: string;
     laps: string;
     time: string;
+    /** Official classification. Empty until the sim publishes ResultsPositions. */
+    results: SessionResult[];
   };
 }
 
@@ -92,12 +105,27 @@ export type SessionStateName =
 export interface StandingRow {
   carIdx: number;
   position: number;
+  /** Live class rank while a race is racing or checkered. Official class position otherwise. */
   classPosition: number;
   classId: number;
   className: string;
   classColor: string;
   carNumber: string;
   driverName: string;
+  teamName: string;
+  /** One letter, or empty when the compound is unknown. */
+  tire: string;
+  /** Stall entries observed since the server attached to this session. */
+  pitStops: number;
+  /**
+   * iRacing's class position on the first racing tick.
+   * The arrow compares the row's class position with this.
+   */
+  startClassPosition: number;
+  /** Gap to the class car ahead. Null for the class leader. */
+  intervalSec: number | null;
+  /** Whole laps behind the class leader, after the lap-distance correction. */
+  lapsDown: number;
   lap: number;
   lastLapSec: number | null;
   bestLapSec: number | null;

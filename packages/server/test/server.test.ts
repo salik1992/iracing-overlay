@@ -20,12 +20,9 @@ test("fixture publishes a joined standings frame", async () => {
     const body = (await health.json()) as { ok: boolean; source: string; phase: string; clients: number };
     assert.deepEqual(body, { ok: true, source: "fixture", phase: "live", clients: 0 });
 
-    const missing = await fetch(`http://127.0.0.1:${port}/standings`);
-    assert.equal(missing.status, 404);
-    assert.deepEqual(await missing.json(), {
-      error: "widget files are not built",
-      widgetId: "standings",
-    });
+    const page = await fetch(`http://127.0.0.1:${port}/standings`);
+    assert.equal(page.status, 200);
+    assert.match(await page.text(), /\/standings\/index\.js/);
 
     const messages = await hello(port, "standings", 3);
     assert.equal(messages[0]?.type, "status");
@@ -43,6 +40,8 @@ test("fixture publishes a joined standings frame", async () => {
     assert.ok((ahead.gapToPlayerSec ?? 0) < 0);
     const player = messages[2].frame.rows.find((row) => row.isPlayer);
     assert.equal(player?.driverName, "Vit Salomon");
+    assert.equal(player?.teamName, "Salomon Racing");
+    assert.equal(player?.tire, "W");
 
     const flags = await hello(port, "digiflag", 2);
     assert.equal(flags[0]?.type, "status");
