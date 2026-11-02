@@ -208,7 +208,17 @@ test("a car with no lap time stays up, with an empty column, after the timed car
   );
   assert.equal(raceCars[0]?.car.gap, "");
   assert.equal(raceCars[1]?.car.gap, "0.500");
-  assert.equal(raceCars[2]?.car.gap, "");
+  assert.equal(raceCars[2]?.car.gap, "+2L");
+});
+
+test("a race interval shows before a best lap is posted", () => {
+  const board = buildBoard(session({ type: "Race", laps: "20" }), frame([
+    wire({ carIdx: 1, position: 1, classPosition: 1, carNumber: "2", bestLapSec: null, intervalSec: null, lapsDown: 0 }),
+    wire({ carIdx: 2, position: 2, classPosition: 2, carNumber: "22", bestLapSec: null, intervalSec: 0.35, lapsDown: 0, driverName: "Vit Salomon" }),
+  ]));
+  const cars = carItems(board);
+  assert.equal(cars[0]?.car.gap, "");
+  assert.equal(cars[1]?.car.gap, "0.350");
 });
 
 test("race mode uses the class interval and laps down", () => {

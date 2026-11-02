@@ -48,9 +48,6 @@ export function headerMeta(session: SessionFields, frame: StandingsWire): string
 }
 
 export function raceGap(row: StandingWire, leader: boolean): string {
-  if (row.bestLapSec === null) {
-    return "";
-  }
   const down = Math.floor(row.lapsDown);
   if (down >= 1) {
     return `+${down}L`;

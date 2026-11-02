@@ -59,6 +59,37 @@ test("class interval and laps down stay inside the class", () => {
   assert.deepEqual(session?.tires, ["Soft", "Wet"]);
 });
 
+test("crossing the start finish does not add a lap to the interval", () => {
+  const jumped = buildStandings(
+    makeTick([
+      sample(1, 1, 1, 3, 0.01, 88.5, -1, 90),
+      sample(2, 2, 2, 2, 0.98, 1.5, -1, 90.5),
+    ]),
+    null,
+  );
+  assert.equal(jumped.rows.find((row) => row.carIdx === 1)?.intervalSec, null);
+  assert.equal(jumped.rows.find((row) => row.carIdx === 2)?.lapsDown, 0);
+  assert.equal(jumped.rows.find((row) => row.carIdx === 2)?.intervalSec, 3);
+
+  const steady = buildStandings(
+    makeTick([
+      sample(1, 1, 1, 3, 0.01, 0, -1, 90),
+      sample(2, 2, 2, 2, 0.98, 1.5, -1, 90),
+    ]),
+    null,
+  );
+  assert.equal(steady.rows.find((row) => row.carIdx === 2)?.intervalSec, 1.5);
+
+  const fromBest = buildStandings(
+    makeTick([
+      sample(1, 1, 1, 3, 0.01, 78, -1, -1),
+      sample(2, 2, 2, 2, 0.97, 2, -1, -1),
+    ]),
+    null,
+  );
+  assert.equal(fromBest.rows.find((row) => row.carIdx === 2)?.intervalSec, 4);
+});
+
 test("a car two laps behind the class leader reports two laps down", () => {
   const tick = makeTick([
     sample(1, 1, 1, 10, 0.1, 0, -1),
@@ -155,6 +186,7 @@ function sample(
   lapDistPct: number,
   estTimeSec: number,
   tireCompound: number,
+  lastLapSec = -1,
 ): CarSample {
   return {
     carIdx,
@@ -164,7 +196,7 @@ function sample(
     lapCompleted: lap,
     lapDistPct,
     estTimeSec,
-    lastLapSec: -1,
+    lastLapSec,
     bestLapSec: 80,
     onPitRoad: false,
     trackSurface: 3,

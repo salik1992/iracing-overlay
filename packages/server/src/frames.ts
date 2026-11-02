@@ -97,7 +97,7 @@ export function buildStandings(
       const place = grid?.get(draft.car.carIdx);
       const classPosition = place?.classPosition ?? liveClassPosition?.get(draft.car.carIdx) ?? draft.car.classPosition;
       const position = place?.position ?? draft.car.position;
-      rows.push(toRow(tick, session, note, draft, ahead?.gap ?? null, index === 0, leader, classPosition, position));
+      rows.push(toRow(tick, session, note, draft, ahead?.car ?? null, index === 0, leader, classPosition, position));
     }
   }
   if (grid) {
@@ -119,7 +119,7 @@ function toRow(
   session: SessionSnapshot | null,
   note: RaceNote,
   draft: Draft,
-  aheadGap: number | null,
+  ahead: CarSample | null,
   leader: boolean,
   classLeader: CarSample | undefined,
   classPosition: number,
@@ -139,7 +139,7 @@ function toRow(
     tire: tireLetter(car.tireCompound, session?.tires ?? []),
     pitStops: note.pitStops.get(car.carIdx) ?? 0,
     startClassPosition: note.startClassPosition.get(car.carIdx) ?? 0,
-    intervalSec: leader ? null : interval(aheadGap, gap),
+    intervalSec: leader || ahead === null ? null : interval(ahead, car),
     lapsDown: classLeader ? lapsDown(classLeader, car) : 0,
     lap: car.lap,
     lastLapSec: lapTime(car.lastLapSec),
@@ -232,15 +232,41 @@ function gapToPlayer(carEstSec: number, playerEstSec: number): number | null {
   return Math.round((carEstSec - playerEstSec) * 1000) / 1000;
 }
 
-function interval(aheadGap: number | null, carGap: number | null): number | null {
-  if (aheadGap === null || carGap === null) {
+/**
+ * CarIdxEstTime restarts near a full lap when that car crosses the
+ * start/finish line. Until the next car crosses, the raw difference
+ * includes that lap. Adding the crossed car's last lap, or its best lap,
+ * removes the jump when the cars are on different laps.
+ */
+function interval(ahead: CarSample, car: CarSample): number | null {
+  if (!Number.isFinite(ahead.estTimeSec) || !Number.isFinite(car.estTimeSec)) {
     return null;
   }
-  const value = carGap - aheadGap;
+  let value = car.estTimeSec - ahead.estTimeSec;
+  const laps = ahead.lap - car.lap;
+  if (laps !== 0) {
+    const crossedLap = crossingLapSec(laps > 0 ? ahead : car) ?? crossingLapSec(laps > 0 ? car : ahead);
+    if (crossedLap !== null) {
+      const wrapped = value + laps * crossedLap;
+      if (Math.abs(wrapped) < Math.abs(value)) {
+        value = wrapped;
+      }
+    }
+  }
   if (!Number.isFinite(value)) {
     return null;
   }
   return Math.round(value * 1000) / 1000;
+}
+
+function crossingLapSec(car: CarSample): number | null {
+  if (Number.isFinite(car.lastLapSec) && car.lastLapSec > 0) {
+    return car.lastLapSec;
+  }
+  if (Number.isFinite(car.bestLapSec) && car.bestLapSec > 0) {
+    return car.bestLapSec;
+  }
+  return null;
 }
 
 function lapsDown(leader: CarSample, car: CarSample): number {
