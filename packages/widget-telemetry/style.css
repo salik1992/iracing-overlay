@@ -17,17 +17,21 @@ body {
   overflow: hidden;
 }
 
-.ghost {
+.gear {
   position: absolute;
   left: 0;
   right: 0;
-  top: calc(100vh * 22 / 176);
+  /* Shares a center line with the 28px speed and steering figures at top 16. */
+  top: calc(100vh * 12 / 176);
   text-align: center;
-  font-size: calc(100vh * 118 / 176);
+  font-size: calc(100vh * 36 / 176);
   font-weight: var(--font-weight-strong);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
   line-height: 1;
-  color: color-mix(in srgb, var(--fg) 22%, transparent);
+  color: var(--number);
   pointer-events: none;
+  z-index: 1;
 }
 
 .steer-lock,

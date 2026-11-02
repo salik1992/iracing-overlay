@@ -14,7 +14,7 @@ export interface TelemetryView {
 
 export function createView(parent: ParentNode): TelemetryView {
   const panel = element("div", "panel");
-  const gear = element("div", "ghost");
+  const gear = element("div", "gear");
   gear.textContent = "N";
 
   const wheel = wheelSvg();
