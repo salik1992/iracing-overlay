@@ -172,6 +172,7 @@ test("normalizes the demo session", () => {
   assert.equal(session.drivers["9"]?.spectator, true);
   assert.equal(session.session.name, "PRACTICE");
   assert.deepEqual(session.session.results, []);
+  assert.deepEqual(session.grid, []);
 });
 
 test("an ai session fills a blank class name from the car screen name", () => {

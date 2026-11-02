@@ -1,8 +1,8 @@
 # Standings
 
-Composite timing tower for the OBS browser source at `/standings`. The panel sits at the top left. A 480×960 source fits a full single-class list. The panel uses the full width, and its height follows the rows. Rows past the source edge are clipped.
+Composite timing tower for the OBS browser source at `/standings`. The panel sits at the top left. A 480×1030 source fits a full single-class list of 45 rows at 16px. The panel uses the full width, and its height follows the rows. Rows past the source edge are clipped.
 
-The page background stays transparent. The panel is the shared terminal panel at 14px, with 6px 8px of padding.
+The page background stays transparent. The panel is the shared terminal panel at 16px, with 6px 8px of padding.
 
 ## Columns
 
@@ -18,15 +18,23 @@ The name is the first initial, a space, and a three-letter stem, in capitals. Vi
 
 ## Window
 
-The top 5 are always in the list. A single class shows at most 45 drivers, with the player centered and 10 cars on each side. When that window meets the top 5, the list fills from P1 up to 45. A field of 46 with the player at the front draws all 46, because a one-car tail takes the same space as a gap line.
+Other classes show the top 8. A class with fewer than 8 shows every car. A class of 9 shows all nine, and a class of 10 shows the top 8 and a gap, because a hole of one car is drawn as that car. The player's class uses the same window in a single-class field and in a multiclass field. It always shows its top 5.
 
-Multiclass draws one group per class, ordered by the best overall position in the class. Each class position starts at 1. The player class merges the top 5 with the player ±3 and does not fill out to 45. Every other class shows its top 8. A class of 9 shows all nine. A class of 10 shows the top 8 and a gap.
+The rows left for the cars around the player are
 
-A hole of one car is drawn as that car. A larger hole, and the cars after the window, are a line with the omitted count.
+`(45 - (classes - 1) × 8 - 5 - 1) / 2`
 
-The whole widget caps at 45 driver rows. Headings and omit lines do not count. The player's class stays whole. Other classes lose cars from the last class backward, and a class that loses every car loses its heading. Because a one-car omit is drawn as a car, a cut that would leave a single car omitted removes two so the row count falls.
+when the player is outside the top 5. Half of that, rounded up, is the number of cars directly above the player. Half, rounded down, is the number directly below. When the player is already inside the top 5, the formula does not subtract the player again, because that row is one of the five.
 
-The sizes live in `src/constants.ts`: `TOP_N` 5, `OTHER_TOP` 8, `MAX_ROWS` 45, `PLAYER_RADIUS` 10, `MULTI_RADIUS` 3, `TEAM_MS` 10000.
+Cars above the player that are already in the top 5, or that would sit before P1, are not drawn twice. Those spare rows move below the player. Cars that would sit past the last car in the class move above the player. A hole of one car is still drawn as that car. A larger hole is a line with the omitted count.
+
+A 60-car class with the player in P9 draws P1–P45 and a gap of 15. The same class with the player in P53 draws P1–P5, a gap of 15, and P21–P60. A 46-car class with the player in P1 draws all 46, because the one car past the window is drawn as a car.
+
+Headings and omit lines do not count toward the 45. With enough classes that eight cars from each other class already pass 45, those classes still show their top 8 and the player class keeps its top 5 and the player.
+
+Multiclass draws one group per class, ordered by the best overall position in the class. Each class position starts at 1.
+
+The sizes live in `src/constants.ts`: `TOP_N` 5, `OTHER_TOP` 8, `MAX_ROWS` 45, `TEAM_MS` 10000.
 
 A car on pit road, stopped in its stall, or sitting in the garage is drawn at 0.7 opacity. The garage is track surface NotInWorld. A car off the racing surface keeps full opacity.
 
@@ -34,7 +42,7 @@ A car on pit road, stopped in its stall, or sitting in the garage is drawn at 0.
 
 In a race the column is the class interval, three decimals, and the class leader's cell is empty. A car a full lap or more behind the class leader shows `+1L`, `+2L`. Lap distance percent cancels one lap when that car is further through the lap than the leader.
 
-In a race, once the state is racing, the class order is laps completed plus the fraction of the current lap. The position column and the interval follow that order, so a pass shows up where it happens. Parade laps keep iRacing's class position. Under the checkered flag that live order continues until the results leader completes another lap. Cars that have taken the flag then lock to the official result, and cars still running stay in live order. A car towed into its pit stall keeps the progress it had on track. Practice and qualifying keep iRacing's class position, and the gap column stays the best lap.
+In a race, once the state is racing, the class order is laps completed plus the fraction of the current lap. The position column and the interval follow that order, so a pass shows up where it happens. Before the green, while the race is getting in the car, warming up, or on parade laps, the order is the qualifying grid from `QualifyResultsInfo` when that list has cars. Those places are 0-based in the YAML and the row shows them starting at 1. A car left off the grid sorts after it, and a posted lap does not move anyone. With no qualifying result the row keeps the class position iRacing publishes, which is often 0, so the tower follows entry order. Under the checkered flag that live order continues until the results leader completes another lap. Cars that have taken the flag then lock to the official result, and cars still running stay in live order. A car towed into its pit stall keeps the progress it had on track. Practice and qualifying keep iRacing's class position, and the gap column stays the best lap.
 
 In every other session the owner of the class best lap shows the clock, such as `1:22.481`. The rest of the class shows the delta of their best lap, such as `+0.214`. A car with no best lap stays on the board, that column is empty, and the row is sorted after every car in the class that has a time. In a race the gap column is empty for that car as well. Ties keep the earlier class position. A position of 0 is left blank.
 
@@ -54,7 +62,7 @@ The player mark is the accent tick on that row. The plate stays the class or rul
 
 The arrow uses the class position on the row. Green and up means places gained. Red and down means places lost. Zero is a muted dash. The server stores iRacing's class position on the first tick whose session state is racing, and the arrow compares the live class position with that stored place, so the baseline is the place at the green. A car that appears later uses the official class position from the first tick that includes it. Attaching after the green flag opens the delta at zero.
 
-Stops count entries into the pit stall after the server has already seen that car. A stall already in progress on the first sight of the car stays uncounted. Both counts reset when the session number changes. The SDK does not publish a pit-stop total or a grid slot.
+Stops count entries into the pit stall after the server has already seen that car. A stall already in progress on the first sight of the car stays uncounted. Both counts reset when the session number changes. The SDK does not publish a pit-stop total. The grid is `QualifyResultsInfo` in the weekend YAML.
 
 ## Header
 

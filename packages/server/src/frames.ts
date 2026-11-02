@@ -5,6 +5,14 @@ import type { CarSample, Tick } from "./tick.js";
 import type { DriverSnapshot, FlagsFrame, GarageFrame, SessionSnapshot, StandingRow, StandingsFrame, TelemetryFrame } from "./types.js";
 
 const NOT_IN_WORLD = -1;
+const STATE_GET_IN_CAR = 1;
+const STATE_WARMUP = 2;
+const STATE_PARADE = 3;
+
+interface GridPlace {
+  position: number;
+  classPosition: number;
+}
 
 export function buildTelemetry(tick: Tick): TelemetryFrame {
   return {
@@ -75,9 +83,10 @@ export function buildStandings(
     groups.set(classId, list);
   }
 
+  const grid = qualifyingGrid(tick, session);
   const rows: StandingRow[] = [];
   for (const list of groups.values()) {
-    list.sort(byClass(liveClassPosition));
+    list.sort(byClass(liveClassPosition, grid));
     const leader = list[0]?.car;
     for (let index = 0; index < list.length; index += 1) {
       const draft = list[index];
@@ -85,11 +94,17 @@ export function buildStandings(
         continue;
       }
       const ahead = index > 0 ? list[index - 1] : undefined;
-      const classPosition = liveClassPosition?.get(draft.car.carIdx) ?? draft.car.classPosition;
-      rows.push(toRow(tick, session, note, draft, ahead?.gap ?? null, index === 0, leader, classPosition));
+      const place = grid?.get(draft.car.carIdx);
+      const classPosition = place?.classPosition ?? liveClassPosition?.get(draft.car.carIdx) ?? draft.car.classPosition;
+      const position = place?.position ?? draft.car.position;
+      rows.push(toRow(tick, session, note, draft, ahead?.gap ?? null, index === 0, leader, classPosition, position));
     }
   }
-  rows.sort((a, b) => postedRank(a.bestLapSec) - postedRank(b.bestLapSec) || a.position - b.position || a.carIdx - b.carIdx);
+  if (grid) {
+    rows.sort((a, b) => gridRank(grid, a.carIdx) - gridRank(grid, b.carIdx) || a.carIdx - b.carIdx);
+  } else {
+    rows.sort((a, b) => postedRank(a.bestLapSec) - postedRank(b.bestLapSec) || a.position - b.position || a.carIdx - b.carIdx);
+  }
   return {
     sessionState: sessionStateName(tick.sessionState),
     sessionTimeRemainSec: tick.sessionTimeRemainSec,
@@ -108,11 +123,12 @@ function toRow(
   leader: boolean,
   classLeader: CarSample | undefined,
   classPosition: number,
+  position: number,
 ): StandingRow {
   const { car, driver, gap } = draft;
   return {
     carIdx: car.carIdx,
-    position: car.position,
+    position,
     classPosition,
     classId: driver?.classId ?? 0,
     className: driver?.className ?? "",
@@ -135,13 +151,59 @@ function toRow(
   };
 }
 
-function byClass(live: ReadonlyMap<number, number> | null): (a: Draft, b: Draft) => number {
+function byClass(
+  live: ReadonlyMap<number, number> | null,
+  grid: ReadonlyMap<number, GridPlace> | null,
+): (a: Draft, b: Draft) => number {
   return (a, b) => {
+    if (grid) {
+      return (
+        gridClass(grid, a.car.carIdx) - gridClass(grid, b.car.carIdx) ||
+        gridRank(grid, a.car.carIdx) - gridRank(grid, b.car.carIdx) ||
+        a.car.carIdx - b.car.carIdx
+      );
+    }
     const posted = postedRank(a.car.bestLapSec) - postedRank(b.car.bestLapSec);
     const left = classKey(a, live);
     const right = classKey(b, live);
     return posted || left - right || a.car.position - b.car.position || a.car.carIdx - b.car.carIdx;
   };
+}
+
+/**
+ * QualifyResultsInfo places, shown starting at 1.
+ * Used only before the green of a race, and only when the list has cars.
+ * A posted lap does not reorder this grid. Cars missing from it sort after.
+ */
+function qualifyingGrid(tick: Tick, session: SessionSnapshot | null): ReadonlyMap<number, GridPlace> | null {
+  if (session === null || !isRaceSession(session.session.type) || session.grid.length === 0) {
+    return null;
+  }
+  const state = tick.sessionState;
+  if (state !== STATE_GET_IN_CAR && state !== STATE_WARMUP && state !== STATE_PARADE) {
+    return null;
+  }
+  const places = new Map<number, GridPlace>();
+  for (const result of session.grid) {
+    places.set(result.carIdx, {
+      position: result.position + 1,
+      classPosition: result.classPosition + 1,
+    });
+  }
+  return places;
+}
+
+function gridClass(grid: ReadonlyMap<number, GridPlace>, carIdx: number): number {
+  return grid.get(carIdx)?.classPosition ?? Number.MAX_SAFE_INTEGER;
+}
+
+function gridRank(grid: ReadonlyMap<number, GridPlace>, carIdx: number): number {
+  return grid.get(carIdx)?.position ?? Number.MAX_SAFE_INTEGER;
+}
+
+function isRaceSession(type: string): boolean {
+  const text = type.trim().toLowerCase();
+  return text === "race" || text.endsWith(" race");
 }
 
 /** Cars that have not posted a lap sort after cars that have. */

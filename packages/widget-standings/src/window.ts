@@ -1,136 +1,104 @@
-import { MAX_ROWS, TOP_N } from "./constants.js";
+import { MAX_ROWS, OTHER_TOP, TOP_N } from "./constants.js";
 
 export type WindowItem = { kind: "car"; position: number } | { kind: "gap"; count: number };
 
-export interface Trimmable {
-  player: boolean;
-  count: number;
-  items: WindowItem[];
+/**
+ * Top 8 of a class that does not contain the player.
+ * Fewer than 8 shows the whole class. A one-car tail is that car, so 9 shows all 9.
+ */
+export function otherClassWindow(count: number): WindowItem[] {
+  if (count <= OTHER_TOP + 1) {
+    return cars(1, count);
+  }
+  return [...cars(1, OTHER_TOP), { kind: "gap", count: count - OTHER_TOP }];
 }
 
 /**
- * Top 5, plus a window of `radius` around the player.
- * Overlap fills from P1 up to MAX_ROWS when `fillOnOverlap` is set.
- * A 1-car hole is drawn as that car. A larger hole is an omit line.
+ * Player's class, for one class or many.
+ * Other classes keep 8 rows each. The top 5 and the player take the next rows.
+ * The spare rows split above and below the player. Above rounds up, below rounds down.
+ * Rows that fall inside the top 5 or before P1 move below the player.
+ * Rows that fall past the last car move above the player.
+ * A one-car hole is drawn as that car.
+ * The player is not reserved twice when that car is already inside the top 5.
  */
-export function windowPositions(
-  count: number,
-  playerPos: number,
-  radius: number,
-  fillOnOverlap: boolean,
-  topCount: number = TOP_N,
-): WindowItem[] {
-  if (count <= MAX_ROWS && radius >= count) {
-    return range(1, count).map((position) => ({ kind: "car", position }));
+export function playerClassWindow(count: number, playerPos: number, classCount: number): WindowItem[] {
+  if (count <= 0) {
+    return [];
   }
-  if (count <= topCount) {
-    return range(1, count).map((position) => ({ kind: "car", position }));
+  const player = Math.min(count, Math.max(1, playerPos));
+  const top = Math.min(TOP_N, count);
+  const reservedOthers = Math.max(0, classCount - 1) * OTHER_TOP;
+  const separatePlayer = player > top ? 1 : 0;
+  const spare = Math.max(0, MAX_ROWS - reservedOthers - top - separatePlayer);
+  let above = Math.ceil(spare / 2);
+  let below = spare - above;
+
+  const aboveRoom = Math.max(0, player - top - 1);
+  if (above > aboveRoom) {
+    below += above - aboveRoom;
+    above = aboveRoom;
+  }
+  const belowRoom = count - player;
+  if (below > belowRoom) {
+    above += below - belowRoom;
+    below = belowRoom;
+  }
+  if (above > aboveRoom) {
+    above = aboveRoom;
   }
 
-  const start = Math.max(1, playerPos - radius);
-  const end = Math.min(count, playerPos + radius);
-  const mid = start - topCount - 1;
-  if (fillOnOverlap && mid <= 0) {
-    let shown = Math.min(count, MAX_ROWS);
-    if (count - shown === 1) {
-      shown = count;
-    }
-    const items: WindowItem[] = range(1, shown).map((position) => ({ kind: "car", position }));
-    if (count > shown) {
-      items.push({ kind: "gap", count: count - shown });
-    }
-    return items;
+  const shown = new Set<number>();
+  for (let position = 1; position <= top; position += 1) {
+    shown.add(position);
   }
+  for (let position = player - above; position < player; position += 1) {
+    if (position > top) {
+      shown.add(position);
+    }
+  }
+  shown.add(player);
+  let next = player + 1;
+  let left = below;
+  while (next <= count && left > 0) {
+    if (!shown.has(next)) {
+      shown.add(next);
+      left -= 1;
+    }
+    next += 1;
+  }
+  return withHoles(shown, count);
+}
 
-  const items: WindowItem[] = range(1, Math.min(topCount, count)).map((position) => ({ kind: "car", position }));
-  if (radius === 0) {
-    pushTail(items, topCount, count);
-    return items;
-  }
-  if (mid === 1) {
-    items.push({ kind: "car", position: topCount + 1 });
-  } else if (mid > 1) {
-    items.push({ kind: "gap", count: mid });
-  }
-  if (end >= start) {
-    for (const position of range(Math.max(start, topCount + 1), end)) {
-      if (!items.some((item) => item.kind === "car" && item.position === position)) {
-        items.push({ kind: "car", position });
-      }
+/** A hole of one car is drawn as that car. A larger hole is an omit line. */
+function withHoles(shown: ReadonlySet<number>, count: number): WindowItem[] {
+  const items: WindowItem[] = [];
+  let cursor = 1;
+  while (cursor <= count) {
+    if (shown.has(cursor)) {
+      items.push({ kind: "car", position: cursor });
+      cursor += 1;
+      continue;
     }
+    let end = cursor;
+    while (end <= count && !shown.has(end)) {
+      end += 1;
+    }
+    const hole = end - cursor;
+    if (hole === 1) {
+      items.push({ kind: "car", position: cursor });
+    } else {
+      items.push({ kind: "gap", count: hole });
+    }
+    cursor = end;
   }
-  pushTail(items, end, count);
   return items;
 }
 
-/**
- * Drop cars from the last non-player class until the driver rows fit.
- * A one-car omit is drawn as that car, so a cut that would leave one car
- * omitted removes two and the row count actually falls.
- */
-export function trimOthers(groups: readonly Trimmable[]): void {
-  const order = groups.map((_, index) => index).filter((index) => !groups[index]?.player).reverse();
-  let guard = 0;
-  while (carTotal(groups) > MAX_ROWS && guard < 1000) {
-    guard += 1;
-    let cut = false;
-    for (const index of order) {
-      if (carTotal(groups) <= MAX_ROWS) {
-        return;
-      }
-      const group = groups[index];
-      if (group && cutOne(group)) {
-        cut = true;
-      }
-    }
-    if (!cut) {
-      return;
-    }
+function cars(from: number, to: number): WindowItem[] {
+  const items: WindowItem[] = [];
+  for (let position = from; position <= to; position += 1) {
+    items.push({ kind: "car", position });
   }
-}
-
-function cutOne(group: Trimmable): boolean {
-  const shown = group.items.filter((item) => item.kind === "car").length;
-  if (shown === 0) {
-    return false;
-  }
-  let keep = shown - 1;
-  if (group.count - keep === 1) {
-    keep -= 1;
-  }
-  if (keep <= 0) {
-    group.items = [];
-    return shown > 0;
-  }
-  const omitted = group.count - keep;
-  if (omitted <= 1) {
-    group.items = range(1, group.count).map((position) => ({ kind: "car", position }));
-    return false;
-  }
-  group.items = [
-    ...range(1, keep).map((position) => ({ kind: "car" as const, position })),
-    { kind: "gap", count: omitted },
-  ];
-  return true;
-}
-
-function carTotal(groups: readonly Trimmable[]): number {
-  return groups.reduce((sum, group) => sum + group.items.filter((item) => item.kind === "car").length, 0);
-}
-
-function pushTail(items: WindowItem[], shownEnd: number, count: number): void {
-  const tail = count - shownEnd;
-  if (tail === 1) {
-    items.push({ kind: "car", position: count });
-  } else if (tail > 1) {
-    items.push({ kind: "gap", count: tail });
-  }
-}
-
-function range(from: number, to: number): number[] {
-  const out: number[] = [];
-  for (let value = from; value <= to; value += 1) {
-    out.push(value);
-  }
-  return out;
+  return items;
 }

@@ -66,6 +66,11 @@ export interface SessionSnapshot {
   drivers: Record<string, DriverSnapshot>;
   /** Compound names indexed by CarIdxTireCompound, when the session publishes them. */
   tires: string[];
+  /**
+   * QualifyResultsInfo.Results. Position and ClassPosition are 0-based.
+   * Empty when the weekend has no qualifying classification.
+   */
+  grid: SessionResult[];
   session: {
     number: number;
     name: string;
@@ -105,7 +110,10 @@ export type SessionStateName =
 export interface StandingRow {
   carIdx: number;
   position: number;
-  /** Live class rank while a race is racing or checkered. Official class position otherwise. */
+  /**
+   * Class place on the row. Live rank while racing or checkered.
+   * Qualifying place, starting at 1, before the green. Official class position otherwise.
+   */
   classPosition: number;
   classId: number;
   className: string;

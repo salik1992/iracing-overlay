@@ -29,5 +29,7 @@ export interface StandingWire {
 
 export interface StandingsWire {
   sessionTimeRemainSec: number;
+  /** Session state name. Pre-green race states order the grid ahead of a posted lap. */
+  sessionState?: string;
   rows: StandingWire[];
 }

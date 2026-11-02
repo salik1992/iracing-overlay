@@ -79,6 +79,7 @@ function parseStandings(frame: unknown): Incoming | null {
     type: "standings",
     frame: {
       sessionTimeRemainSec: asFiniteOr(record.sessionTimeRemainSec, 0),
+      sessionState: asText(record.sessionState),
       rows,
     },
   };

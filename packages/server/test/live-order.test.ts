@@ -29,6 +29,124 @@ test("a pass puts the car ahead on the row and on the interval", () => {
   assert.equal(gapOf(frame, 2), 0);
 });
 
+test("the pre-green race follows the qualifying grid, not entry order", () => {
+  const qualify = [
+    { Position: 1, ClassPosition: 1, CarIdx: 1 },
+    { Position: 2, ClassPosition: 2, CarIdx: 2 },
+    { Position: 0, ClassPosition: 0, CarIdx: 3 },
+  ];
+  const session = raceSession(
+    "Race",
+    [
+      { carIdx: 1, classId: 10 },
+      { carIdx: 2, classId: 10 },
+      { carIdx: 3, classId: 10 },
+      { carIdx: 4, classId: 10 },
+    ],
+    [],
+    1,
+    qualify,
+  );
+  assert.equal(session.grid[0]?.classPosition, 1);
+  assert.equal(session.grid.find((result) => result.carIdx === 3)?.position, 0);
+
+  const cars = [
+    parked(1, 2, 80),
+    parked(2, 5, -1),
+    parked(3, 0, 70),
+    parked(4, 9, 60),
+  ];
+  for (const sessionState of [1, 2, 3]) {
+    const frame = publish(new LiveOrder(), session, makeTick(cars, { sessionState, playerEst: 0 }));
+    assert.deepEqual(orderOf(frame), [3, 1, 2, 4], `state ${sessionState}`);
+    assert.equal(placeOf(frame, 3)?.position, 1);
+    assert.equal(placeOf(frame, 3)?.classPosition, 1);
+    assert.equal(placeOf(frame, 1)?.position, 2);
+    assert.equal(placeOf(frame, 1)?.classPosition, 2);
+    assert.equal(placeOf(frame, 2)?.classPosition, 3);
+    assert.equal(placeOf(frame, 4)?.position, 0);
+    assert.equal(placeOf(frame, 4)?.classPosition, 0);
+    assert.equal(intervalOf(frame, 3), null);
+    assert.equal(intervalOf(frame, 1), 2);
+    assert.equal(intervalOf(frame, 2), 3);
+  }
+});
+
+test("a race with no qualifying result keeps entry order on the grid", () => {
+  const session = raceSession("Race", [
+    { carIdx: 1, classId: 10 },
+    { carIdx: 2, classId: 10 },
+    { carIdx: 3, classId: 10 },
+  ]);
+  const frame = publish(
+    new LiveOrder(),
+    session,
+    makeTick([parked(1, 0, -1), parked(2, 1, -1), parked(3, 2, -1)], { sessionState: 3, playerEst: 0 }),
+  );
+  assert.deepEqual(session.grid, []);
+  assert.deepEqual(orderOf(frame), [1, 2, 3]);
+  assert.equal(classOf(frame, 1), 0);
+});
+
+test("practice ignores the qualifying grid, and racing uses live order", () => {
+  const qualify = [
+    { Position: 0, ClassPosition: 0, CarIdx: 3 },
+    { Position: 1, ClassPosition: 1, CarIdx: 1 },
+    { Position: 2, ClassPosition: 2, CarIdx: 2 },
+  ];
+  const drivers = [
+    { carIdx: 1, classId: 10 },
+    { carIdx: 2, classId: 10 },
+    { carIdx: 3, classId: 10 },
+  ];
+  const practice = publish(
+    new LiveOrder(),
+    raceSession("Practice", drivers, [], 1, qualify),
+    makeTick([car(1, 1, 1, 0.2, 0), car(2, 2, 1, 0.8, 1), car(3, 3, 1, 0.1, 2)], { sessionState: 3 }),
+  );
+  assert.equal(classOf(practice, 1), 1);
+  assert.equal(classOf(practice, 3), 3);
+
+  const racing = publish(
+    new LiveOrder(),
+    raceSession("Race", drivers, [], 1, qualify),
+    makeTick([car(1, 2, 5, 0.9, 0), car(2, 3, 5, 0.2, 1), car(3, 1, 5, 0.1, 2)], { sessionState: 4, playerEst: 0 }),
+  );
+  assert.equal(classOf(racing, 1), 1);
+  assert.equal(classOf(racing, 2), 2);
+  assert.equal(classOf(racing, 3), 3);
+});
+
+test("each class keeps its own qualifying place", () => {
+  const session = raceSession(
+    "Heat Race",
+    [
+      { carIdx: 1, classId: 10 },
+      { carIdx: 2, classId: 10 },
+      { carIdx: 3, classId: 20 },
+    ],
+    [],
+    1,
+    [
+      { Position: 0, ClassPosition: 0, CarIdx: 3 },
+      { Position: 1, ClassPosition: 0, CarIdx: 2 },
+      { Position: 2, ClassPosition: 1, CarIdx: 1 },
+    ],
+  );
+  const frame = publish(
+    new LiveOrder(),
+    session,
+    makeTick([parked(1, 4, 80), parked(2, 1, -1), parked(3, 0, 70)], { sessionState: 3, playerEst: 0 }),
+  );
+  assert.deepEqual(orderOf(frame), [3, 2, 1]);
+  assert.equal(placeOf(frame, 3)?.classPosition, 1);
+  assert.equal(placeOf(frame, 2)?.classPosition, 1);
+  assert.equal(placeOf(frame, 1)?.classPosition, 2);
+  assert.equal(placeOf(frame, 2)?.position, 2);
+  assert.equal(intervalOf(frame, 2), null);
+  assert.equal(intervalOf(frame, 1), 3);
+});
+
 test("parade laps keep the official class order and intervals", () => {
   const session = fieldSession();
   const tick = makeTick([car(1, 1, 5, 0.6, 0), car(2, 2, 5, 0.4, 15.5), car(3, 3, 5, 0.45, 15)], {
@@ -252,9 +370,11 @@ function raceSession(
   drivers: { carIdx: number; classId: number; name?: string }[],
   results: unknown[] = [],
   sessionNum = 1,
+  qualify: unknown[] = [],
 ): SessionSnapshot {
   const session = normalizeSession(
     {
+      QualifyResultsInfo: { Results: qualify },
       DriverInfo: {
         DriverCarIdx: drivers[0]?.carIdx ?? 0,
         Drivers: drivers.map((driver) => ({
@@ -331,6 +451,19 @@ function car(
     trackSurface,
     tireCompound: -1,
   };
+}
+
+function parked(carIdx: number, estTimeSec: number, bestLapSec: number): CarSample {
+  return { ...car(carIdx, 0, 0, 0, estTimeSec), position: 0, classPosition: 0, bestLapSec };
+}
+
+function orderOf(frame: StandingsFrame): number[] {
+  return frame.rows.map((row) => row.carIdx);
+}
+
+function placeOf(frame: StandingsFrame, carIdx: number): { position: number; classPosition: number } | undefined {
+  const row = frame.rows.find((item) => item.carIdx === carIdx);
+  return row ? { position: row.position, classPosition: row.classPosition } : undefined;
 }
 
 function classOf(frame: StandingsFrame, carIdx: number): number | undefined {

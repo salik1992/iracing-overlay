@@ -49,6 +49,7 @@ export function normalizeSession(input: unknown, options: NormalizeOptions): Ses
     },
     drivers,
     tires: readTires(driverInfo["TireCompounds"]),
+    grid: readResults(asRecord(root["QualifyResultsInfo"])?.["Results"]),
     session: {
       number: asNumber(current?.["SessionNum"]) ?? options.sessionNum,
       name: asText(current?.["SessionName"], ""),

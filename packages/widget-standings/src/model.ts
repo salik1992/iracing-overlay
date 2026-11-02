@@ -1,9 +1,8 @@
 import { tokyo } from "./color.js";
-import { MULTI_RADIUS, OTHER_TOP, PLAYER_RADIUS } from "./constants.js";
 import { gainedPlaces, headerMeta, inPitLane, isRace, otherGap, raceGap } from "./format.js";
 import { splitShort } from "./names.js";
 import type { SessionFields, StandingWire, StandingsWire } from "./types.js";
-import { trimOthers, windowPositions, type WindowItem } from "./window.js";
+import { otherClassWindow, playerClassWindow, type WindowItem } from "./window.js";
 
 export interface CarView {
   position: number;
@@ -44,34 +43,27 @@ interface ClassGroup {
 
 export function buildBoard(session: SessionFields, frame: StandingsWire): Board {
   const race = isRace(session.type);
-  const groups = groupRows(frame.rows);
+  const groups = groupRows(frame.rows, race && isPreGreen(frame.sessionState ?? ""));
   const multi = groups.length > 1;
   const items: BoardItem[] = [];
   if (!multi) {
     const group = groups[0];
     if (group) {
-      items.push(...materialize(group, windowFor(group, true), race, false));
+      items.push(...materialize(group, windowFor(group, groups.length), race, false));
     }
   } else {
-    const built = groups.map((group) => ({
-      player: group.player,
-      count: group.rows.length,
-      items: windowFor(group, false),
-      group,
-    }));
-    trimOthers(built);
-    for (const entry of built) {
-      const cars = entry.items.filter((item) => item.kind === "car");
-      if (cars.length === 0) {
+    for (const group of groups) {
+      const window = windowFor(group, groups.length);
+      if (!window.some((item) => item.kind === "car")) {
         continue;
       }
       items.push({
         kind: "class",
-        key: `class:${entry.group.classId}`,
-        name: entry.group.name,
-        color: tokyo(entry.group.color),
+        key: `class:${group.classId}`,
+        name: group.name,
+        color: tokyo(group.color),
       });
-      items.push(...materialize(entry.group, entry.items, race, true));
+      items.push(...materialize(group, window, race, true));
     }
   }
   return {
@@ -83,15 +75,12 @@ export function buildBoard(session: SessionFields, frame: StandingsWire): Board 
   };
 }
 
-function windowFor(group: ClassGroup, single: boolean): WindowItem[] {
+function windowFor(group: ClassGroup, classCount: number): WindowItem[] {
   const playerIndex = group.rows.findIndex((row) => row.isPlayer);
   if (playerIndex < 0) {
-    return windowPositions(group.rows.length, 1, 0, false, OTHER_TOP);
+    return otherClassWindow(group.rows.length);
   }
-  if (!single) {
-    return windowPositions(group.rows.length, playerIndex + 1, MULTI_RADIUS, false);
-  }
-  return windowPositions(group.rows.length, playerIndex + 1, PLAYER_RADIUS, true);
+  return playerClassWindow(group.rows.length, playerIndex + 1, classCount);
 }
 
 function materialize(group: ClassGroup, items: WindowItem[], race: boolean, multi: boolean): BoardItem[] {
@@ -147,7 +136,7 @@ function bestLap(rows: readonly StandingWire[]): { sec: number; carIdx: number }
   return best;
 }
 
-function groupRows(rows: readonly StandingWire[]): ClassGroup[] {
+function groupRows(rows: readonly StandingWire[], gridOrder: boolean): ClassGroup[] {
   const buckets = new Map<number, StandingWire[]>();
   for (const row of rows) {
     const list = buckets.get(row.classId) ?? [];
@@ -156,13 +145,7 @@ function groupRows(rows: readonly StandingWire[]): ClassGroup[] {
   }
   const groups: ClassGroup[] = [];
   for (const [classId, list] of buckets) {
-    const ordered = [...list].sort(
-      (a, b) =>
-        postedRank(a) - postedRank(b) ||
-        shownPosition(a) - shownPosition(b) ||
-        a.position - b.position ||
-        a.carIdx - b.carIdx,
-    );
+    const ordered = [...list].sort((a, b) => compareRows(a, b, gridOrder));
     const first = ordered[0];
     groups.push({
       classId,
@@ -170,11 +153,48 @@ function groupRows(rows: readonly StandingWire[]): ClassGroup[] {
       color: first?.classColor ?? "",
       player: ordered.some((row) => row.isPlayer),
       rows: ordered,
-      minOverall: ordered.reduce((min, row) => Math.min(min, row.position), Number.POSITIVE_INFINITY),
+      minOverall: minOverall(ordered, gridOrder),
     });
   }
   groups.sort((a, b) => a.minOverall - b.minOverall || a.classId - b.classId);
   return groups;
+}
+
+/** Get-in-car, warmup, and parade laps of a race follow the qualifying grid. */
+function isPreGreen(state: string): boolean {
+  return state === "getInCar" || state === "warmup" || state === "paradeLaps";
+}
+
+function compareRows(a: StandingWire, b: StandingWire, gridOrder: boolean): number {
+  if (gridOrder) {
+    return (
+      placeKey(shownPosition(a)) - placeKey(shownPosition(b)) ||
+      placeKey(a.position) - placeKey(b.position) ||
+      a.carIdx - b.carIdx
+    );
+  }
+  return (
+    postedRank(a) - postedRank(b) ||
+    shownPosition(a) - shownPosition(b) ||
+    a.position - b.position ||
+    a.carIdx - b.carIdx
+  );
+}
+
+/** A place of 0 is unset. On the grid those cars follow every car that has a place. */
+function placeKey(position: number): number {
+  return position > 0 ? position : Number.MAX_SAFE_INTEGER;
+}
+
+function minOverall(rows: readonly StandingWire[], gridOrder: boolean): number {
+  let min = Number.POSITIVE_INFINITY;
+  for (const row of rows) {
+    const position = gridOrder && row.position <= 0 ? Number.POSITIVE_INFINITY : row.position;
+    if (position < min) {
+      min = position;
+    }
+  }
+  return min;
 }
 
 function shownPosition(row: StandingWire): number {
