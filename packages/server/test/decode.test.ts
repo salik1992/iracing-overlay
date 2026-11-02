@@ -92,6 +92,64 @@ test("normalizes the demo session", () => {
   assert.deepEqual(session.session.results, []);
 });
 
+test("an ai session fills a blank class name from the car screen name", () => {
+  const session = normalizeSession(
+    {
+      WeekendInfo: { TrackLength: "1 km" },
+      DriverInfo: {
+        DriverCarIdx: 1,
+        Drivers: [
+          {
+            CarIdx: 1,
+            UserName: "Player",
+            CarNumber: "22",
+            CarClassID: 7,
+            CarClassShortName: "",
+            CarScreenNameShort: "Cadillac V-Series.R",
+            CarScreenName: "Cadillac V-Series.R GTP",
+            CarIsAI: 0,
+          },
+          {
+            CarIdx: 2,
+            UserName: "AI",
+            CarNumber: "3",
+            CarClassID: 7,
+            CarClassShortName: " ",
+            CarScreenNameShort: "Acura ARX-06",
+            CarIsAI: 1,
+          },
+          {
+            CarIdx: 3,
+            UserName: "GT",
+            CarNumber: "8",
+            CarClassID: 9,
+            CarClassShortName: "GT3",
+            CarScreenNameShort: "Ferrari 296 GT3",
+            CarIsAI: 1,
+          },
+          {
+            CarIdx: 4,
+            UserName: "Blank sibling",
+            CarNumber: "9",
+            CarClassID: 9,
+            CarScreenNameShort: "Porsche 911 GT3 R",
+            CarIsAI: 1,
+          },
+          { CarIdx: 0, UserName: "Pace", CarNumber: "0", CarClassID: 7, CarClassShortName: "Pace", CarIsPaceCar: 1 },
+        ],
+      },
+      SessionInfo: { Sessions: [{ SessionNum: 0, SessionType: "Race" }] },
+    },
+    { sessionNum: 0, displayUnits: 1 },
+  );
+  assert.ok(session);
+  assert.equal(session.drivers["1"]?.className, "Cadillac V-Series.R");
+  assert.equal(session.drivers["2"]?.className, "Acura ARX-06");
+  assert.equal(session.drivers["3"]?.className, "GT3");
+  assert.equal(session.drivers["4"]?.className, "GT3");
+  assert.equal(session.drivers["0"]?.className, "Pace");
+});
+
 test("standings drop pace cars, spectators, and cars not in the world", () => {
   const session = normalizeSession(
     {

@@ -44,7 +44,7 @@ The server reads `CarIdxTireCompound`. When `DriverInfo.TireCompounds` names tha
 
 ## Class and player
 
-Multiclass plates and the class separator use the session class color with the hue kept, saturation 0.62, and lightness 0.72. The plate type is `#1a1b26`. A single class uses the rule plate. The separator is a class-colored line across the position column, the class name aligned with the left edge of the plate, and the line continuing to the right edge.
+An AI session leaves the class name blank. The heading then uses the short name already published for that class, or the car's short screen name. Multiclass plates and the class separator use the session class color with the hue kept, saturation 0.62, and lightness 0.72. The plate type is `#1a1b26`. A single class uses the rule plate. The separator is a class-colored line across the position column, the class name aligned with the left edge of the plate, and the line continuing to the right edge.
 
 The player mark is the accent tick on that row. The plate stays the class or rule color.
 

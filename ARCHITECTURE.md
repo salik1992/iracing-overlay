@@ -337,7 +337,7 @@ These types still live in the server. `shared` exports the `WidgetManifest` type
 
 * Weekend: track display name, config, track length in meters, series, event type, `simMode`, team racing, official flag.
 * Player: `playerCarIdx`, car number, driver name, shift-light RPM points (`DriverCarSLFirstRPM`, `DriverCarSLShiftRPM`, `DriverCarSLLastRPM`, `DriverCarSLBlinkRPM`), redline, idle RPM, max fuel in liters, `displayUnits`.
-* Drivers, keyed by `carIdx`: name, car number, team name, car path, class id, class name, class color, iRating, license string, spectator, pace car, AI.
+* Drivers, keyed by `carIdx`: name, car number, team name, car path, class id, class name, class color, iRating, license string, spectator, pace car, AI. The class name is `CarClassShortName`. An AI session leaves that blank, so a competing car uses the short name already published for its class, and otherwise `CarScreenNameShort` or `CarScreenName`.
 * Tire catalog: `DriverInfo.TireCompounds` when the session publishes it, indexed by `CarIdxTireCompound`.
 * Current session: number, name, type, laps or time limit.
 

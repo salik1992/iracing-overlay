@@ -62,6 +62,7 @@ export function normalizeSession(input: unknown, options: NormalizeOptions): Ses
 
 function readDrivers(value: unknown): Record<string, DriverSnapshot> {
   const drivers: Record<string, DriverSnapshot> = {};
+  const screens = new Map<string, string>();
   if (!Array.isArray(value)) {
     return drivers;
   }
@@ -77,7 +78,7 @@ function readDrivers(value: unknown): Record<string, DriverSnapshot> {
       carNumber: asText(record["CarNumber"], ""),
       carPath: asText(record["CarPath"], ""),
       classId: asNumber(record["CarClassID"]) ?? 0,
-      className: asText(record["CarClassShortName"], ""),
+      className: trimmed(record["CarClassShortName"]),
       classColor: classColor(record["CarClassColor"]),
       iRating: asNumber(record["IRating"]) ?? 0,
       license: asText(record["LicString"], ""),
@@ -86,8 +87,35 @@ function readDrivers(value: unknown): Record<string, DriverSnapshot> {
       paceCar: asBool(record["CarIsPaceCar"]),
       ai: asBool(record["CarIsAI"]),
     };
+    screens.set(String(carIdx), trimmed(record["CarScreenNameShort"]) || trimmed(record["CarScreenName"]));
   }
+  fillBlankClassNames(drivers, screens);
   return drivers;
+}
+
+/**
+ * AI sessions leave CarClassShortName empty. A competing car borrows the short
+ * name already published for its class, and otherwise uses the car screen name.
+ */
+function fillBlankClassNames(drivers: Record<string, DriverSnapshot>, screens: ReadonlyMap<string, string>): void {
+  const named = new Map<number, string>();
+  for (const driver of Object.values(drivers)) {
+    if (driver.paceCar || driver.spectator || driver.className === "" || named.has(driver.classId)) {
+      continue;
+    }
+    named.set(driver.classId, driver.className);
+  }
+  for (const driver of Object.values(drivers)) {
+    if (driver.className !== "") {
+      continue;
+    }
+    const shared = named.get(driver.classId);
+    if (shared && !driver.paceCar && !driver.spectator) {
+      driver.className = shared;
+      continue;
+    }
+    driver.className = screens.get(String(driver.carIdx)) ?? "";
+  }
 }
 
 function readResults(value: unknown): SessionResult[] {
@@ -180,6 +208,10 @@ function asNumber(value: unknown): number | null {
     }
   }
   return null;
+}
+
+function trimmed(value: unknown): string {
+  return asText(value, "").trim();
 }
 
 function asText(value: unknown, fallback: string): string {
