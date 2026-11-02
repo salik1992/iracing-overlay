@@ -180,12 +180,12 @@ Class color is the session's own hex. Shared styles do not remap it onto this pa
 
 `html` and `body` use `background: transparent`. The track shows through everywhere the panel does not cover.
 
-The panel fill is `--bg` at `--panel-alpha: 0.82`, exposed as `--panel`. Text, borders, and role colors stay fully opaque, so the glyphs do not blend into the track. There is no backdrop blur and no gradient. A washed-out scene is handled by raising `--panel-alpha`, not by changing the text color.
+The panel fill is `--bg` at `--panel-alpha: 0.91`, exposed as `--panel`. Text, borders, and role colors stay fully opaque, so the glyphs do not blend into the track. There is no backdrop blur and no gradient. A washed-out scene is handled by raising `--panel-alpha`, not by changing the text color.
 
 ```css
 :root {
   --bg: #1a1b26;
-  --panel-alpha: 0.82;
+  --panel-alpha: 0.91;
   --panel: rgb(26 27 38 / var(--panel-alpha));
   --idle-opacity: 0.55;
   --font-family: "Fira Code", monospace;
@@ -196,7 +196,7 @@ The panel fill is `--bg` at `--panel-alpha: 0.82`, exposed as `--panel`. Text, b
 }
 ```
 
-When status `phase` is `"idle"`, the page adds `is-idle` to the panel. That class sets `opacity: var(--idle-opacity)` on the whole panel, text included, and leaves the last frame in place. The fill alpha compounds with it (0.82 × 0.55). Widgets do not invent a second dim.
+When status `phase` is `"idle"`, the page adds `is-idle` to the panel. That class sets `opacity: var(--idle-opacity)` on the whole panel, text included, and leaves the last frame in place. The fill alpha compounds with it (0.91 × 0.55). Widgets do not invent a second dim.
 
 ### Frame
 
