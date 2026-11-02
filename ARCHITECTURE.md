@@ -437,10 +437,10 @@ One Browser Source per widget.
 |---|---|---|
 | `http://127.0.0.1:8080/telemetry` | 60 Hz | 440×126 |
 | `http://127.0.0.1:8080/digiflag` | 10 Hz | 288×288 |
-| `http://127.0.0.1:8080/standings` | 10 Hz | 480×594 |
+| `http://127.0.0.1:8080/standings` | 10 Hz | 321×594 |
 | `http://127.0.0.1:8080/garage` | 10 Hz | The game view. 1920×1080 is a starting size. |
 
-594px is the preferred standings height. It is a 720p frame with the 126px telemetry source above it. The width stays 480.
+321×594 is the preferred standings size. 594px is a 720p frame with the 126px telemetry source above it. 321px is the narrowest width that fits a two-digit position, a three-digit car number, the short driver name, two-digit stops, a two-digit place change, and a gap of `12:34.567`.
 
 In the source properties: set the width and height to the widget, enable "Shutdown source when not visible", and enable "Refresh browser when scene becomes active". Leave the page background transparent. Custom CSS in the source is unnecessary because each widget ships its own stylesheet.
 

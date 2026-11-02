@@ -1,6 +1,6 @@
 # Standings
 
-Composite timing tower for the OBS browser source at `/standings`. The panel sits at the top left. The preferred source is 480×594, the 720p frame with the 126px telemetry above it. The panel uses the full width, and its height follows the rows. Rows past the source edge are clipped.
+Composite timing tower for the OBS browser source at `/standings`. The panel sits at the top left. The preferred source is 321×594. The height is the 720p frame with the 126px telemetry above it. The width is the narrowest race row: a two-digit position, a three-digit car number, the short driver name, two-digit stops, a two-digit place change, and a gap of `12:34.567`. The panel uses the full width, and its height follows the rows. Rows past the source edge are clipped.
 
 The page background stays transparent. The panel is the shared terminal panel at 16px, with 6px 8px of padding.
 
