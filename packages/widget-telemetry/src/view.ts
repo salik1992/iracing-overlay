@@ -159,10 +159,10 @@ function rpmBar(): { bar: HTMLDivElement; lamps: HTMLSpanElement[] } {
 function wheelSvg(): SVGSVGElement {
   const svg = svgElement("svg", { class: "wheel", viewBox: "-50 -50 100 100" });
   svg.append(
-    svgElement("circle", { r: "40", fill: "none", stroke: "var(--fg)", "stroke-width": "3" }),
+    svgElement("circle", { r: "44", fill: "none", stroke: "var(--fg)", "stroke-width": "8" }),
     svgElement("circle", { r: "11", fill: "none", stroke: "var(--rule)", "stroke-width": "2" }),
     spokes(),
-    svgElement("rect", { x: "-3", y: "-48", width: "6", height: "12", fill: "var(--number)" }),
+    svgElement("rect", { x: "-4", y: "-49", width: "8", height: "12", fill: "var(--number)" }),
   );
   return svg;
 }
@@ -171,10 +171,10 @@ function wheelSvg(): SVGSVGElement {
 function spokes(): SVGGElement {
   const group = svgElement("g", { transform: "rotate(180)" });
   group.append(svgElement("path", {
-    d: "M0,-40 V-11 M-34,16 L-9,5 M34,16 L9,5",
+    d: "M0,-44 V-11 M-40,19 L-9,5 M40,19 L9,5",
     fill: "none",
     stroke: "var(--fg)",
-    "stroke-width": "3",
+    "stroke-width": "6",
     "stroke-linecap": "square",
   }));
   return group;
