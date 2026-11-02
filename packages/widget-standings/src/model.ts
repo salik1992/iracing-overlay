@@ -155,7 +155,11 @@ function groupRows(rows: readonly StandingWire[]): ClassGroup[] {
   const groups: ClassGroup[] = [];
   for (const [classId, list] of buckets) {
     const ordered = [...list].sort(
-      (a, b) => shownPosition(a) - shownPosition(b) || a.position - b.position || a.carIdx - b.carIdx,
+      (a, b) =>
+        postedRank(a) - postedRank(b) ||
+        shownPosition(a) - shownPosition(b) ||
+        a.position - b.position ||
+        a.carIdx - b.carIdx,
     );
     const first = ordered[0];
     groups.push({
@@ -173,4 +177,8 @@ function groupRows(rows: readonly StandingWire[]): ClassGroup[] {
 
 function shownPosition(row: StandingWire): number {
   return row.classPosition > 0 ? row.classPosition : row.position;
+}
+
+function postedRank(row: StandingWire): number {
+  return row.bestLapSec === null ? 1 : 0;
 }

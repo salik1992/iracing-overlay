@@ -29,6 +29,8 @@ export class IRacingSource implements TelemetrySource {
   private simMode: string | null = null;
   private session: SessionSnapshot | null = null;
   private sessionVersion: number | null = null;
+  /** SessionNum last asked of the YAML. A missing record must not be asked again every tick. */
+  private normalizedSessionNum: number | null = null;
   private sessionUniqueId: number | null = null;
   private readErrorLogged = false;
 
@@ -122,6 +124,9 @@ export class IRacingSource implements TelemetrySource {
     const unique = scalarNumber(sdk, "SessionUniqueID");
     if (unique !== null && unique !== this.sessionUniqueId) {
       this.sessionUniqueId = unique;
+      // A new weekend re-reads the YAML even when the version counter repeats.
+      this.sessionVersion = null;
+      this.normalizedSessionNum = null;
       sdk.resetTelemetryVariableCache();
     }
 
@@ -202,25 +207,23 @@ export class IRacingSource implements TelemetrySource {
   }
 
   private refreshSession(sdk: IRacingSDK, sessionNum: number, displayUnits: DisplayUnits): void {
-    const version = sdk.currDataVersion;
-    if (version !== this.sessionVersion) {
-      const snapshot = normalizeSession(sdk.getSessionData(), { sessionNum, displayUnits });
-      if (snapshot) {
-        this.sessionVersion = version;
-        this.session = snapshot;
-        this.publishSimMode(snapshot.weekend.simMode);
-        this.sessions.emit({ session: snapshot, version });
-        return;
-      }
+    const next = advanceSession(
+      {
+        version: this.sessionVersion,
+        sessionNum: this.normalizedSessionNum,
+        session: this.session,
+      },
+      { version: sdk.currDataVersion, sessionNum, displayUnits },
+      () => sdk.getSessionData(),
+    );
+    this.sessionVersion = next.held.version;
+    this.normalizedSessionNum = next.held.sessionNum;
+    this.session = next.held.session;
+    if (!next.publish) {
+      return;
     }
-    const seenVersion = this.sessionVersion;
-    if (this.session && seenVersion !== null && this.session.player.displayUnits !== displayUnits) {
-      this.session = {
-        ...this.session,
-        player: { ...this.session.player, displayUnits },
-      };
-      this.sessions.emit({ session: this.session, version: seenVersion });
-    }
+    this.publishSimMode(next.publish.session.weekend.simMode);
+    this.sessions.emit({ session: next.publish.session, version: next.publish.version });
   }
 
   private publishSimMode(simMode: string): void {
@@ -271,6 +274,54 @@ function numberArray(sdk: IRacingSDK, name: SdkName): number[] {
 function boolArray(sdk: IRacingSDK, name: SdkName): boolean[] {
   const variable = sdk.getTelemetryVariable<boolean>(name);
   return variable?.value ?? [];
+}
+
+export interface HeldSession {
+  version: number | null;
+  sessionNum: number | null;
+  session: SessionSnapshot | null;
+}
+
+export interface SessionAdvance {
+  held: HeldSession;
+  publish: { session: SessionSnapshot; version: number } | null;
+}
+
+/**
+ * Re-read the weekend YAML when its version changes or when telemetry SessionNum
+ * changes. Practice, qualifying, and the race are already in that YAML, so a
+ * session change often leaves the version alone. The stored number is the one
+ * requested. A missing record falls back inside normalizeSession, and storing
+ * the fallback's number would select it again on every tick.
+ */
+export function advanceSession(
+  held: HeldSession,
+  update: { version: number; sessionNum: number; displayUnits: DisplayUnits },
+  readRaw: () => unknown,
+): SessionAdvance {
+  if (update.version !== held.version || update.sessionNum !== held.sessionNum) {
+    const snapshot = normalizeSession(readRaw(), {
+      sessionNum: update.sessionNum,
+      displayUnits: update.displayUnits,
+    });
+    if (snapshot) {
+      return {
+        held: { version: update.version, sessionNum: update.sessionNum, session: snapshot },
+        publish: { session: snapshot, version: update.version },
+      };
+    }
+  }
+  if (held.session && held.version !== null && held.session.player.displayUnits !== update.displayUnits) {
+    const session: SessionSnapshot = {
+      ...held.session,
+      player: { ...held.session.player, displayUnits: update.displayUnits },
+    };
+    return {
+      held: { ...held, session },
+      publish: { session, version: held.version },
+    };
+  }
+  return { held, publish: null };
 }
 
 /**

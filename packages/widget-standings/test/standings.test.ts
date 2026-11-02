@@ -103,17 +103,62 @@ test("other mode shows the class best and its delta", () => {
   assert.equal(board.items.some((item) => item.kind === "class"), false);
 });
 
+test("a car with no lap time stays up, with an empty column, after the timed cars", () => {
+  const absent = wire({
+    carIdx: 9,
+    position: 0,
+    classPosition: 0,
+    carNumber: "9",
+    driverName: "No Time",
+    bestLapSec: null,
+    intervalSec: 4,
+    lapsDown: 2,
+  });
+  const practice = buildBoard(
+    session({ type: "Practice", laps: "unlimited", time: "unlimited" }),
+    frame([
+      absent,
+      wire({ carIdx: 2, position: 2, classPosition: 2, carNumber: "22", bestLapSec: 81.2, driverName: "Vit Salomon" }),
+      wire({ carIdx: 1, position: 1, classPosition: 1, carNumber: "2", bestLapSec: 80, driverName: "A. Nielsen" }),
+    ]),
+  );
+  const practiceCars = carItems(practice);
+  assert.deepEqual(
+    practiceCars.map((item) => item.car.number),
+    ["2", "22", "9"],
+  );
+  assert.equal(practiceCars[0]?.car.gap, "1:20.000");
+  assert.equal(practiceCars[1]?.car.gap, "+1.200");
+  assert.equal(practiceCars[2]?.car.gap, "");
+  assert.equal(practiceCars[2]?.car.position, 0);
+
+  const race = buildBoard(session({ type: "Race", laps: "20" }), frame([
+    absent,
+    wire({ carIdx: 1, position: 1, classPosition: 1, carNumber: "2", bestLapSec: 80, intervalSec: null }),
+    wire({ carIdx: 2, position: 2, classPosition: 2, carNumber: "22", bestLapSec: 81, intervalSec: 0.5 }),
+  ]));
+  const raceCars = carItems(race);
+  assert.deepEqual(
+    raceCars.map((item) => item.car.number),
+    ["2", "22", "9"],
+  );
+  assert.equal(raceCars[0]?.car.gap, "");
+  assert.equal(raceCars[1]?.car.gap, "0.500");
+  assert.equal(raceCars[2]?.car.gap, "");
+});
+
 test("race mode uses the class interval and laps down", () => {
   const board = buildBoard(
     session({ type: "Race", laps: "48" }),
     frame([
-      wire({ carIdx: 1, position: 1, classPosition: 1, intervalSec: null, lapsDown: 0, lap: 23, startClassPosition: 1 }),
+      wire({ carIdx: 1, position: 1, classPosition: 1, intervalSec: null, lapsDown: 0, lap: 23, bestLapSec: 80, startClassPosition: 1 }),
       wire({
         carIdx: 2,
         position: 2,
         classPosition: 2,
         intervalSec: 1.18,
         lapsDown: 0,
+        bestLapSec: 80.5,
         startClassPosition: 4,
         driverName: "Nyck de Vries",
       }),
@@ -123,6 +168,7 @@ test("race mode uses the class interval and laps down", () => {
         classPosition: 3,
         intervalSec: 2,
         lapsDown: 2,
+        bestLapSec: 81,
         startClassPosition: 3,
         driverName: "Pete van der Kirk",
       }),

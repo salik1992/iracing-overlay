@@ -38,11 +38,12 @@ interface Draft {
 export function standingCars(tick: Tick, session: SessionSnapshot | null): CarSample[] {
   const cars: CarSample[] = [];
   for (const car of tick.cars) {
-    if (car.position <= 0 || car.trackSurface === NOT_IN_WORLD) {
-      continue;
-    }
     const driver = session?.drivers[String(car.carIdx)];
     if (driver?.paceCar || driver?.spectator) {
+      continue;
+    }
+    // A joined car can sit at position 0 with no lap yet. An empty slot has neither.
+    if (!driver && (car.position <= 0 || car.trackSurface === NOT_IN_WORLD)) {
       continue;
     }
     cars.push(car);
@@ -84,7 +85,7 @@ export function buildStandings(
       rows.push(toRow(tick, session, note, draft, ahead?.gap ?? null, index === 0, leader, classPosition));
     }
   }
-  rows.sort((a, b) => a.position - b.position || a.carIdx - b.carIdx);
+  rows.sort((a, b) => postedRank(a.bestLapSec) - postedRank(b.bestLapSec) || a.position - b.position || a.carIdx - b.carIdx);
   return {
     sessionState: sessionStateName(tick.sessionState),
     sessionTimeRemainSec: tick.sessionTimeRemainSec,
@@ -132,10 +133,16 @@ function toRow(
 
 function byClass(live: ReadonlyMap<number, number> | null): (a: Draft, b: Draft) => number {
   return (a, b) => {
+    const posted = postedRank(a.car.bestLapSec) - postedRank(b.car.bestLapSec);
     const left = classKey(a, live);
     const right = classKey(b, live);
-    return left - right || a.car.position - b.car.position || a.car.carIdx - b.car.carIdx;
+    return posted || left - right || a.car.position - b.car.position || a.car.carIdx - b.car.carIdx;
   };
+}
+
+/** Cars that have not posted a lap sort after cars that have. */
+function postedRank(bestLapSec: number | null): number {
+  return bestLapSec !== null && Number.isFinite(bestLapSec) && bestLapSec > 0 ? 0 : 1;
 }
 
 function classKey(draft: Draft, live: ReadonlyMap<number, number> | null): number {

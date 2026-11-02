@@ -34,7 +34,7 @@ In a race the column is the class interval, three decimals, and the class leader
 
 In a race, once the state is racing, the class order is laps completed plus the fraction of the current lap. The position column and the interval follow that order, so a pass shows up where it happens. Parade laps keep iRacing's class position. Under the checkered flag that live order continues until the results leader completes another lap. Cars that have taken the flag then lock to the official result, and cars still running stay in live order. A car towed into its pit stall keeps the progress it had on track. Practice and qualifying keep iRacing's class position, and the gap column stays the best lap.
 
-In every other session the owner of the class best lap shows the clock, such as `1:22.481`. The rest of the class shows the delta of their best lap, such as `+0.214`. A car with no best lap is blank. Ties keep the earlier class position.
+In every other session the owner of the class best lap shows the clock, such as `1:22.481`. The rest of the class shows the delta of their best lap, such as `+0.214`. A car with no best lap stays on the board, that column is empty, and the row is sorted after every car in the class that has a time. In a race the gap column is empty for that car as well. Ties keep the earlier class position. A position of 0 is left blank.
 
 ## Tyre
 
@@ -56,7 +56,7 @@ Stops count entries into the pit stall after the server has already seen that ca
 
 ## Header
 
-The session type is muted. A lap-limited session shows the overall leader's lap over the limit, such as `23/48`. A timed session shows the time remaining, `m:ss`, and `h:mm:ss` from one hour. An unlimited session shows the type alone.
+The session type is muted. A lap-limited session shows the overall leader's lap over the limit, such as `23/48`. A timed session shows the time remaining, `m:ss`, and `h:mm:ss` from one hour. An unlimited session shows the type alone. The type, the lap or time limit, and the columns follow the current session, so a page opened in practice switches to the race columns when the sim advances.
 
 ## Idle and preview
 

@@ -301,14 +301,14 @@ Source selection:
 `irsdk-node` waits on the sim event, about every 16 ms while a session is active. Each successful wait replaces the snapshot:
 
 * The telemetry fields the widgets need, copied out of the latest buffer.
-* The session snapshot, replaced only when `sessionInfoUpdate` changes. YAML is parsed on that change, then reduced to `SessionSnapshot`. The raw YAML string is not kept for the browsers.
+* The session snapshot. YAML is parsed when `sessionInfoUpdate` changes and when telemetry `SessionNum` changes, then reduced to `SessionSnapshot`. The weekend YAML already lists practice, qualifying, and the race, so moving between them selects the matching record while the version stays the same. The raw YAML string is not kept for the browsers.
 
 Delivery follows the sim clock.
 
 * A telemetry subscriber receives every tick, which is 60 Hz while iRacing is producing ticks.
 * A standings subscriber receives every sixth tick, which is 10 Hz.
 * A digiflag subscriber receives that same sixth tick. The frame is the decoded flag names. On the pace lap, `green` and `greenHeld` are left out until `startGo`, so the matrix stays dark until the flying start.
-* A session subscriber receives a session message when the version changes, including once on hello.
+* A session subscriber receives a session message when the snapshot changes, including once on hello. The snapshot changes on a new YAML version and on a new telemetry session number.
 
 Paused or disconnected sim means ticks stop. The server then sends `{ type: "status", phase: "idle" }` and the widgets keep the last frame on screen, dimmed with the shared `is-idle` class, until ticks resume. Sockets with no subscriber do no work for that channel. One shared-memory read serves every OBS source.
 
@@ -339,7 +339,7 @@ These types still live in the server. `shared` exports the `WidgetManifest` type
 * Player: `playerCarIdx`, car number, driver name, shift-light RPM points (`DriverCarSLFirstRPM`, `DriverCarSLShiftRPM`, `DriverCarSLLastRPM`, `DriverCarSLBlinkRPM`), redline, idle RPM, max fuel in liters, `displayUnits`.
 * Drivers, keyed by `carIdx`: name, car number, team name, car path, class id, class name, class color, iRating, license string, spectator, pace car, AI. The class name is `CarClassShortName`. An AI session leaves that blank, so a competing car uses the short name already published for its class, and otherwise `CarScreenNameShort` or `CarScreenName`.
 * Tire catalog: `DriverInfo.TireCompounds` when the session publishes it, indexed by `CarIdxTireCompound`.
-* Current session: number, name, type, laps or time limit.
+* Current session: number, name, type, laps or time limit, chosen by telemetry `SessionNum`.
 
 `TelemetryFrame`, 60 Hz:
 
@@ -366,13 +366,13 @@ Shift-light thresholds travel in the session message. The telemetry view caches 
 | `sessionTimeRemainSec` | `SessionTimeRemain` |
 | `sessionLapsRemain` | `SessionLapsRemainEx` |
 | `flags` | `SessionFlags`, decoded to names in `shared` |
-| `rows[]` | One row per car that is in the world |
+| `rows[]` | One row per competitor, including a car that has not posted a lap |
 
 Each row contains `carIdx`, overall position, class position, class name and color, car number, driver name, team name, lap, last and best lap seconds, gap to the player in seconds, class interval in seconds, laps down to the class leader, tire letter, pit stops observed since the server attached, class position at the start of racing, `onPitRoad`, track surface, and `isPlayer`.
 
-Overall position stays the position iRacing publishes. In a race, once the state is racing, each class is ordered by laps completed plus the fraction of the current lap (`CarIdxLapCompleted` + `CarIdxLapDistPct`). That order is the class position on the row, and the interval is the estimated-time gap to the car now ahead, so a pass shows up where it happens. Parade laps keep iRacing's class position. Under the checkered flag the live order continues until the results leader completes another lap. Cars that have taken the flag then lock to `ResultsPositions`, and cars still running stay in live order. The lock reads the latest session YAML, so it follows the official classification as the sim updates it. A car towed into its pit stall keeps the progress it had on track. Practice, qualifying, warmup, and any session that is not a race keep iRacing's class position.
+Overall position stays the position iRacing publishes. In a race, once the state is racing, each class is ordered by laps completed plus the fraction of the current lap (`CarIdxLapCompleted` + `CarIdxLapDistPct`). That order is the class position on the row, and the interval is the estimated-time gap to the car now ahead, so a pass shows up where it happens. Parade laps keep iRacing's class position. Under the checkered flag the live order continues until the results leader completes another lap. Cars that have taken the flag then lock to `ResultsPositions`, and cars still running stay in live order. The lock reads the latest session YAML, so it follows the official classification as the sim updates it. A car towed into its pit stall keeps the progress it had on track. Practice, qualifying, warmup, and any session that is not a race keep iRacing's class position. That session type is the YAML record selected by telemetry `SessionNum`.
 
-Gap to the player uses `CarIdxEstTime`: the estimated time for that car to reach the player's point on the racing line. Subtract the player's value. Negative means ahead. The class interval is the difference of those gaps between a car and the class car ahead. The class leader's interval is null. Laps down compares lap and lap distance percent with the class leader, and drops one when the car is further through the lap than the leader. Empty slots, spectators, and the pace car are dropped before send.
+Gap to the player uses `CarIdxEstTime`: the estimated time for that car to reach the player's point on the racing line. Subtract the player's value. Negative means ahead. The class interval is the difference of those gaps between a car and the class car ahead. The class leader's interval is null. Laps down compares lap and lap distance percent with the class leader, and drops one when the car is further through the lap than the leader. Empty slots, spectators, and the pace car are dropped before send. A joined car with no best lap stays in its class, after the cars that have posted one, and does not become the class leader.
 
 The SDK does not publish a pit-stop count or a grid position. Pit stops count a rising edge of track surface `InPitStall` after the server has already seen that car, and the count resets when the session number changes. A stall already in progress on the first sight of the car stays uncounted. The arrow baseline is iRacing's class position on the first tick whose session state is racing, including a server that attaches after the green flag, so the delta opens at zero. Cars that appear later take their first seen official class position. The arrow compares that baseline with the class position on the row.
 
@@ -387,7 +387,7 @@ The standings page draws the Composite layout from this frame and retunes each c
 iRacing writes a memory-mapped file, `Local\IRSDKMemMapFileName`, and signals `Local\IRSDKDataValidEvent` on each tick. Two payloads share that file.
 
 * Telemetry variables, about 60 times a second. The variable list is fixed for a session and changes when the car or session changes. `IRacingSource` clears its field cache on each new session.
-* A YAML session string. `sessionInfoUpdate` increments when it changes. Drivers joining, results posting, and a session change are typical reasons.
+* A YAML session string. `sessionInfoUpdate` increments when the string changes. Drivers joining and results posting are typical reasons. Practice, qualifying, and the race are records in that string. Telemetry `SessionNum` selects the current one, and that number changes without a new YAML version.
 
 The reader copies the latest of up to four telemetry buffers so a frame is internally consistent. Several readers may attach. This server is the only reader we run.
 

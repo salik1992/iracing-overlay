@@ -171,7 +171,7 @@ function updateCar(parts: CarParts, car: CarView): void {
     parts.root.style.removeProperty("--plate");
   }
   parts.root.className = classes.join(" ");
-  parts.pos.textContent = String(car.position);
+  parts.pos.textContent = car.position > 0 ? String(car.position) : "";
   parts.num.textContent = car.number;
   parts.initial.textContent = car.initial ? `${car.initial} ` : "";
   parts.tri.textContent = car.trigram;

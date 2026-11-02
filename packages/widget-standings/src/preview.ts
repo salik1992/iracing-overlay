@@ -78,7 +78,7 @@ function klass(cursor: { next: number }, classId: number, className: string, cla
       carNumber: entry.number,
       driverName: entry.name,
       lap: position === 1 ? 23 : 22,
-      bestLapSec: null,
+      bestLapSec: 80 + index,
       teamName: TEAMS[Number(entry.number) % TEAMS.length] ?? "",
       tire: entry.tire,
       pitStops: entry.stops,
