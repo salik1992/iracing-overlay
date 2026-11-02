@@ -16,12 +16,14 @@ const FILES: Record<string, string> = {
   "/index.html": "index.html",
   "/index.js": "index.js",
   "/style.css": "style.css",
+  "/cover.png": "cover.png",
 };
 
 const CONTENT_TYPES: Record<string, string> = {
   "index.html": "text/html; charset=utf-8",
   "index.js": "text/javascript; charset=utf-8",
   "style.css": "text/css; charset=utf-8",
+  "cover.png": "image/png",
 };
 
 export interface OverlayServer {

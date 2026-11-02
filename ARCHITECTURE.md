@@ -6,7 +6,7 @@ Custom overlays for iRacing, shown in OBS through Browser Source. A Node process
 
 * npm workspaces. One package for the server, one shared package, and one package per browser widget.
 * Widgets are vanilla functional TypeScript. Each widget creates its DOM once and writes into those nodes when a frame arrives.
-* Each widget has its own URL and its own stream rate. `/telemetry` is 60 Hz. `/digiflag` and `/standings` are 10 Hz.
+* Each widget has its own URL and its own stream rate. `/telemetry` is 60 Hz. `/digiflag`, `/standings`, and `/garage` are 10 Hz.
 * The server reads shared memory once, at the sim's tick, into a snapshot. Widget timers sample that snapshot. Widgets do not read the SDK.
 * The websocket carries small, widget-specific messages. Session data is a separate message, sent when the YAML version changes.
 * The server binds to `127.0.0.1` only.
@@ -14,7 +14,7 @@ Custom overlays for iRacing, shown in OBS through Browser Source. A Node process
 * The race PC runs `git pull`, `npm install`, and `npm start`. esbuild and the `irsdk-node` native addon both ship prebuilt binaries.
 * The overlay is read-only. Camera, replay, pit, and chat commands stay out of this program.
 * Values on the wire are SI units. Display formatting lives in the shared package and uses the driver's `DisplayUnits`.
-* Shared visuals are a terminal panel: Fira Code, the Tokyo Night Night palette, and a flat translucent fill on a transparent page. Widget READMEs own layout. Digiflag is the exception: a lamp matrix with no panel, in signal colors.
+* Shared visuals are a terminal panel: Fira Code, the Tokyo Night Night palette, and a flat translucent fill on a transparent page. Widget READMEs own layout. Digiflag is one exception: a lamp matrix with no panel, in signal colors. The garage cover is the other: a fullscreen picture with no panel and no idle dim, shown only while the garage screen is open.
 
 ## System
 
@@ -26,6 +26,7 @@ Windows race PC                              OBS
 │  60 Hz telemetry + YAML  │                 │  telemetry              │
 └────────────▲─────────────┘                 │  digiflag               │
              │ read                          │  standings              │
+             │                               │  garage                 │
              │                               └────────────▲────────────┘
 ┌────────────┴───────────────────────┐                     │ websocket
 │ @salik1992/iracing-overlay-server  │─────────────────────┘
@@ -55,6 +56,7 @@ packages/
   widget-telemetry/          @salik1992/iracing-overlay-widget-telemetry
   widget-digiflag/           @salik1992/iracing-overlay-widget-digiflag
   widget-standings/          @salik1992/iracing-overlay-widget-standings
+  widget-garage/             @salik1992/iracing-overlay-widget-garage
 ```
 
 Every package is private. Root `package.json` is `@salik1992/iracing-overlay-monorepo`, with `"workspaces": ["packages/*"]` and `"engines": { "node": ">=22" }`. A `.nvmrc` pins the same major.
@@ -66,11 +68,13 @@ Every package is private. Root `package.json` is `@salik1992/iracing-overlay-mon
 | `widget-telemetry` | Numeral page for pedals, steering angle, speed, and gear. 60 Hz. |
 | `widget-digiflag` | Cove 16 lamp matrix for session flags, with no panel. 10 Hz. |
 | `widget-standings` | Page for the race order, intervals, pit state, and session clock. 10 Hz. |
+| `widget-garage` | Fullscreen cover while the garage screen is open. 10 Hz. The picture is `packages/widget-garage/assets/cover.png`. |
 
 A new overlay is a new workspace package. The server keeps an explicit list of widget manifests, so a widget that fails to build fails the server build with it.
 
 ```ts
 import { manifest as digiflag } from "@salik1992/iracing-overlay-widget-digiflag";
+import { manifest as garage } from "@salik1992/iracing-overlay-widget-garage";
 import { manifest as standings } from "@salik1992/iracing-overlay-widget-standings";
 import { manifest as telemetry } from "@salik1992/iracing-overlay-widget-telemetry";
 
@@ -78,6 +82,7 @@ export const widgets = [
   { ...telemetry, staticDir: "packages/widget-telemetry/dist" },
   { ...digiflag, staticDir: "packages/widget-digiflag/dist" },
   { ...standings, staticDir: "packages/widget-standings/dist" },
+  { ...garage, staticDir: "packages/widget-garage/dist" },
 ];
 ```
 
@@ -95,6 +100,7 @@ packages/widget-telemetry/
   src/view.ts              create DOM once, update nodes from frames
   index.html
   style.css
+  assets/                  pictures copied into dist/ next to index.html
   dist/                    esbuild output, served as static files
 ```
 
@@ -255,6 +261,9 @@ HTTP:
 | `GET /telemetry` | `widget-telemetry` `index.html` |
 | `GET /telemetry/index.js`, `style.css` | That widget's built files |
 | `GET /standings` | Same pattern for the standings widget |
+| `GET /digiflag` | Same pattern for the flag matrix |
+| `GET /garage` | The garage cover page |
+| `GET /garage/cover.png` | The cover image, from `widget-garage/assets/cover.png` |
 | `GET /health` | `{ ok, source, clients }` for a quick check on the race PC |
 | `GET /fonts/FiraCode-VF.woff2` | The shared Fira Code file, from `packages/shared/fonts/` |
 
@@ -265,7 +274,7 @@ The page sends one hello and then only receives:
 ```ts
 type ClientMessage = {
   type: "hello";
-  widgetId: "telemetry" | "standings";
+  widgetId: "telemetry" | "digiflag" | "standings" | "garage";
 };
 ```
 
@@ -308,9 +317,10 @@ Delivery follows the sim clock.
 * A telemetry subscriber receives every tick, which is 60 Hz while iRacing is producing ticks.
 * A standings subscriber receives every sixth tick, which is 10 Hz.
 * A digiflag subscriber receives that same sixth tick. The frame is the decoded flag names. On the pace lap, `green` and `greenHeld` are left out until `startGo`, so the matrix stays dark until the flying start.
-* A session subscriber receives a session message when the snapshot changes, including once on hello. The snapshot changes on a new YAML version and on a new telemetry session number.
+* A garage subscriber receives that same sixth tick. The frame is whether the garage screen is visible (`IsGarageVisible`).
+* A session subscriber receives a session message when the snapshot changes, including once on hello. The snapshot changes on a new YAML version and on a new telemetry session number. The garage page does not subscribe to session messages.
 
-Paused or disconnected sim means ticks stop. The server then sends `{ type: "status", phase: "idle" }` and the widgets keep the last frame on screen, dimmed with the shared `is-idle` class, until ticks resume. Sockets with no subscriber do no work for that channel. One shared-memory read serves every OBS source.
+Paused or disconnected sim means ticks stop. The server then sends `{ type: "status", phase: "idle" }` and the widgets keep the last frame on screen, dimmed with the shared `is-idle` class, until ticks resume. The garage cover does not use that dim. It keeps the last visibility at full opacity. Sockets with no subscriber do no work for that channel. One shared-memory read serves every OBS source.
 
 ### Race-PC run
 
@@ -328,10 +338,11 @@ type ServerMessage =
   | { type: "session"; version: number; session: SessionSnapshot }
   | { type: "telemetry"; tick: number; frame: TelemetryFrame }
   | { type: "standings"; tick: number; frame: StandingsFrame }
-  | { type: "flags"; tick: number; frame: FlagsFrame };
+  | { type: "flags"; tick: number; frame: FlagsFrame }
+  | { type: "garage"; tick: number; frame: GarageFrame };
 ```
 
-These types still live in the server. `shared` exports the `WidgetManifest` type, the websocket client, and the JSON readers. The client sends hello, reconnects, and hands each text frame to the page. The telemetry page parses the status, the session units, the shift-light RPM points, and the telemetry fields it draws. The digiflag page parses the status and the flag names. The standings page parses the status, the session type, the lap and time limits, the team-racing flag, and the standings frame. `FlagsFrame` is `flags: string[]`, the same names standings carries.
+These types still live in the server. `shared` exports the `WidgetManifest` type, the websocket client, and the JSON readers. The client sends hello, reconnects, and hands each text frame to the page. The telemetry page parses the status, the session units, the shift-light RPM points, and the telemetry fields it draws. The digiflag page parses the status and the flag names. The standings page parses the status, the session type, the lap and time limits, the team-racing flag, and the standings frame. The garage page parses only `{ visible: boolean }`. `FlagsFrame` is `flags: string[]`, the same names standings carries. `GarageFrame` is that visible flag, copied from `IsGarageVisible`. While it is true the page paints `cover.png` across the source at full opacity. A dropped connection keeps the last visibility, so the setup stays covered if the server blinks while the garage is open.
 
 `SessionSnapshot` is the normalized slice of the YAML document:
 
@@ -427,6 +438,7 @@ One Browser Source per widget.
 | `http://127.0.0.1:8080/telemetry` | 60 Hz | 440×176 |
 | `http://127.0.0.1:8080/digiflag` | 10 Hz | 288×288 |
 | `http://127.0.0.1:8080/standings` | 10 Hz | 480×960 |
+| `http://127.0.0.1:8080/garage` | 10 Hz | The game view. 1920×1080 is a starting size. |
 
 In the source properties: set the width and height to the widget, enable "Shutdown source when not visible", and enable "Refresh browser when scene becomes active". Leave the page background transparent. Custom CSS in the source is unnecessary because each widget ships its own stylesheet.
 
@@ -434,7 +446,7 @@ Several sources share one server process and one shared-memory reader.
 
 ## Development
 
-On Linux, `npm run dev` starts the fixture source and the pages. Open `/telemetry`, `/digiflag`, and `/standings` in a browser. The fixture is a short practice at Test Circuit, checked into `packages/server/fixtures/demo.json`, so the pages move without the sim. An `.ibt` file can later drive the player's own car, because the file uses the same row layout. The demo field is three cars. `/standings#preview` paints a generated multiclass race through the same layout.
+On Linux, `npm run dev` starts the fixture source and the pages. Open `/telemetry`, `/digiflag`, `/standings`, and `/garage` in a browser. The fixture is a short practice at Test Circuit, checked into `packages/server/fixtures/demo.json`, so the pages move without the sim. An `.ibt` file can later drive the player's own car, because the file uses the same row layout. The demo field is three cars. `/standings#preview` paints a generated multiclass race through the same layout. `/garage#preview` shows the cover and ignores the live frame. The fixture leaves the cover hidden.
 
 On the race PC, `npm start` attaches to iRacing. The first real session is also how a fixture gets recorded: a server flag writes the reduced ticks and the session snapshot, and that file comes back through git.
 
@@ -443,9 +455,9 @@ Unit tests for gap math, flag decode, lap-time format, and the fixture clock run
 ## Adding a widget
 
 1. Create `packages/widget-<name>` with a manifest (`id`, `route`, `hz`, `session`).
-2. Add the frame type to `shared` and the field copy to the snapshot in `server`.
+2. Add the frame type in the server and copy the fields it needs onto the tick.
 3. Register the manifest in the server's widget list.
-4. Build a view that creates its DOM once, on the shared panel.
+4. Build a view that creates its DOM once.
 5. Add an OBS Browser Source pointed at the route.
 
 ## Out of scope

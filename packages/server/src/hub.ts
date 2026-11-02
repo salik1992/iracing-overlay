@@ -1,6 +1,6 @@
 import type { RawData, WebSocket } from "ws";
 
-import { buildFlags, buildStandings, buildTelemetry } from "./frames.js";
+import { buildFlags, buildGarage, buildStandings, buildTelemetry } from "./frames.js";
 import { LiveOrder } from "./live-order.js";
 import { EMPTY_NOTE, RaceMemory, type RaceNote } from "./race-memory.js";
 import type { TelemetrySource } from "./sources/telemetry-source.js";
@@ -177,6 +177,9 @@ function frameMessage(
   }
   if (widget.id === "digiflag") {
     return { type: "flags", tick: tick.sessionTick, frame: buildFlags(tick) };
+  }
+  if (widget.id === "garage") {
+    return { type: "garage", tick: tick.sessionTick, frame: buildGarage(tick) };
   }
   return null;
 }

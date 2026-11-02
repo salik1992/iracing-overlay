@@ -201,6 +201,7 @@ export class IRacingSource implements TelemetrySource {
       lapLastSec: scalarNumber(sdk, "LapLastLapTime") ?? -1,
       lapBestSec: scalarNumber(sdk, "LapBestLapTime") ?? -1,
       onTrack: scalarBool(sdk, "IsOnTrack"),
+      garageVisible: scalarBool(sdk, "IsGarageVisible"),
       cars,
     };
     this.ticks.emit(tick);

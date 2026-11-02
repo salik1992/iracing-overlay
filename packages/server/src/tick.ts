@@ -43,5 +43,7 @@ export interface Tick {
   lapLastSec: number;
   lapBestSec: number;
   onTrack: boolean;
+  /** IsGarageVisible. True while the garage screen is open. */
+  garageVisible: boolean;
   cars: CarSample[];
 }

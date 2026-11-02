@@ -1,6 +1,7 @@
 import { join } from "node:path";
 
 import { manifest as digiflag } from "@salik1992/iracing-overlay-widget-digiflag";
+import { manifest as garage } from "@salik1992/iracing-overlay-widget-garage";
 import { manifest as standings } from "@salik1992/iracing-overlay-widget-standings";
 import { manifest as telemetry } from "@salik1992/iracing-overlay-widget-telemetry";
 
@@ -20,6 +21,10 @@ export const widgets: readonly WidgetServe[] = [
   {
     ...standings,
     staticDir: join(packagesRoot, "widget-standings", "dist"),
+  },
+  {
+    ...garage,
+    staticDir: join(packagesRoot, "widget-garage", "dist"),
   },
 ];
 

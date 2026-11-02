@@ -177,6 +177,7 @@ export class FixtureSource implements TelemetrySource {
       lapLastSec: player?.lastLapSec ?? -1,
       lapBestSec: player?.bestLapSec ?? -1,
       onTrack: true,
+      garageVisible: false,
       cars: samples,
     };
   }

@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@salik1992/iracing-overlay-widget-digiflag": "0.0.0",
+    "@salik1992/iracing-overlay-widget-garage": "0.0.0",
     "@salik1992/iracing-overlay-widget-standings": "0.0.0",
     "@salik1992/iracing-overlay-widget-telemetry": "0.0.0",
     "irsdk-node": "^4.4.0",

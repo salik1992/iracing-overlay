@@ -1,5 +1,5 @@
 import { createRequire } from "node:module";
-import { copyFile, mkdir, readFile } from "node:fs/promises";
+import { copyFile, mkdir, readFile, readdir, stat } from "node:fs/promises";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 
@@ -42,6 +42,7 @@ await esbuild.build({
 });
 
 await copyFile(join(root, "index.html"), join(dist, "index.html"));
+await copyAssets(root, dist);
 
 const css = await readFile(join(dist, "style.css"), "utf8");
 if (!css.includes("/fonts/FiraCode-VF.woff2")) {
@@ -49,4 +50,27 @@ if (!css.includes("/fonts/FiraCode-VF.woff2")) {
 }
 if (css.includes("@import")) {
   throw new Error("bundled style.css still has an @import");
+}
+
+async function copyAssets(root, dist) {
+  const assets = join(root, "assets");
+  let names;
+  try {
+    names = await readdir(assets);
+  } catch (error) {
+    if (error && typeof error === "object" && "code" in error && error.code === "ENOENT") {
+      return;
+    }
+    throw error;
+  }
+  for (const name of names) {
+    if (name.startsWith(".") || name.includes("/") || name.includes("\\")) {
+      continue;
+    }
+    const from = join(assets, name);
+    if (!(await stat(from)).isFile()) {
+      continue;
+    }
+    await copyFile(from, join(dist, name));
+  }
 }

@@ -137,6 +137,7 @@ test("pace lap keeps the green bit off the digiflag lamp until the lights go", (
     lapLastSec: 0,
     lapBestSec: 0,
     onTrack: true,
+    garageVisible: false,
     cars: [],
   };
   assert.deepEqual(buildFlags(tick).flags, ["serviceable", "startHidden"]);
@@ -273,6 +274,7 @@ test("a competitor with no lap time stays after the cars that posted one", () =>
     lapLastSec: -1,
     lapBestSec: -1,
     onTrack: true,
+    garageVisible: false,
     cars: [
       car(1, 1, 0),
       { ...car(2, 0, 1), classPosition: 0, lap: 0, lapCompleted: -1, bestLapSec: -1, lastLapSec: -1 },
@@ -349,6 +351,7 @@ test("standings drop pace cars, spectators, and cars not in the world", () => {
     lapLastSec: -1,
     lapBestSec: 31.4,
     onTrack: true,
+    garageVisible: false,
     cars: [
       car(0, 4, 1),
       car(1, 1, -0.4),

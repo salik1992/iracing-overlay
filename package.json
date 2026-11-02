@@ -12,9 +12,9 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "npm run build -w @salik1992/iracing-overlay-widget-telemetry -w @salik1992/iracing-overlay-widget-digiflag -w @salik1992/iracing-overlay-widget-standings && npm run dev -w @salik1992/iracing-overlay-server",
-    "start": "npm run build -w @salik1992/iracing-overlay-widget-telemetry -w @salik1992/iracing-overlay-widget-digiflag -w @salik1992/iracing-overlay-widget-standings && npm run start -w @salik1992/iracing-overlay-server",
-    "test": "npm run test -w @salik1992/iracing-overlay-shared -w @salik1992/iracing-overlay-widget-telemetry -w @salik1992/iracing-overlay-widget-digiflag -w @salik1992/iracing-overlay-widget-standings -w @salik1992/iracing-overlay-server",
-    "typecheck": "npm run typecheck -w @salik1992/iracing-overlay-shared -w @salik1992/iracing-overlay-widget-telemetry -w @salik1992/iracing-overlay-widget-digiflag -w @salik1992/iracing-overlay-widget-standings -w @salik1992/iracing-overlay-server"
+    "dev": "npm run build -w @salik1992/iracing-overlay-widget-telemetry -w @salik1992/iracing-overlay-widget-digiflag -w @salik1992/iracing-overlay-widget-standings -w @salik1992/iracing-overlay-widget-garage && npm run dev -w @salik1992/iracing-overlay-server",
+    "start": "npm run build -w @salik1992/iracing-overlay-widget-telemetry -w @salik1992/iracing-overlay-widget-digiflag -w @salik1992/iracing-overlay-widget-standings -w @salik1992/iracing-overlay-widget-garage && npm run start -w @salik1992/iracing-overlay-server",
+    "test": "npm run test -w @salik1992/iracing-overlay-shared -w @salik1992/iracing-overlay-widget-telemetry -w @salik1992/iracing-overlay-widget-digiflag -w @salik1992/iracing-overlay-widget-standings -w @salik1992/iracing-overlay-widget-garage -w @salik1992/iracing-overlay-server",
+    "typecheck": "npm run typecheck -w @salik1992/iracing-overlay-shared -w @salik1992/iracing-overlay-widget-telemetry -w @salik1992/iracing-overlay-widget-digiflag -w @salik1992/iracing-overlay-widget-standings -w @salik1992/iracing-overlay-widget-garage -w @salik1992/iracing-overlay-server"
   }
 }

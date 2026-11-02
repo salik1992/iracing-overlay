@@ -50,6 +50,14 @@ test("fixture publishes a joined standings frame", async () => {
       return;
     }
     assert.deepEqual(flags[1].frame.flags, ["green"]);
+
+    const garage = await hello(port, "garage", 2);
+    assert.equal(garage[0]?.type, "status");
+    assert.equal(garage[1]?.type, "garage");
+    if (garage[1]?.type !== "garage") {
+      return;
+    }
+    assert.equal(garage[1].frame.visible, false);
   } finally {
     await source.stop();
     await app.close();
@@ -83,6 +91,25 @@ test("samples telemetry every tick and standings every sixth tick", async () => 
   } finally {
     telemetry.close();
     standings.close();
+    await app.close();
+  }
+});
+
+test("serves the garage cover", async () => {
+  const hub = new Hub(widgets);
+  const app = createOverlayServer({ hub, widgets, sourceName: "fixture" });
+  const port = await listen(app.http, 0, "127.0.0.1");
+  try {
+    const page = await fetch(`http://127.0.0.1:${port}/garage`);
+    assert.equal(page.status, 200);
+    assert.match(await page.text(), /\/garage\/index\.js/);
+
+    const cover = await fetch(`http://127.0.0.1:${port}/garage/cover.png`);
+    assert.equal(cover.status, 200);
+    assert.equal(cover.headers.get("content-type"), "image/png");
+    const bytes = Buffer.from(await cover.arrayBuffer());
+    assert.equal(bytes.subarray(0, 8).toString("hex"), "89504e470d0a1a0a");
+  } finally {
     await app.close();
   }
 });

@@ -304,6 +304,7 @@ function makeTick(
     lapLastSec: -1,
     lapBestSec: -1,
     onTrack: true,
+    garageVisible: false,
     cars,
   };
 }

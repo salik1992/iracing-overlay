@@ -2,7 +2,7 @@ import { decodeFlags, lampFlags, sessionStateName } from "./flags.js";
 import { EMPTY_NOTE, type RaceNote } from "./race-memory.js";
 import { tireLetter } from "./tire.js";
 import type { CarSample, Tick } from "./tick.js";
-import type { DriverSnapshot, FlagsFrame, SessionSnapshot, StandingRow, StandingsFrame, TelemetryFrame } from "./types.js";
+import type { DriverSnapshot, FlagsFrame, GarageFrame, SessionSnapshot, StandingRow, StandingsFrame, TelemetryFrame } from "./types.js";
 
 const NOT_IN_WORLD = -1;
 
@@ -26,6 +26,10 @@ export function buildTelemetry(tick: Tick): TelemetryFrame {
 
 export function buildFlags(tick: Tick): FlagsFrame {
   return { flags: lampFlags(tick.sessionState, tick.sessionFlags) };
+}
+
+export function buildGarage(tick: Tick): GarageFrame {
+  return { visible: tick.garageVisible };
 }
 
 interface Draft {
