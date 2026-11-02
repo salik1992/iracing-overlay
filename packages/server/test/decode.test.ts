@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
-import { buildStandings, buildTelemetry } from "../src/frames.js";
-import { decodeFlags, sessionStateName } from "../src/flags.js";
+import { buildFlags, buildStandings, buildTelemetry } from "../src/frames.js";
+import { decodeFlags, lampFlags, sessionStateName } from "../src/flags.js";
 import { fixturePath } from "../src/paths.js";
 import { normalizeSession } from "../src/session.js";
 import { clutchPedal } from "../src/sources/iracing-source.js";
@@ -21,6 +21,44 @@ test("decodes combined session flags, including the high start-light bit", () =>
   assert.deepEqual(decodeFlags(0x4 | 0x20), ["green", "blue"]);
   assert.deepEqual(decodeFlags(0x80000000), ["startGo"]);
   assert.deepEqual(decodeFlags(0), []);
+});
+
+test("pace lap keeps the green bit off the digiflag lamp until the lights go", () => {
+  const paceGreen = 0x10040004;
+  assert.deepEqual(lampFlags(3, paceGreen), ["serviceable", "startHidden"]);
+  assert.deepEqual(decodeFlags(paceGreen), ["green", "serviceable", "startHidden"]);
+  const ready = 0x20040204;
+  assert.equal(lampFlags(3, ready).includes("green"), false);
+  const go = 0x80040204;
+  assert.deepEqual(lampFlags(3, go), ["green", "oneLapToGreen", "serviceable", "startGo"]);
+  assert.equal(lampFlags(4, paceGreen).includes("green"), true);
+  const tick = {
+    sessionTick: 1,
+    sessionNum: 1,
+    sessionState: 3,
+    sessionTimeRemainSec: 0,
+    sessionLapsRemain: 10,
+    sessionFlags: paceGreen,
+    displayUnits: 0 as const,
+    replay: false,
+    playerCarIdx: 0,
+    playerEstTimeSec: 0,
+    speedMps: 0,
+    rpm: 0,
+    gear: 0,
+    throttle: 0,
+    brake: 0,
+    clutch: 0,
+    steeringWheelAngleRad: 0,
+    steeringWheelAngleMaxRad: 0,
+    lap: 0,
+    lapCurrentSec: 0,
+    lapLastSec: 0,
+    lapBestSec: 0,
+    onTrack: true,
+    cars: [],
+  };
+  assert.deepEqual(buildFlags(tick).flags, ["serviceable", "startHidden"]);
 });
 
 test("names session states", () => {

@@ -2,11 +2,11 @@
 
 Cove 16 flag matrix for the OBS browser source at `/digiflag`. The source is square. A 288×288 source matches the study, and other sizes keep the same corner. The square sits in the top-right of the viewport. The page has no panel.
 
-The server sends every decoded `SessionFlags` name at 10 Hz. One lamp is drawn. Driver warnings win over the race-state lamps:
+The server sends decoded `SessionFlags` names at 10 Hz. During the pace lap it withholds `green` and `greenHeld` until `startGo`. One lamp is drawn. Driver warnings win over the race-state lamps:
 
 disqualify, black, repair, furled, red, checkered, caution waving, caution, yellow waving, random waving, yellow, debris, white, blue, crossed, green held, start go, green.
 
-`serviceable`, `dqScoringInvalid`, `startHidden`, `startReady`, `startSet`, `fiveToGo`, `tenToGo`, and `oneLapToGreen` leave the matrix clear. The SDK describes the service bit as not a flag. The others are a scoring state, the start lights, and the lap-count boards.
+`serviceable`, `dqScoringInvalid`, `startHidden`, `startReady`, `startSet`, `fiveToGo`, `tenToGo`, and `oneLapToGreen` leave the matrix clear. The SDK describes the service bit as not a flag. The others are a scoring state, the start lights, and the lap-count boards. The green lamp also stays off while the start lights are at ready or set, and a held green with no green bit stays off. It lights on start go, and on the green bit once the pace lap is over and those lights have moved on.
 
 Every lamp fades in and fades out over 200 ms when it appears or gives way to another lamp.
 

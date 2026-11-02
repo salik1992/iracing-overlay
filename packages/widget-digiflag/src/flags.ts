@@ -50,6 +50,8 @@ export interface DotPaint {
  * One matrix, so the first match wins. Driver warnings come before the
  * race-state lamps. serviceable, dqScoringInvalid, startHidden, startReady,
  * startSet, fiveToGo, tenToGo, and oneLapToGreen stay off the matrix.
+ * Green and green held also stay off while the start lights are at ready
+ * or set. Green held alone is the starter holding the flag, not the wave.
  */
 const PRIORITY: readonly FlagName[] = [
   "disqualify",
@@ -89,10 +91,18 @@ export function isFlagName(value: string): value is FlagName {
 
 export function shownFlag(names: readonly string[]): FlagName | null {
   const present = new Set(names);
+  const lightsHeld = !present.has("startGo") && (present.has("startReady") || present.has("startSet"));
   for (const name of PRIORITY) {
-    if (present.has(name)) {
-      return name;
+    if (!present.has(name)) {
+      continue;
     }
+    if (name === "greenHeld" && !present.has("green") && !present.has("startGo")) {
+      continue;
+    }
+    if (lightsHeld && (name === "green" || name === "greenHeld")) {
+      continue;
+    }
+    return name;
   }
   return null;
 }

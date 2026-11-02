@@ -1,4 +1,4 @@
-import { decodeFlags, sessionStateName } from "./flags.js";
+import { decodeFlags, lampFlags, sessionStateName } from "./flags.js";
 import { EMPTY_NOTE, type RaceNote } from "./race-memory.js";
 import { tireLetter } from "./tire.js";
 import type { CarSample, Tick } from "./tick.js";
@@ -25,7 +25,7 @@ export function buildTelemetry(tick: Tick): TelemetryFrame {
 }
 
 export function buildFlags(tick: Tick): FlagsFrame {
-  return { flags: decodeFlags(tick.sessionFlags) };
+  return { flags: lampFlags(tick.sessionState, tick.sessionFlags) };
 }
 
 interface Draft {

@@ -39,6 +39,9 @@ const SESSION_STATES: readonly SessionStateName[] = [
   "coolDown",
 ];
 
+/** SessionState parade laps: the pace lap before a flying start. */
+const STATE_PARADE = 3;
+
 /** Decode an iRacing SessionFlags bitfield. Several flags can be set at once. */
 export function decodeFlags(flags: number): string[] {
   const bits = flags | 0;
@@ -49,6 +52,18 @@ export function decodeFlags(flags: number): string[] {
     }
   }
   return names;
+}
+
+/**
+ * Flag names for the digiflag lamp. iRacing can set the green bit on the
+ * pace lap, before the flag waves. Those names stay out until start go.
+ */
+export function lampFlags(sessionState: number, flags: number): string[] {
+  const names = decodeFlags(flags);
+  if (sessionState !== STATE_PARADE || names.includes("startGo")) {
+    return names;
+  }
+  return names.filter((name) => name !== "green" && name !== "greenHeld");
 }
 
 export function sessionStateName(value: number): SessionStateName {

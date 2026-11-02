@@ -42,7 +42,13 @@ test("one lamp wins, and non-flag bits stay dark", () => {
   assert.equal(shownFlag(["debris", "caution"]), "caution");
   assert.equal(shownFlag(["serviceable"]), null);
   assert.equal(shownFlag(["dqScoringInvalid", "startHidden"]), null);
-  assert.equal(shownFlag(["green", "startReady", "startSet", "fiveToGo", "tenToGo", "oneLapToGreen"]), "green");
+  assert.equal(shownFlag(["green", "startReady", "startSet", "fiveToGo", "tenToGo", "oneLapToGreen"]), null);
+  assert.equal(shownFlag(["green", "greenHeld", "startReady"]), null);
+  assert.equal(shownFlag(["green", "startSet"]), null);
+  assert.equal(shownFlag(["greenHeld"]), null);
+  assert.equal(shownFlag(["green", "greenHeld"]), "greenHeld");
+  assert.equal(shownFlag(["startGo", "green", "oneLapToGreen"]), "startGo");
+  assert.equal(shownFlag(["startGo", "greenHeld", "green"]), "greenHeld");
   assert.equal(shownFlag(["startReady", "startSet", "fiveToGo", "tenToGo", "oneLapToGreen"]), null);
   assert.equal(shownFlag([]), null);
 });

@@ -307,7 +307,7 @@ Delivery follows the sim clock.
 
 * A telemetry subscriber receives every tick, which is 60 Hz while iRacing is producing ticks.
 * A standings subscriber receives every sixth tick, which is 10 Hz.
-* A digiflag subscriber receives that same sixth tick. The frame is only the decoded flag names.
+* A digiflag subscriber receives that same sixth tick. The frame is the decoded flag names. On the pace lap, `green` and `greenHeld` are left out until `startGo`, so the matrix stays dark until the flying start.
 * A session subscriber receives a session message when the version changes, including once on hello.
 
 Paused or disconnected sim means ticks stop. The server then sends `{ type: "status", phase: "idle" }` and the widgets keep the last frame on screen, dimmed with the shared `is-idle` class, until ticks resume. Sockets with no subscriber do no work for that channel. One shared-memory read serves every OBS source.
