@@ -1,6 +1,6 @@
 # Standings
 
-Composite timing tower for the OBS browser source at `/standings`. The panel sits at the top left. A 480×1030 source fits a full single-class list of 45 rows at 16px. The panel uses the full width, and its height follows the rows. Rows past the source edge are clipped.
+Composite timing tower for the OBS browser source at `/standings`. The panel sits at the top left. The preferred source is 480×594, the 720p frame with the 126px telemetry above it. The panel uses the full width, and its height follows the rows. Rows past the source edge are clipped.
 
 The page background stays transparent. The panel is the shared terminal panel at 16px, with 6px 8px of padding.
 
@@ -18,23 +18,23 @@ The name is the first initial, a space, and a three-letter stem, in capitals. Vi
 
 ## Window
 
-Other classes show the top 8. A class with fewer than 8 shows every car. A class of 9 shows all nine, and a class of 10 shows the top 8 and a gap, because a hole of one car is drawn as that car. The player's class uses the same window in a single-class field and in a multiclass field. It always shows its top 5.
+Other classes show the top 3. A class with fewer than 3 shows every car. A class of 4 shows all four, and a class of 5 shows the top 3 and a gap, because a hole of one car is drawn as that car. The player's class uses the same window in a single-class field and in a multiclass field. It always shows its top 5.
 
 The rows left for the cars around the player are
 
-`(45 - (classes - 1) × 8 - 5 - 1) / 2`
+`(20 - (classes - 1) × 3 - 5 - 1) / 2`
 
 when the player is outside the top 5. Half of that, rounded up, is the number of cars directly above the player. Half, rounded down, is the number directly below. When the player is already inside the top 5, the formula does not subtract the player again, because that row is one of the five.
 
 Cars above the player that are already in the top 5, or that would sit before P1, are not drawn twice. Those spare rows move below the player. Cars that would sit past the last car in the class move above the player. A hole of one car is still drawn as that car. A larger hole is a line with the omitted count.
 
-A 60-car class with the player in P9 draws P1–P45 and a gap of 15. The same class with the player in P53 draws P1–P5, a gap of 15, and P21–P60. A 46-car class with the player in P1 draws all 46, because the one car past the window is drawn as a car.
+A 60-car class with the player in P9 draws P1–P20 and a gap of 40. The same class with the player in P53 draws P1–P5, a gap of 40, and P46–P60. A 21-car class with the player in P1 draws all 21, because the one car past the window is drawn as a car.
 
-Headings and omit lines do not count toward the 45. With enough classes that eight cars from each other class already pass 45, those classes still show their top 8 and the player class keeps its top 5 and the player.
+Headings and omit lines do not count toward the 20. With enough classes that three cars from each other class already pass 20, those classes still show their top 3 and the player class keeps its top 5 and the player.
 
 Multiclass draws one group per class, ordered by the best overall position in the class. Each class position starts at 1.
 
-The sizes live in `src/constants.ts`: `TOP_N` 5, `OTHER_TOP` 8, `MAX_ROWS` 45, `TEAM_MS` 10000.
+The sizes live in `src/constants.ts`: `TOP_N` 5, `OTHER_TOP` 3, `MAX_ROWS` 20, `TEAM_MS` 10000.
 
 A car on pit road, stopped in its stall, or sitting in the garage is drawn at 0.7 opacity. The garage is track surface NotInWorld. A car off the racing surface keeps full opacity.
 

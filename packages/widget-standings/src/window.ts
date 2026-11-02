@@ -3,8 +3,8 @@ import { MAX_ROWS, OTHER_TOP, TOP_N } from "./constants.js";
 export type WindowItem = { kind: "car"; position: number } | { kind: "gap"; count: number };
 
 /**
- * Top 8 of a class that does not contain the player.
- * Fewer than 8 shows the whole class. A one-car tail is that car, so 9 shows all 9.
+ * Top 3 of a class that does not contain the player.
+ * Fewer than 3 shows the whole class. A one-car tail is that car, so 4 shows all 4.
  */
 export function otherClassWindow(count: number): WindowItem[] {
   if (count <= OTHER_TOP + 1) {
@@ -15,7 +15,7 @@ export function otherClassWindow(count: number): WindowItem[] {
 
 /**
  * Player's class, for one class or many.
- * Other classes keep 8 rows each. The top 5 and the player take the next rows.
+ * Other classes keep 3 rows each. The top 5 and the player take the next rows.
  * The spare rows split above and below the player. Above rounds up, below rounds down.
  * Rows that fall inside the top 5 or before P1 move below the player.
  * Rows that fall past the last car move above the player.
