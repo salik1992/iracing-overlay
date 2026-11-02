@@ -6,8 +6,16 @@ import { buildStandings, buildTelemetry } from "../src/frames.js";
 import { decodeFlags, sessionStateName } from "../src/flags.js";
 import { fixturePath } from "../src/paths.js";
 import { normalizeSession } from "../src/session.js";
+import { clutchPedal } from "../src/sources/iracing-source.js";
 import type { Tick } from "../src/tick.js";
 import { parseTrackLengthMeters } from "../src/track-length.js";
+
+test("clutch pedal is the complement of iRacing engagement", () => {
+  assert.equal(clutchPedal(1), 0);
+  assert.equal(clutchPedal(0), 1);
+  assert.equal(clutchPedal(0.25), 0.75);
+  assert.equal(clutchPedal(null), 0);
+});
 
 test("decodes combined session flags, including the high start-light bit", () => {
   assert.deepEqual(decodeFlags(0x4 | 0x20), ["green", "blue"]);

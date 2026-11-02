@@ -188,7 +188,7 @@ export class IRacingSource implements TelemetrySource {
       gear: scalarNumber(sdk, "Gear") ?? 0,
       throttle: scalarNumber(sdk, "Throttle") ?? 0,
       brake: scalarNumber(sdk, "Brake") ?? 0,
-      clutch: scalarNumber(sdk, "Clutch") ?? 0,
+      clutch: clutchPedal(scalarNumber(sdk, "Clutch")),
       steeringWheelAngleRad: scalarNumber(sdk, "SteeringWheelAngle") ?? 0,
       steeringWheelAngleMaxRad: scalarNumber(sdk, "SteeringWheelAngleMax") ?? 0,
       lap: scalarNumber(sdk, "Lap") ?? 0,
@@ -271,6 +271,17 @@ function numberArray(sdk: IRacingSDK, name: SdkName): number[] {
 function boolArray(sdk: IRacingSDK, name: SdkName): boolean[] {
   const variable = sdk.getTelemetryVariable<boolean>(name);
   return variable?.value ?? [];
+}
+
+/**
+ * iRacing's Clutch is 0 when the pedal is pressed and 1 when it is released.
+ * The overlay matches brake and throttle: 0 released, 1 pressed.
+ */
+export function clutchPedal(value: number | null): number {
+  if (value === null || !Number.isFinite(value)) {
+    return 0;
+  }
+  return 1 - value;
 }
 
 function atOr(values: number[], index: number, fallback: number): number {

@@ -348,7 +348,8 @@ These types still live in the server. `shared` exports the `WidgetManifest` type
 | `speedMps` | `Speed` | m/s |
 | `rpm` | `RPM` | |
 | `gear` | `Gear` | -1 reverse, 0 neutral |
-| `throttle`, `brake`, `clutch` | `Throttle`, `Brake`, `Clutch` | 0 to 1 |
+| `throttle`, `brake` | `Throttle`, `Brake` | 0 released to 1 pressed |
+| `clutch` | `Clutch` | 0 released to 1 pressed. The SDK publishes engagement, so this is one minus `Clutch`. |
 | `steeringWheelAngleRad` | `SteeringWheelAngle` | |
 | `steeringWheelAngleMaxRad` | `SteeringWheelAngleMax` | scale for the wheel graphic |
 | `lap` | `Lap` | |
