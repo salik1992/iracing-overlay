@@ -17,26 +17,26 @@ body {
   overflow: hidden;
 }
 
-/* 6 by 18 on the 176 canvas, in the gap above the gear. */
+/* 6 by 18 on the 126 canvas, in the gap above the gear. */
 .rpm-lights {
   position: absolute;
-  top: calc(100vh * 3 / 176);
+  top: calc(100vh * 3 / 126);
   left: 50%;
   transform: translateX(-50%);
   display: flex;
-  gap: calc(100vh * 6 / 176);
+  gap: calc(100vh * 6 / 126);
   z-index: 1;
   pointer-events: none;
 }
 
 .rpm-segment {
   display: flex;
-  gap: calc(100vh * 2 / 176);
+  gap: calc(100vh * 2 / 126);
 }
 
 .rpm-light {
-  width: calc(100vh * 18 / 176);
-  height: calc(100vh * 6 / 176);
+  width: calc(100vh * 18 / 126);
+  height: calc(100vh * 6 / 126);
   flex: none;
   background: var(--rule);
 }
@@ -50,9 +50,9 @@ body {
   left: 0;
   right: 0;
   /* Shares a center line with the 28px speed and steering figures at top 16. */
-  top: calc(100vh * 12 / 176);
+  top: calc(100vh * 12 / 126);
   text-align: center;
-  font-size: calc(100vh * 36 / 176);
+  font-size: calc(100vh * 36 / 126);
   font-weight: var(--font-weight-strong);
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.03em;
@@ -65,7 +65,7 @@ body {
 .steer-lock,
 .speed-lock {
   position: absolute;
-  top: calc(100vh * 16 / 176);
+  top: calc(100vh * 16 / 126);
   z-index: 1;
   white-space: nowrap;
 }
@@ -83,14 +83,14 @@ body {
 }
 
 .wheel {
-  width: calc(100vh * 26 / 176);
-  height: calc(100vh * 26 / 176);
+  width: calc(100vh * 26 / 126);
+  height: calc(100vh * 26 / 126);
   flex: none;
   display: block;
 }
 
 .readout {
-  font-size: calc(100vh * 28 / 176);
+  font-size: calc(100vh * 28 / 126);
   font-weight: var(--font-weight-strong);
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.03em;
@@ -98,18 +98,20 @@ body {
 }
 
 .unit {
-  font-size: calc(100vh * 11 / 176);
+  font-size: calc(100vh * 11 / 126);
   font-weight: var(--font-weight);
   letter-spacing: 0.06em;
   line-height: 1;
+  color: var(--number);
 }
 
+/* Side and bottom edges of the panel. The top meets the gear box on the 126 canvas. */
 .trace-row {
   position: absolute;
-  left: calc(100vw * 24 / 440);
-  right: calc(100vw * 16 / 440);
-  top: calc(100vh * 78 / 176);
-  height: calc(100vh * 78 / 176);
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: calc(100vh * 78 / 126);
   display: flex;
   align-items: stretch;
 }

@@ -435,7 +435,7 @@ One Browser Source per widget.
 
 | Source URL | Rate | Suggested starting size |
 |---|---|---|
-| `http://127.0.0.1:8080/telemetry` | 60 Hz | 440×176 |
+| `http://127.0.0.1:8080/telemetry` | 60 Hz | 440×126 |
 | `http://127.0.0.1:8080/digiflag` | 10 Hz | 288×288 |
 | `http://127.0.0.1:8080/standings` | 10 Hz | 480×960 |
 | `http://127.0.0.1:8080/garage` | 10 Hz | The game view. 1920×1080 is a starting size. |

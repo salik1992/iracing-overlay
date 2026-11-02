@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
 import {
@@ -12,6 +13,14 @@ import {
 } from "../src/format.js";
 import { HISTORY_GAP_MS, HISTORY_MS, pedalPaths, remember, type PedalSample } from "../src/history.js";
 import { parseMessage } from "../src/parse.js";
+
+test("units are orange and the trace sits on the panel edges", () => {
+  const css = readFileSync(new URL("../style.css", import.meta.url), "utf8");
+  assert.match(css, /\.unit\s*\{[^}]*color:\s*var\(--number\)/);
+  assert.match(css, /\.trace-row\s*\{[^}]*\bleft:\s*0;/);
+  assert.match(css, /\.trace-row\s*\{[^}]*\bright:\s*0;/);
+  assert.match(css, /\.trace-row\s*\{[^}]*\bbottom:\s*0;/);
+});
 
 test("gear labels use a digit, N, or R", () => {
   assert.equal(gearLabel(3), "3");
