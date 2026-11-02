@@ -8,6 +8,8 @@ const NOT_IN_WORLD = -1;
 const STATE_GET_IN_CAR = 1;
 const STATE_WARMUP = 2;
 const STATE_PARADE = 3;
+const STATE_RACING = 4;
+const STATE_CHECKERED = 5;
 
 interface GridPlace {
   position: number;
@@ -84,9 +86,10 @@ export function buildStandings(
   }
 
   const grid = qualifyingGrid(tick, session);
+  const byPlace = grid !== null || liveClassPosition !== null || raceUnderway(tick, session);
   const rows: StandingRow[] = [];
   for (const list of groups.values()) {
-    list.sort(byClass(liveClassPosition, grid));
+    list.sort(byClass(liveClassPosition, grid, byPlace));
     const leader = list[0]?.car;
     for (let index = 0; index < list.length; index += 1) {
       const draft = list[index];
@@ -102,6 +105,8 @@ export function buildStandings(
   }
   if (grid) {
     rows.sort((a, b) => gridRank(grid, a.carIdx) - gridRank(grid, b.carIdx) || a.carIdx - b.carIdx);
+  } else if (byPlace) {
+    rows.sort((a, b) => placeRank(a.position) - placeRank(b.position) || a.carIdx - b.carIdx);
   } else {
     rows.sort((a, b) => postedRank(a.bestLapSec) - postedRank(b.bestLapSec) || a.position - b.position || a.carIdx - b.carIdx);
   }
@@ -154,6 +159,7 @@ function toRow(
 function byClass(
   live: ReadonlyMap<number, number> | null,
   grid: ReadonlyMap<number, GridPlace> | null,
+  byPlace: boolean,
 ): (a: Draft, b: Draft) => number {
   return (a, b) => {
     if (grid) {
@@ -163,11 +169,20 @@ function byClass(
         a.car.carIdx - b.car.carIdx
       );
     }
-    const posted = postedRank(a.car.bestLapSec) - postedRank(b.car.bestLapSec);
-    const left = classKey(a, live);
-    const right = classKey(b, live);
-    return posted || left - right || a.car.position - b.car.position || a.car.carIdx - b.car.carIdx;
+    const place = classKey(a, live) - classKey(b, live) || a.car.position - b.car.position || a.car.carIdx - b.car.carIdx;
+    if (byPlace) {
+      return place;
+    }
+    return postedRank(a.car.bestLapSec) - postedRank(b.car.bestLapSec) || place;
   };
+}
+
+/** Racing and checkered. An invalidated lap has no best time and must not move the car. */
+function raceUnderway(tick: Tick, session: SessionSnapshot | null): boolean {
+  if (session === null || !isRaceSession(session.session.type)) {
+    return false;
+  }
+  return tick.sessionState === STATE_RACING || tick.sessionState === STATE_CHECKERED;
 }
 
 /**
@@ -206,9 +221,13 @@ function isRaceSession(type: string): boolean {
   return text === "race" || text.endsWith(" race");
 }
 
-/** Cars that have not posted a lap sort after cars that have. */
+/** Practice and qualifying: cars that have not posted a lap sort after cars that have. */
 function postedRank(bestLapSec: number | null): number {
   return bestLapSec !== null && Number.isFinite(bestLapSec) && bestLapSec > 0 ? 0 : 1;
+}
+
+function placeRank(position: number): number {
+  return position > 0 ? position : Number.MAX_SAFE_INTEGER;
 }
 
 function classKey(draft: Draft, live: ReadonlyMap<number, number> | null): number {

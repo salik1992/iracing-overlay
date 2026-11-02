@@ -211,6 +211,20 @@ test("a car with no lap time stays up, with an empty column, after the timed car
   assert.equal(raceCars[2]?.car.gap, "+2L");
 });
 
+test("an invalidated lap keeps the racing place when no best lap exists", () => {
+  const board = buildBoard(session({ type: "Race", laps: "20" }), frame([
+    wire({ carIdx: 1, position: 1, classPosition: 1, carNumber: "1", bestLapSec: 80 }),
+    wire({ carIdx: 2, position: 2, classPosition: 2, carNumber: "8", bestLapSec: null, driverName: "Vit Salomon" }),
+    wire({ carIdx: 3, position: 3, classPosition: 3, carNumber: "3", bestLapSec: 81 }),
+  ], 0));
+  const cars = carItems(board);
+  assert.deepEqual(
+    cars.map((item) => item.car.number),
+    ["1", "8", "3"],
+  );
+  assert.equal(cars[1]?.car.position, 2);
+});
+
 test("a race interval shows before a best lap is posted", () => {
   const board = buildBoard(session({ type: "Race", laps: "20" }), frame([
     wire({ carIdx: 1, position: 1, classPosition: 1, carNumber: "2", bestLapSec: null, intervalSec: null, lapsDown: 0 }),

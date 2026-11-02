@@ -43,7 +43,7 @@ interface ClassGroup {
 
 export function buildBoard(session: SessionFields, frame: StandingsWire): Board {
   const race = isRace(session.type);
-  const groups = groupRows(frame.rows, race && isPreGreen(frame.sessionState ?? ""));
+  const groups = groupRows(frame.rows, race);
   const multi = groups.length > 1;
   const items: BoardItem[] = [];
   if (!multi) {
@@ -160,13 +160,8 @@ function groupRows(rows: readonly StandingWire[], gridOrder: boolean): ClassGrou
   return groups;
 }
 
-/** Get-in-car, warmup, and parade laps of a race follow the qualifying grid. */
-function isPreGreen(state: string): boolean {
-  return state === "getInCar" || state === "warmup" || state === "paradeLaps";
-}
-
-function compareRows(a: StandingWire, b: StandingWire, gridOrder: boolean): number {
-  if (gridOrder) {
+function compareRows(a: StandingWire, b: StandingWire, byPlace: boolean): number {
+  if (byPlace) {
     return (
       placeKey(shownPosition(a)) - placeKey(shownPosition(b)) ||
       placeKey(a.position) - placeKey(b.position) ||

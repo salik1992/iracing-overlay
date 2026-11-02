@@ -90,6 +90,51 @@ test("crossing the start finish does not add a lap to the interval", () => {
   assert.equal(fromBest.rows.find((row) => row.carIdx === 2)?.intervalSec, 4);
 });
 
+test("an invalidated lap keeps the race place when no best lap exists", () => {
+  const session = normalizeSession(
+    {
+      DriverInfo: {
+        DriverCarIdx: 2,
+        Drivers: [
+          { CarIdx: 1, UserName: "Lead", CarNumber: "1", CarClassID: 1, CarClassShortName: "GTP" },
+          { CarIdx: 2, UserName: "Vit Salomon", CarNumber: "8", CarClassID: 1, CarClassShortName: "GTP" },
+          { CarIdx: 3, UserName: "Chase", CarNumber: "3", CarClassID: 1, CarClassShortName: "GTP" },
+        ],
+      },
+      SessionInfo: { Sessions: [{ SessionNum: 0, SessionType: "Race" }] },
+    },
+    { sessionNum: 0, displayUnits: 1 },
+  );
+  const cars = [
+    sample(1, 1, 1, 4, 0.4, 0, -1),
+    sample(2, 2, 2, 4, 0.3, 1.25, -1),
+    sample(3, 3, 3, 4, 0.2, 2.5, -1),
+  ];
+  const invalid = cars[1];
+  if (!invalid) {
+    throw new Error("missing car");
+  }
+  invalid.bestLapSec = -1;
+  invalid.lastLapSec = -1;
+  const tick = makeTick(cars, { sessionState: 4, sessionNum: 0 });
+  const frame = buildStandings(tick, session);
+  assert.deepEqual(
+    frame.rows.map((row) => row.carIdx),
+    [1, 2, 3],
+  );
+  assert.equal(frame.rows.find((row) => row.carIdx === 2)?.bestLapSec, null);
+  assert.equal(frame.rows.find((row) => row.carIdx === 2)?.classPosition, 2);
+  assert.equal(frame.rows.find((row) => row.carIdx === 2)?.intervalSec, 1.25);
+  assert.equal(frame.rows.find((row) => row.carIdx === 3)?.intervalSec, 1.25);
+
+  const live = buildStandings(tick, session, undefined, new Map([[1, 1], [2, 2], [3, 3]]));
+  assert.deepEqual(
+    live.rows.map((row) => row.carIdx),
+    [1, 2, 3],
+  );
+  assert.equal(live.rows.find((row) => row.carIdx === 2)?.intervalSec, 1.25);
+});
+
 test("a car two laps behind the class leader reports two laps down", () => {
   const tick = makeTick([
     sample(1, 1, 1, 10, 0.1, 0, -1),
