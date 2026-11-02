@@ -11,7 +11,7 @@ body {
   max-height: 100%;
   overflow: hidden;
   padding: 6px 8px 4px;
-  font-size: 13px;
+  font-size: 14px;
   font-variant-numeric: tabular-nums;
 }
 
@@ -116,7 +116,7 @@ body {
   align-self: center;
   display: grid;
   place-items: center;
-  height: 14px;
+  height: 16px;
   background: var(--plate, var(--rule));
   text-align: center;
   line-height: 1;
@@ -173,11 +173,11 @@ body {
   justify-self: center;
   display: grid;
   place-items: center;
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   background: var(--rule);
   color: var(--fg);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
   line-height: 1;
 }
@@ -211,9 +211,9 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
-  height: 16px;
+  height: 18px;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .omit-line {
@@ -231,9 +231,9 @@ body {
   grid-template-columns: 2.4ch minmax(0, 1fr);
   column-gap: 8px;
   align-items: center;
-  height: 16px;
+  height: 18px;
   margin-top: 8px;
-  font-size: 13px;
+  font-size: 14px;
   letter-spacing: 0;
   color: var(--class);
 }
@@ -256,7 +256,7 @@ body {
 
 .classname {
   flex: none;
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }

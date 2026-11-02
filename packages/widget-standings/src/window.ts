@@ -18,17 +18,18 @@ export function windowPositions(
   playerPos: number,
   radius: number,
   fillOnOverlap: boolean,
+  topCount: number = TOP_N,
 ): WindowItem[] {
   if (count <= MAX_ROWS && radius >= count) {
     return range(1, count).map((position) => ({ kind: "car", position }));
   }
-  if (count <= TOP_N) {
+  if (count <= topCount) {
     return range(1, count).map((position) => ({ kind: "car", position }));
   }
 
   const start = Math.max(1, playerPos - radius);
   const end = Math.min(count, playerPos + radius);
-  const mid = start - TOP_N - 1;
+  const mid = start - topCount - 1;
   if (fillOnOverlap && mid <= 0) {
     let shown = Math.min(count, MAX_ROWS);
     if (count - shown === 1) {
@@ -41,18 +42,18 @@ export function windowPositions(
     return items;
   }
 
-  const items: WindowItem[] = range(1, Math.min(TOP_N, count)).map((position) => ({ kind: "car", position }));
+  const items: WindowItem[] = range(1, Math.min(topCount, count)).map((position) => ({ kind: "car", position }));
   if (radius === 0) {
-    pushTail(items, TOP_N, count);
+    pushTail(items, topCount, count);
     return items;
   }
   if (mid === 1) {
-    items.push({ kind: "car", position: TOP_N + 1 });
+    items.push({ kind: "car", position: topCount + 1 });
   } else if (mid > 1) {
     items.push({ kind: "gap", count: mid });
   }
   if (end >= start) {
-    for (const position of range(Math.max(start, TOP_N + 1), end)) {
+    for (const position of range(Math.max(start, topCount + 1), end)) {
       if (!items.some((item) => item.kind === "car" && item.position === position)) {
         items.push({ kind: "car", position });
       }

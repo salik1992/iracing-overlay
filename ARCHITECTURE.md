@@ -426,7 +426,7 @@ One Browser Source per widget.
 |---|---|---|
 | `http://127.0.0.1:8080/telemetry` | 60 Hz | 440×176 |
 | `http://127.0.0.1:8080/digiflag` | 10 Hz | 288×288 |
-| `http://127.0.0.1:8080/standings` | 10 Hz | 480×640 |
+| `http://127.0.0.1:8080/standings` | 10 Hz | 480×960 |
 
 In the source properties: set the width and height to the widget, enable "Shutdown source when not visible", and enable "Refresh browser when scene becomes active". Leave the page background transparent. Custom CSS in the source is unnecessary because each widget ships its own stylesheet.
 

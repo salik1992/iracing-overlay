@@ -1,5 +1,5 @@
 import { tokyo } from "./color.js";
-import { MULTI_RADIUS, PLAYER_RADIUS } from "./constants.js";
+import { MULTI_RADIUS, OTHER_TOP, PLAYER_RADIUS } from "./constants.js";
 import { gainedPlaces, headerMeta, isRace, otherGap, raceGap } from "./format.js";
 import { splitShort } from "./names.js";
 import type { SessionFields, StandingWire, StandingsWire } from "./types.js";
@@ -85,7 +85,7 @@ export function buildBoard(session: SessionFields, frame: StandingsWire): Board 
 function windowFor(group: ClassGroup, single: boolean): WindowItem[] {
   const playerIndex = group.rows.findIndex((row) => row.isPlayer);
   if (playerIndex < 0) {
-    return windowPositions(group.rows.length, 1, 0, false);
+    return windowPositions(group.rows.length, 1, 0, false, OTHER_TOP);
   }
   if (!single) {
     return windowPositions(group.rows.length, playerIndex + 1, MULTI_RADIUS, false);

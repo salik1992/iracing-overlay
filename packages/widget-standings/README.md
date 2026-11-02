@@ -1,8 +1,8 @@
 # Standings
 
-Composite timing tower for the OBS browser source at `/standings`. The panel sits at the top left. A 480×640 source matches the layout, and the panel uses the full width. Its height follows the rows. Rows past the source edge are clipped.
+Composite timing tower for the OBS browser source at `/standings`. The panel sits at the top left. A 480×960 source fits a full single-class list. The panel uses the full width, and its height follows the rows. Rows past the source edge are clipped.
 
-The page background stays transparent. The panel is the shared terminal panel at 13px, with 6px 8px of padding.
+The page background stays transparent. The panel is the shared terminal panel at 14px, with 6px 8px of padding.
 
 ## Columns
 
@@ -18,15 +18,15 @@ The name is the first initial, a space, and a three-letter stem, in capitals. Vi
 
 ## Window
 
-The top 5 are always in the list. A single class shows at most 30 drivers, with the player centered and 10 cars on each side. When that window meets the top 5, the list fills from P1 up to 30. A field of 31 with the player at the front draws all 31, because a one-car tail takes the same space as a gap line.
+The top 5 are always in the list. A single class shows at most 45 drivers, with the player centered and 10 cars on each side. When that window meets the top 5, the list fills from P1 up to 45. A field of 46 with the player at the front draws all 46, because a one-car tail takes the same space as a gap line.
 
-Multiclass draws one group per class, ordered by the best overall position in the class. Each class position starts at 1. The player class merges the top 5 with the player ±3 and does not fill out to 30. Every other class shows its top 5. A class of 6 shows all six. A class of 9 shows the top 5 and a gap.
+Multiclass draws one group per class, ordered by the best overall position in the class. Each class position starts at 1. The player class merges the top 5 with the player ±3 and does not fill out to 45. Every other class shows its top 8. A class of 9 shows all nine. A class of 10 shows the top 8 and a gap.
 
 A hole of one car is drawn as that car. A larger hole, and the cars after the window, are a line with the omitted count.
 
-The whole widget caps at 30 driver rows. Headings and omit lines do not count. The player's class stays whole. Other classes lose cars from the last class backward, and a class that loses every car loses its heading. Because a one-car omit is drawn as a car, a cut that would leave a single car omitted removes two so the row count falls.
+The whole widget caps at 45 driver rows. Headings and omit lines do not count. The player's class stays whole. Other classes lose cars from the last class backward, and a class that loses every car loses its heading. Because a one-car omit is drawn as a car, a cut that would leave a single car omitted removes two so the row count falls.
 
-The sizes live in `src/constants.ts`: `TOP_N` 5, `MAX_ROWS` 30, `PLAYER_RADIUS` 10, `MULTI_RADIUS` 3, `TEAM_MS` 10000.
+The sizes live in `src/constants.ts`: `TOP_N` 5, `OTHER_TOP` 8, `MAX_ROWS` 45, `PLAYER_RADIUS` 10, `MULTI_RADIUS` 3, `TEAM_MS` 10000.
 
 ## Gap
 
