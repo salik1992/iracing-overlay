@@ -1,5 +1,14 @@
-import type { DisplayUnits } from "./format.js";
-import { gearLabel, speedReadout, steerReadout, steerUnitText } from "./format.js";
+import {
+  EMPTY_SHIFT,
+  gearLabel,
+  shiftBlinkOn,
+  shiftLights,
+  speedReadout,
+  steerReadout,
+  steerUnitText,
+  type DisplayUnits,
+  type ShiftLightPoints,
+} from "./format.js";
 import { clamp01, pedalPaths, remember, type Pedal, type PedalSample } from "./history.js";
 import type { TelemetrySample } from "./parse.js";
 
@@ -9,11 +18,13 @@ const PEDALS: readonly Pedal[] = ["clutch", "brake", "throttle"];
 export interface TelemetryView {
   setIdle(idle: boolean): void;
   setUnits(units: DisplayUnits): void;
+  setShift(points: ShiftLightPoints): void;
   show(frame: TelemetrySample, at?: number): void;
 }
 
 export function createView(parent: ParentNode): TelemetryView {
   const panel = element("div", "panel");
+  const rpmLamps = rpmBar();
   const gear = element("div", "gear");
   gear.textContent = "N";
 
@@ -66,17 +77,26 @@ export function createView(parent: ParentNode): TelemetryView {
 
   const traceRow = element("div", "trace-row");
   traceRow.append(traces, bars);
-  panel.append(gear, steerLock, speedLock, traceRow);
+  panel.append(rpmLamps.bar, gear, steerLock, speedLock, traceRow);
   parent.append(panel);
 
   const history: PedalSample[] = [];
   let units: DisplayUnits = 1;
+  let shift: ShiftLightPoints = EMPTY_SHIFT;
   let last: TelemetrySample | null = null;
+  let shownAt = 0;
 
   const paintSpeed = (): void => {
     const readout = speedReadout(last?.speedMps ?? 0, units);
     speedValue.textContent = readout.value;
     speedUnit.textContent = readout.unit;
+  };
+
+  const paintRpm = (rpm: number, at: number): void => {
+    const on = shiftLights(rpm, shift, shiftBlinkOn(at));
+    rpmLamps.lamps.forEach((lamp, index) => {
+      lamp.classList.toggle("is-on", on[index] === true);
+    });
   };
 
   return {
@@ -87,14 +107,22 @@ export function createView(parent: ParentNode): TelemetryView {
       units = next;
       paintSpeed();
     },
+    setShift(points: ShiftLightPoints): void {
+      shift = points;
+      if (last) {
+        paintRpm(last.rpm, shownAt);
+      }
+    },
     show(frame: TelemetrySample, at = Date.now()): void {
       last = frame;
+      shownAt = at;
       gear.textContent = gearLabel(frame.gear);
       const steer = steerReadout(frame.steeringWheelAngleRad);
       steerValue.textContent = steer.degrees;
       steerUnit.textContent = steerUnitText(steer.side);
       wheel.style.transform = `rotate(${steer.wheelDeg.toFixed(2)}deg)`;
       paintSpeed();
+      paintRpm(frame.rpm, at);
       for (const pedal of PEDALS) {
         fills[pedal].style.height = `${(clamp01(frame[pedal]) * 100).toFixed(1)}%`;
       }
@@ -111,6 +139,21 @@ export function createView(parent: ParentNode): TelemetryView {
       }
     },
   };
+}
+
+function rpmBar(): { bar: HTMLDivElement; lamps: HTMLSpanElement[] } {
+  const bar = element("div", "rpm-lights");
+  const lamps: HTMLSpanElement[] = [];
+  for (const name of ["green", "yellow", "red"] as const) {
+    const segment = element("div", `rpm-segment ${name}`);
+    for (let index = 0; index < 5; index += 1) {
+      const lamp = element("span", "rpm-light");
+      lamps.push(lamp);
+      segment.append(lamp);
+    }
+    bar.append(segment);
+  }
+  return { bar, lamps };
 }
 
 function wheelSvg(): SVGSVGElement {

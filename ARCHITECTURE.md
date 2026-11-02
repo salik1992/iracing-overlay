@@ -331,7 +331,7 @@ type ServerMessage =
   | { type: "flags"; tick: number; frame: FlagsFrame };
 ```
 
-These types still live in the server. `shared` exports the `WidgetManifest` type, the websocket client, and the JSON readers. The client sends hello, reconnects, and hands each text frame to the page. The telemetry page parses the status, session units, and telemetry fields it draws. The digiflag page parses the status and the flag names. The standings page parses the status, the session type, the lap and time limits, the team-racing flag, and the standings frame. `FlagsFrame` is `flags: string[]`, the same names standings carries.
+These types still live in the server. `shared` exports the `WidgetManifest` type, the websocket client, and the JSON readers. The client sends hello, reconnects, and hands each text frame to the page. The telemetry page parses the status, the session units, the shift-light RPM points, and the telemetry fields it draws. The digiflag page parses the status and the flag names. The standings page parses the status, the session type, the lap and time limits, the team-racing flag, and the standings frame. `FlagsFrame` is `flags: string[]`, the same names standings carries.
 
 `SessionSnapshot` is the normalized slice of the YAML document:
 
@@ -346,7 +346,7 @@ These types still live in the server. `shared` exports the `WidgetManifest` type
 | Field | Source | Notes |
 |---|---|---|
 | `speedMps` | `Speed` | m/s |
-| `rpm` | `RPM` | |
+| `rpm` | `RPM` | Fifteen shift lights on the telemetry page. The session message carries the four RPM points. |
 | `gear` | `Gear` | -1 reverse, 0 neutral |
 | `throttle`, `brake` | `Throttle`, `Brake` | 0 released to 1 pressed |
 | `clutch` | `Clutch` | 0 released to 1 pressed. The SDK publishes engagement, so this is one minus `Clutch`. |

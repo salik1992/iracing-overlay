@@ -1,9 +1,10 @@
 import { asFinite, asRecord, parseRecord, parseStatus, type Phase } from "@salik1992/iracing-overlay-shared/json";
 
-import type { DisplayUnits } from "./format.js";
+import { EMPTY_SHIFT, type DisplayUnits, type ShiftLightPoints } from "./format.js";
 
 export interface TelemetrySample {
   speedMps: number;
+  rpm: number;
   gear: number;
   throttle: number;
   brake: number;
@@ -13,7 +14,7 @@ export interface TelemetrySample {
 
 export type Incoming =
   | { type: "status"; phase: Phase }
-  | { type: "session"; displayUnits: DisplayUnits }
+  | { type: "session"; displayUnits: DisplayUnits; shift: ShiftLightPoints }
   | { type: "telemetry"; frame: TelemetrySample };
 
 export function parseMessage(text: string): Incoming | null {
@@ -43,7 +44,25 @@ function parseSession(session: unknown): Incoming | null {
   if (units !== 0 && units !== 1) {
     return null;
   }
-  return { type: "session", displayUnits: units };
+  const shift = asRecord(player.shiftLight);
+  return {
+    type: "session",
+    displayUnits: units,
+    shift: {
+      firstRpm: rpmPoint(shift?.firstRpm),
+      shiftRpm: rpmPoint(shift?.shiftRpm),
+      lastRpm: rpmPoint(shift?.lastRpm),
+      blinkRpm: rpmPoint(shift?.blinkRpm),
+    },
+  };
+}
+
+function rpmPoint(value: unknown): number {
+  const parsed = asFinite(value);
+  if (parsed === null || parsed <= 0) {
+    return EMPTY_SHIFT.firstRpm;
+  }
+  return parsed;
 }
 
 function parseTelemetry(frame: unknown): Incoming | null {
@@ -52,6 +71,7 @@ function parseTelemetry(frame: unknown): Incoming | null {
     return null;
   }
   const speedMps = asFinite(record.speedMps);
+  const rpm = asFinite(record.rpm);
   const gear = asFinite(record.gear);
   const throttle = asFinite(record.throttle);
   const brake = asFinite(record.brake);
@@ -59,6 +79,7 @@ function parseTelemetry(frame: unknown): Incoming | null {
   const steeringWheelAngleRad = asFinite(record.steeringWheelAngleRad);
   if (
     speedMps === null ||
+    rpm === null ||
     gear === null ||
     throttle === null ||
     brake === null ||
@@ -69,6 +90,6 @@ function parseTelemetry(frame: unknown): Incoming | null {
   }
   return {
     type: "telemetry",
-    frame: { speedMps, gear, throttle, brake, clutch, steeringWheelAngleRad },
+    frame: { speedMps, rpm, gear, throttle, brake, clutch, steeringWheelAngleRad },
   };
 }

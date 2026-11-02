@@ -17,6 +17,34 @@ body {
   overflow: hidden;
 }
 
+/* 6 by 18 on the 176 canvas, in the gap above the gear. */
+.rpm-lights {
+  position: absolute;
+  top: calc(100vh * 3 / 176);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: calc(100vh * 6 / 176);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.rpm-segment {
+  display: flex;
+  gap: calc(100vh * 2 / 176);
+}
+
+.rpm-light {
+  width: calc(100vh * 18 / 176);
+  height: calc(100vh * 6 / 176);
+  flex: none;
+  background: var(--rule);
+}
+
+.rpm-segment.green .rpm-light.is-on { background: var(--good); }
+.rpm-segment.yellow .rpm-light.is-on { background: var(--caution); }
+.rpm-segment.red .rpm-light.is-on { background: var(--bad); }
+
 .gear {
   position: absolute;
   left: 0;

@@ -13,6 +13,7 @@ connectWidget(manifest.id, parseMessage, (message) => {
   }
   if (message.type === "session") {
     view.setUnits(message.displayUnits);
+    view.setShift(message.shift);
     return;
   }
   view.show(message.frame);

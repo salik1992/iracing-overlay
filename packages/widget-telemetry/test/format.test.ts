@@ -1,7 +1,15 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { gearLabel, speedReadout, steerReadout, steerUnitText } from "../src/format.js";
+import {
+  gearLabel,
+  shiftBlinkOn,
+  shiftLights,
+  speedReadout,
+  steerReadout,
+  steerUnitText,
+  type ShiftLightPoints,
+} from "../src/format.js";
 import { HISTORY_GAP_MS, HISTORY_MS, pedalPaths, remember, type PedalSample } from "../src/history.js";
 import { parseMessage } from "../src/parse.js";
 
@@ -71,6 +79,40 @@ test("a gap in the pedal history starts a new trace segment", () => {
   assert.equal(paths.area.match(/Z/g)?.length, 2);
 });
 
+const demoShift: ShiftLightPoints = {
+  firstRpm: 6000,
+  shiftRpm: 7000,
+  lastRpm: 7500,
+  blinkRpm: 7800,
+};
+
+test("shift lights fill green, then yellow, then red, and blink at the blink point", () => {
+  const lit = (rpm: number, blinkOn = true): number =>
+    shiftLights(rpm, demoShift, blinkOn).filter(Boolean).length;
+
+  assert.equal(lit(5999), 0);
+  assert.equal(lit(6000), 1);
+  assert.equal(lit(6499), 5);
+  assert.equal(lit(6500), 6);
+  assert.equal(lit(6900), 10);
+  assert.equal(lit(7000), 11);
+  assert.equal(lit(7400), 15);
+  assert.equal(lit(7799), 15);
+  assert.equal(lit(7800, true), 15);
+  assert.equal(lit(7800, false), 0);
+  assert.equal(shiftBlinkOn(0), true);
+  assert.equal(shiftBlinkOn(100), false);
+  assert.equal(shiftBlinkOn(200), true);
+
+  const early = shiftLights(6500, demoShift, true);
+  assert.deepEqual(early.slice(0, 6), [true, true, true, true, true, true]);
+  assert.equal(early.slice(6).some(Boolean), false);
+
+  const fallback = shiftLights(6000, { firstRpm: 6000, shiftRpm: 5000, lastRpm: 7500, blinkRpm: 0 }, true);
+  assert.equal(fallback.filter(Boolean).length, 1);
+  assert.equal(shiftLights(Number.NaN, demoShift, true).some(Boolean), false);
+});
+
 test("parse keeps the fields this widget draws", () => {
   assert.deepEqual(parseMessage('{"type":"status","phase":"idle","simMode":null}'), {
     type: "status",
@@ -79,7 +121,18 @@ test("parse keeps the fields this widget draws", () => {
   assert.deepEqual(parseMessage('{"type":"session","version":3,"session":{"player":{"displayUnits":0}}}'), {
     type: "session",
     displayUnits: 0,
+    shift: { firstRpm: 0, shiftRpm: 0, lastRpm: 0, blinkRpm: 0 },
   });
+  assert.deepEqual(
+    parseMessage(
+      '{"type":"session","version":3,"session":{"player":{"displayUnits":1,"shiftLight":{"firstRpm":6000,"shiftRpm":7000,"lastRpm":7500,"blinkRpm":7800}}}}',
+    ),
+    {
+      type: "session",
+      displayUnits: 1,
+      shift: demoShift,
+    },
+  );
   const telemetry = parseMessage(JSON.stringify({
     type: "telemetry",
     tick: 4,
@@ -100,6 +153,7 @@ test("parse keeps the fields this widget draws", () => {
     type: "telemetry",
     frame: {
       speedMps: 41.1,
+      rpm: 7000,
       gear: 4,
       throttle: 0.8,
       brake: 0,
