@@ -1,6 +1,6 @@
 import { tokyo } from "./color.js";
 import { MULTI_RADIUS, OTHER_TOP, PLAYER_RADIUS } from "./constants.js";
-import { gainedPlaces, headerMeta, isRace, otherGap, raceGap } from "./format.js";
+import { gainedPlaces, headerMeta, inPitLane, isRace, otherGap, raceGap } from "./format.js";
 import { splitShort } from "./names.js";
 import type { SessionFields, StandingWire, StandingsWire } from "./types.js";
 import { trimOthers, windowPositions, type WindowItem } from "./window.js";
@@ -16,6 +16,7 @@ export interface CarView {
   gained: number;
   gap: string;
   player: boolean;
+  pits: boolean;
   plate: string | null;
 }
 
@@ -125,6 +126,7 @@ function materialize(group: ClassGroup, items: WindowItem[], race: boolean, mult
         gained: gainedPlaces(row.startClassPosition, position),
         gap: race ? raceGap(row, leader) : otherGap(row, best),
         player: row.isPlayer,
+        pits: inPitLane(row.onPitRoad, row.trackSurface),
         plate,
       },
     });

@@ -164,6 +164,9 @@ function updateCar(parts: CarParts, car: CarView): void {
   if (car.player) {
     classes.push("is-player");
   }
+  if (car.pits) {
+    classes.push("is-pits");
+  }
   if (car.plate) {
     classes.push("is-class");
     parts.root.style.setProperty("--plate", car.plate);

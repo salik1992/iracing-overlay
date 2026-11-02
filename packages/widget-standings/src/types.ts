@@ -22,6 +22,8 @@ export interface StandingWire {
   startClassPosition: number;
   intervalSec: number | null;
   lapsDown: number;
+  onPitRoad: boolean;
+  trackSurface: number;
   isPlayer: boolean;
 }
 

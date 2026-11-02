@@ -21,6 +21,7 @@ interface Seed {
   interval: number | null;
   lapsDown: number;
   player: boolean;
+  pitLane: boolean;
 }
 
 export function previewBoard(): Board {
@@ -32,7 +33,7 @@ export function previewBoard(): Board {
       car("01", "Sebastien Bourdais", 2, "H", 0, 1.44, 0),
       car("888", "Filipe Albuquerque", 1, "S", 3, 3.208, 0),
       car("10", "Renger van der Zande", 2, "I", -1, 8.114, 0),
-      car("24", "Tom Blomqvist", 1, "W", 0, null, 1),
+      car("24", "Tom Blomqvist", 1, "W", 0, null, 1, false, true),
       car("59", "Alex Lynn", 0, "M", 2, null, 1),
       car("85", "Richard Westbrook", 1, "H", -1, null, 2),
       car("93", "Sheldon van der Linde", 2, "S", 1, null, 2),
@@ -85,6 +86,8 @@ function klass(cursor: { next: number }, classId: number, className: string, cla
       startClassPosition: start > 0 ? start : 1,
       intervalSec: entry.interval,
       lapsDown: entry.lapsDown,
+      onPitRoad: entry.pitLane,
+      trackSurface: 3,
       isPlayer: entry.player,
     };
   });
@@ -99,6 +102,7 @@ function car(
   interval: number | null,
   lapsDown: number,
   player = false,
+  pitLane = false,
 ): Seed {
-  return { number, name, stops, tire, gained, interval, lapsDown, player };
+  return { number, name, stops, tire, gained, interval, lapsDown, player, pitLane };
 }

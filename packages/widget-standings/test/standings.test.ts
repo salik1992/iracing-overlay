@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
 import { tokyo } from "../src/color.js";
-import { formatLap, formatRemain, gainedPlaces, headerMeta, isRace } from "../src/format.js";
+import { formatLap, formatRemain, gainedPlaces, headerMeta, inPitLane, isRace } from "../src/format.js";
 import { buildBoard, type Board, type BoardItem } from "../src/model.js";
 import { shortName } from "../src/names.js";
 import { parseMessage } from "../src/parse.js";
@@ -32,6 +32,27 @@ test("the window keeps the five studied shapes", () => {
   assert.equal(labels(windowPositions(9, 1, 0, false)), `${span(1, 5)},g4`);
   assert.equal(labels(windowPositions(12, 1, 0, false, OTHER_TOP)), `${span(1, 8)},g4`);
   assert.equal(labels(windowPositions(9, 1, 0, false, OTHER_TOP)), span(1, 9));
+});
+
+test("pit road, the stall, and the garage dim a row", () => {
+  assert.equal(inPitLane(true, 3), true);
+  assert.equal(inPitLane(false, 1), true);
+  assert.equal(inPitLane(false, -1), true);
+  assert.equal(inPitLane(false, 0), false);
+  assert.equal(inPitLane(false, 2), false);
+  assert.equal(inPitLane(false, 3), false);
+
+  const board = buildBoard(session({ type: "Practice" }), frame([
+    wire({ carIdx: 1, position: 1, classPosition: 1, carNumber: "1", onPitRoad: true, trackSurface: 3 }),
+    wire({ carIdx: 2, position: 2, classPosition: 2, carNumber: "2", trackSurface: 1 }),
+    wire({ carIdx: 3, position: 3, classPosition: 3, carNumber: "3", trackSurface: -1 }),
+    wire({ carIdx: 4, position: 4, classPosition: 4, carNumber: "4", trackSurface: 0 }),
+  ]));
+  const byNumber = new Map(carItems(board).map((item) => [item.car.number, item.car.pits]));
+  assert.equal(byNumber.get("1"), true);
+  assert.equal(byNumber.get("2"), true);
+  assert.equal(byNumber.get("3"), true);
+  assert.equal(byNumber.get("4"), false);
 });
 
 test("race mode is the session type", () => {
@@ -264,12 +285,15 @@ test("the preview is a multiclass race through the same board", () => {
   assert.equal(player?.car.number, "8");
   assert.ok(carItems(board).some((item) => item.car.number === "888"));
   assert.equal(player?.car.plate, "#8baae4");
+  assert.equal(carItems(board).find((item) => item.car.number === "24")?.car.pits, true);
+  assert.equal(player?.car.pits, false);
 });
 
 test("the team frame hides the gap and the player tick stays on the row", () => {
   const css = readFileSync(new URL("../style.css", import.meta.url), "utf8");
   assert.match(css, /\.panel\.is-team \.gap\s*\{[^}]*display:\s*none/);
   assert.match(css, /\.row\.is-player\s*\{[^}]*box-shadow:\s*inset 2px 0 0 var\(--accent\)/);
+  assert.match(css, /\.row\.is-pits\s*\{[^}]*opacity:\s*0\.7/);
   assert.doesNotMatch(css, /is-player[^{]*\.num/);
 });
 
@@ -300,6 +324,19 @@ test("the page parses session and standings and ignores other frames", () => {
   assert.equal(standings.frame.rows[0]?.driverName, "Vit Salomon");
   assert.equal(standings.frame.rows[0]?.tire, "W");
   assert.equal(standings.frame.rows[0]?.intervalSec, null);
+  assert.equal(standings.frame.rows[0]?.onPitRoad, false);
+  assert.equal(standings.frame.rows[0]?.trackSurface, 3);
+  const pitting = parseMessage(
+    JSON.stringify({
+      type: "standings",
+      frame: { rows: [{ carIdx: 4, onPitRoad: true, trackSurface: -1 }] },
+    }),
+  );
+  assert.equal(pitting?.type, "standings");
+  if (pitting?.type === "standings") {
+    assert.equal(pitting.frame.rows[0]?.onPitRoad, true);
+    assert.equal(pitting.frame.rows[0]?.trackSurface, -1);
+  }
 });
 
 function labels(items: WindowItem[]): string {
@@ -345,6 +382,8 @@ function wire(patch: Partial<StandingWire>): StandingWire {
     startClassPosition: patch.startClassPosition ?? 0,
     intervalSec: patch.intervalSec === undefined ? null : patch.intervalSec,
     lapsDown: patch.lapsDown ?? 0,
+    onPitRoad: patch.onPitRoad ?? false,
+    trackSurface: patch.trackSurface ?? 3,
     isPlayer: patch.isPlayer ?? false,
   };
 }

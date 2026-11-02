@@ -1,5 +1,13 @@
 import type { SessionFields, StandingWire, StandingsWire } from "./types.js";
 
+const GARAGE = -1;
+const PIT_STALL = 1;
+
+/** Pit road, a car stopped in its stall, or the garage. */
+export function inPitLane(onPitRoad: boolean, trackSurface: number): boolean {
+  return onPitRoad || trackSurface === PIT_STALL || trackSurface === GARAGE;
+}
+
 export function isRace(type: string): boolean {
   const text = type.trim().toLowerCase();
   return text === "race" || text.endsWith(" race");

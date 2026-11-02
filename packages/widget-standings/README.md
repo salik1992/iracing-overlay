@@ -28,6 +28,8 @@ The whole widget caps at 45 driver rows. Headings and omit lines do not count. T
 
 The sizes live in `src/constants.ts`: `TOP_N` 5, `OTHER_TOP` 8, `MAX_ROWS` 45, `PLAYER_RADIUS` 10, `MULTI_RADIUS` 3, `TEAM_MS` 10000.
 
+A car on pit road, stopped in its stall, or sitting in the garage is drawn at 0.7 opacity. The garage is track surface NotInWorld. A car off the racing surface keeps full opacity.
+
 ## Gap
 
 In a race the column is the class interval, three decimals, and the class leader's cell is empty. A car a full lap or more behind the class leader shows `+1L`, `+2L`. Lap distance percent cancels one lap when that car is further through the lap than the leader.

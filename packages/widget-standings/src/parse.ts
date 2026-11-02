@@ -70,6 +70,8 @@ function parseStandings(frame: unknown): Incoming | null {
       startClassPosition: asFiniteOr(row.startClassPosition, 0),
       intervalSec: asFinite(row.intervalSec),
       lapsDown: asFiniteOr(row.lapsDown, 0),
+      onPitRoad: row.onPitRoad === true,
+      trackSurface: asFiniteOr(row.trackSurface, 3),
       isPlayer: row.isPlayer === true,
     });
   }
