@@ -127,7 +127,7 @@ export function paintDot(flag: FlagName, cell: Cell): DotPaint {
     return cell.col % 2 === 0 ? pair(LED.yellow, LED.red) : pair(LED.red, LED.yellow);
   }
   if (flag === "repair") {
-    return inMeatball(cell) ? solid(LED.black) : solid(LED.orange);
+    return inMeatball(cell) ? solid(LED.orange) : solid(LED.black);
   }
   if (flag === "crossed") {
     return onSlash(cell) ? solid(LED.black) : solid(LED.white);
@@ -181,7 +181,7 @@ function pair(a: LedColor, b: LedColor): DotPaint {
   return { a, b, dark: a === LED.black || b === LED.black };
 }
 
-/** Orange field, black ball in the thick part of the cove. */
+/** Orange ball on the black field, in the thick part of the cove. */
 function inMeatball(cell: Cell): boolean {
   const x = (cell.col + 0.5) / 16;
   const y = (cell.row + 0.5) / 16;

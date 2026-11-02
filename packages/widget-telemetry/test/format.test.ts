@@ -20,6 +20,10 @@ test("units are orange and the trace sits on the panel edges", () => {
   assert.match(css, /\.trace-row\s*\{[^}]*\bleft:\s*0;/);
   assert.match(css, /\.trace-row\s*\{[^}]*\bright:\s*0;/);
   assert.match(css, /\.trace-row\s*\{[^}]*\bbottom:\s*0;/);
+  assert.match(css, /\.rpm-segment\.green \.rpm-light\.is-on\s*\{[^}]*background:\s*var\(--good\)/);
+  assert.match(css, /\.rpm-segment\.red \.rpm-light\.is-on\s*\{[^}]*background:\s*var\(--bad\)/);
+  assert.match(css, /\.rpm-segment\.blue \.rpm-light\.is-on\s*\{[^}]*background:\s*var\(--accent\)/);
+  assert.doesNotMatch(css, /\.rpm-segment\.yellow/);
 });
 
 test("gear labels use a digit, N, or R", () => {
@@ -95,7 +99,7 @@ const demoShift: ShiftLightPoints = {
   blinkRpm: 7800,
 };
 
-test("shift lights fill green, then yellow, then red, and blink at the blink point", () => {
+test("shift lights fill green, then red, then blue, and blink at the blink point", () => {
   const lit = (rpm: number, blinkOn = true): number =>
     shiftLights(rpm, demoShift, blinkOn).filter(Boolean).length;
 

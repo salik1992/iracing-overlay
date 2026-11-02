@@ -65,7 +65,7 @@ test("waving and warning lamps blink, debris and checkered swap", () => {
   assert.equal(motionOf("white"), "static");
 });
 
-test("checkered and debris trade colors, repair keeps a black ball", () => {
+test("checkered and debris trade colors, repair keeps an orange ball on black", () => {
   const even = { row: 0, col: 14, dist: 0 };
   const odd = { row: 0, col: 15, dist: 0 };
   assert.deepEqual(paintDot("checkered", even), { a: LED.white, b: LED.black, dark: true });
@@ -75,8 +75,10 @@ test("checkered and debris trade colors, repair keeps a black ball", () => {
 
   const ball = paintDot("repair", { row: 3, col: 12, dist: 0 });
   const field = paintDot("repair", { row: 0, col: 15, dist: 0 });
-  assert.equal(ball.a, LED.black);
-  assert.equal(field.a, LED.orange);
+  assert.equal(ball.a, LED.orange);
+  assert.equal(ball.dark, false);
+  assert.equal(field.a, LED.black);
+  assert.equal(field.dark, true);
 
   const slash = paintDot("crossed", { row: 0, col: 15, dist: 0 });
   const fieldWhite = paintDot("crossed", { row: 0, col: 13, dist: 0 });

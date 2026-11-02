@@ -42,8 +42,8 @@ body {
 }
 
 .rpm-segment.green .rpm-light.is-on { background: var(--good); }
-.rpm-segment.yellow .rpm-light.is-on { background: var(--caution); }
 .rpm-segment.red .rpm-light.is-on { background: var(--bad); }
+.rpm-segment.blue .rpm-light.is-on { background: var(--accent); }
 
 .gear {
   position: absolute;

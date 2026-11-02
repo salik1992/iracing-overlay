@@ -19,7 +19,7 @@ These lamps blink, 500 ms lit and 500 ms dark:
 - furled
 - disqualify
 
-The rest hold still. Green, green held, and start go are green. Yellow and caution are yellow. Red is red. White is white. Black, furled, and disqualify are black. Repair is the orange meatball. Crossed is a white field with a black slash through the corner.
+The rest hold still. Green, green held, and start go are green. Yellow and caution are yellow. Red is red. White is white. Black, furled, and disqualify are black. Repair is an orange ball on a black field. Crossed is a white field with a black slash through the corner.
 
 The lamp colors are signal colors, written in `src/leds.ts`. They are not Tokyo Night tokens, for the same reason a class color stays the session hex.
 

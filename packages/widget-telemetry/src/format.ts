@@ -49,8 +49,8 @@ export function steerUnitText(side: "" | "L" | "R"): string {
 }
 
 export const SHIFT_LIGHTS = 15;
-const GREEN_YELLOW_LIGHTS = 10;
-const RED_LIGHTS = 5;
+const GREEN_RED_LIGHTS = 10;
+const BLUE_LIGHTS = 5;
 /** Full cluster flashes at this period once RPM reaches the blink point. */
 export const SHIFT_BLINK_MS = 100;
 
@@ -70,7 +70,7 @@ export const EMPTY_SHIFT: ShiftLightPoints = {
 
 /**
  * Fifteen lights, left to right. The first ten cross firstRpm to shiftRpm,
- * five green then five yellow. The last five are red and cross shiftRpm to
+ * five green then five red. The last five are blue and cross shiftRpm to
  * lastRpm. At blinkRpm the whole bar follows `blinkOn`.
  */
 export function shiftLights(rpm: number, points: ShiftLightPoints, blinkOn: boolean): boolean[] {
@@ -109,9 +109,9 @@ function litShiftLights(rpm: number, first: number, shift: number, last: number)
   }
   if (shift > first && last > shift) {
     if (rpm < shift) {
-      return lightsInSpan(rpm, first, shift, GREEN_YELLOW_LIGHTS);
+      return lightsInSpan(rpm, first, shift, GREEN_RED_LIGHTS);
     }
-    return GREEN_YELLOW_LIGHTS + lightsInSpan(rpm, shift, last, RED_LIGHTS);
+    return GREEN_RED_LIGHTS + lightsInSpan(rpm, shift, last, BLUE_LIGHTS);
   }
   return lightsInSpan(rpm, first, last, SHIFT_LIGHTS);
 }

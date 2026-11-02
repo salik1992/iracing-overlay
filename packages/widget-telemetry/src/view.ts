@@ -144,7 +144,7 @@ export function createView(parent: ParentNode): TelemetryView {
 function rpmBar(): { bar: HTMLDivElement; lamps: HTMLSpanElement[] } {
   const bar = element("div", "rpm-lights");
   const lamps: HTMLSpanElement[] = [];
-  for (const name of ["green", "yellow", "red"] as const) {
+  for (const name of ["green", "red", "blue"] as const) {
     const segment = element("div", `rpm-segment ${name}`);
     for (let index = 0; index < 5; index += 1) {
       const lamp = element("span", "rpm-light");
