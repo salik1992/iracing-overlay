@@ -4,6 +4,7 @@ import { buildFlags, buildGarage, buildStandings, buildTelemetry } from "./frame
 import { LiveOrder } from "./live-order.js";
 import { PostedLaps, type PostedLap } from "./posted-laps.js";
 import { EMPTY_NOTE, RaceMemory, type RaceNote } from "./race-memory.js";
+import { SectorGaps, type CountedGap } from "./sector-gaps.js";
 import type { TelemetrySource } from "./sources/telemetry-source.js";
 import type { Tick } from "./tick.js";
 import type { ServerMessage, SessionSnapshot, SourceStatus, WidgetServe } from "./types.js";
@@ -25,6 +26,8 @@ export class Hub {
   private liveRanks: ReadonlyMap<number, number> | null = null;
   private readonly posted = new PostedLaps();
   private postedLaps: ReadonlyMap<number, PostedLap> = new Map();
+  private readonly sectors = new SectorGaps();
+  private sectorGaps: ReadonlyMap<number, CountedGap> = new Map();
   private delivered = 0;
 
   constructor(private readonly widgets: readonly WidgetServe[]) {}
@@ -84,6 +87,7 @@ export class Hub {
     this.raceNote = this.race.note(tick);
     this.liveRanks = this.live.note(tick, this.session);
     this.postedLaps = this.posted.note(tick);
+    this.sectorGaps = this.sectors.note(tick, this.session, this.liveRanks);
     this.delivered += 1;
     for (const client of this.clients) {
       const widget = client.widget;
@@ -94,7 +98,15 @@ export class Hub {
       if (this.delivered % every !== 0) {
         continue;
       }
-      const message = frameMessage(widget, tick, this.session, this.raceNote, this.liveRanks, this.postedLaps);
+      const message = frameMessage(
+        widget,
+        tick,
+        this.session,
+        this.raceNote,
+        this.liveRanks,
+        this.postedLaps,
+        this.sectorGaps,
+      );
       if (message) {
         this.send(client.socket, message);
       }
@@ -129,7 +141,15 @@ export class Hub {
       });
     }
     if (this.tick) {
-      const message = frameMessage(widget, this.tick, this.session, this.raceNote, this.liveRanks, this.postedLaps);
+      const message = frameMessage(
+        widget,
+        this.tick,
+        this.session,
+        this.raceNote,
+        this.liveRanks,
+        this.postedLaps,
+        this.sectorGaps,
+      );
       if (message) {
         this.send(client.socket, message);
       }
@@ -169,6 +189,7 @@ function frameMessage(
   note: RaceNote,
   liveClassPosition: ReadonlyMap<number, number> | null,
   postedLaps: ReadonlyMap<number, PostedLap>,
+  sectorGaps: ReadonlyMap<number, CountedGap>,
 ): ServerMessage | null {
   if (widget.id === "telemetry") {
     return { type: "telemetry", tick: tick.sessionTick, frame: buildTelemetry(tick) };
@@ -177,7 +198,7 @@ function frameMessage(
     return {
       type: "standings",
       tick: tick.sessionTick,
-      frame: buildStandings(tick, session, note, liveClassPosition, postedLaps),
+      frame: buildStandings(tick, session, note, liveClassPosition, postedLaps, sectorGaps),
     };
   }
   if (widget.id === "digiflag") {

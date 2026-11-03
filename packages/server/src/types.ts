@@ -73,6 +73,11 @@ export interface SessionSnapshot {
   /** Compound names indexed by CarIdxTireCompound, when the session publishes them. */
   tires: string[];
   /**
+   * SplitTimeInfo sector start positions, as a fraction of the lap.
+   * Always contains 0, the start/finish line. Sorted ascending.
+   */
+  sectorStartPct: number[];
+  /**
    * QualifyResultsInfo.Results. Position and ClassPosition are 0-based.
    * Empty when the weekend has no qualifying classification.
    */

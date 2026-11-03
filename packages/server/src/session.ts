@@ -49,6 +49,7 @@ export function normalizeSession(input: unknown, options: NormalizeOptions): Ses
     },
     drivers,
     tires: readTires(driverInfo["TireCompounds"]),
+    sectorStartPct: readSectors(asRecord(root["SplitTimeInfo"])?.["Sectors"]),
     grid: readResults(asRecord(root["QualifyResultsInfo"])?.["Results"]),
     session: {
       number: asNumber(current?.["SessionNum"]) ?? options.sessionNum,
@@ -117,6 +118,34 @@ function fillBlankClassNames(drivers: Record<string, DriverSnapshot>, screens: R
     }
     driver.className = screens.get(String(driver.carIdx)) ?? "";
   }
+}
+
+/** Sector lines from SplitTimeInfo. The start/finish line is always included. */
+function readSectors(value: unknown): number[] {
+  const found: number[] = [];
+  if (Array.isArray(value)) {
+    for (const entry of value) {
+      const record = asRecord(entry);
+      const pct = record ? asNumber(record["SectorStartPct"]) : null;
+      if (pct === null) {
+        continue;
+      }
+      const normal = pct >= 1 ? 0 : pct;
+      if (normal >= 0 && normal < 1) {
+        found.push(normal);
+      }
+    }
+  }
+  found.push(0);
+  found.sort((a, b) => a - b);
+  const lines: number[] = [];
+  for (const pct of found) {
+    const last = lines[lines.length - 1];
+    if (last === undefined || Math.abs(last - pct) > 1e-6) {
+      lines.push(pct);
+    }
+  }
+  return lines;
 }
 
 function readResults(value: unknown): SessionResult[] {

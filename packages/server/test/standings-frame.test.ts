@@ -52,7 +52,7 @@ test("class interval and laps down stay inside the class", () => {
   assert.equal(lead?.teamName, "Alpha");
   assert.equal(lead?.startClassPosition, 1);
   assert.equal(lead?.pitStops, 0);
-  assert.equal(chase?.intervalSec, 1.25);
+  assert.equal(chase?.intervalSec, null);
   assert.equal(chase?.lapsDown, 0);
   assert.equal(chase?.tire, "W");
   assert.equal(other?.intervalSec, null);
@@ -60,7 +60,7 @@ test("class interval and laps down stay inside the class", () => {
   assert.deepEqual(session?.tires, ["Soft", "Wet"]);
 });
 
-test("crossing the start finish does not add a lap to the interval", () => {
+test("crossing the start finish does not add a lap down", () => {
   const jumped = buildStandings(
     makeTick([
       sample(1, 1, 1, 3, 0.01, 88.5, -1, 90),
@@ -70,54 +70,7 @@ test("crossing the start finish does not add a lap to the interval", () => {
   );
   assert.equal(jumped.rows.find((row) => row.carIdx === 1)?.intervalSec, null);
   assert.equal(jumped.rows.find((row) => row.carIdx === 2)?.lapsDown, 0);
-  assert.equal(jumped.rows.find((row) => row.carIdx === 2)?.intervalSec, 3);
-
-  const steady = buildStandings(
-    makeTick([
-      sample(1, 1, 1, 3, 0.01, 0, -1, 90),
-      sample(2, 2, 2, 2, 0.98, 1.5, -1, 90),
-    ]),
-    null,
-  );
-  assert.equal(steady.rows.find((row) => row.carIdx === 2)?.intervalSec, 1.5);
-
-  const fromBest = buildStandings(
-    makeTick([
-      sample(1, 1, 1, 3, 0.01, 78, -1, -1),
-      sample(2, 2, 2, 2, 0.97, 2, -1, -1),
-    ]),
-    null,
-  );
-  assert.equal(fromBest.rows.find((row) => row.carIdx === 2)?.intervalSec, 4);
-});
-
-test("a start finish straddle uses the short lap gap", () => {
-  const lap = 90;
-  const ahead = sample(1, 1, 1, 4, 0.1, 0, -1, lap);
-  ahead.lapCompleted = 3;
-  const behind = sample(2, 2, 2, 3, 0.9, -0.8 * lap, -1, lap);
-  behind.lapCompleted = 2;
-
-  const negative = buildStandings(makeTick([ahead, behind]), null);
-  assert.equal(negative.rows.find((row) => row.carIdx === 2)?.lapsDown, 0);
-  assert.equal(negative.rows.find((row) => row.carIdx === 2)?.intervalSec, 18);
-
-  behind.estTimeSec = 0.8 * lap;
-  const positive = buildStandings(makeTick([ahead, behind]), null);
-  assert.equal(positive.rows.find((row) => row.carIdx === 2)?.intervalSec, -18);
-
-  ahead.lap = 3;
-  ahead.lapCompleted = 2;
-  behind.lap = 3;
-  behind.lapCompleted = 2;
-  behind.estTimeSec = -0.8 * lap;
-  const lagged = buildStandings(makeTick([ahead, behind]), null);
-  assert.equal(lagged.rows.find((row) => row.carIdx === 2)?.intervalSec, 18);
-
-  const leader = sample(1, 1, 1, 5, 0.9, 0, -1, lap);
-  const trailer = sample(2, 2, 2, 5, 0.1, 0.8 * lap, -1, lap);
-  const far = buildStandings(makeTick([leader, trailer]), null);
-  assert.equal(far.rows.find((row) => row.carIdx === 2)?.intervalSec, 72);
+  assert.equal(jumped.rows.find((row) => row.carIdx === 2)?.intervalSec, null);
 });
 
 test("an invalidated lap keeps the race place when no best lap exists", () => {
@@ -154,15 +107,15 @@ test("an invalidated lap keeps the race place when no best lap exists", () => {
   );
   assert.equal(frame.rows.find((row) => row.carIdx === 2)?.bestLapSec, null);
   assert.equal(frame.rows.find((row) => row.carIdx === 2)?.classPosition, 2);
-  assert.equal(frame.rows.find((row) => row.carIdx === 2)?.intervalSec, 1.25);
-  assert.equal(frame.rows.find((row) => row.carIdx === 3)?.intervalSec, 1.25);
+  assert.equal(frame.rows.find((row) => row.carIdx === 2)?.intervalSec, null);
+  assert.equal(frame.rows.find((row) => row.carIdx === 3)?.intervalSec, null);
 
   const live = buildStandings(tick, session, undefined, new Map([[1, 1], [2, 2], [3, 3]]));
   assert.deepEqual(
     live.rows.map((row) => row.carIdx),
     [1, 2, 3],
   );
-  assert.equal(live.rows.find((row) => row.carIdx === 2)?.intervalSec, 1.25);
+  assert.equal(live.rows.find((row) => row.carIdx === 2)?.intervalSec, null);
 });
 
 test("a qualifying time stays when the driver leaves the car", () => {
@@ -424,6 +377,7 @@ function makeTick(
   }
   return {
     sessionTick: 1,
+    sessionTimeSec: 0,
     sessionNum: options.sessionNum ?? 1,
     sessionState: options.sessionState ?? 4,
     sessionTimeRemainSec: 100,

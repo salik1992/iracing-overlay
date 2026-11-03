@@ -21,6 +21,8 @@ export interface CarSample {
 /** One consistent telemetry sample. Widget frames are derived from this. */
 export interface Tick {
   sessionTick: number;
+  /** SessionTime. Sector intervals are stamped with this clock. */
+  sessionTimeSec: number;
   sessionNum: number;
   sessionState: number;
   sessionTimeRemainSec: number;

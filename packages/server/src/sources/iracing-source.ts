@@ -179,6 +179,7 @@ export class IRacingSource implements TelemetrySource {
 
     const tick: Tick = {
       sessionTick: scalarNumber(sdk, "SessionTick") ?? 0,
+      sessionTimeSec: scalarNumber(sdk, "SessionTime") ?? 0,
       sessionNum,
       sessionState: scalarNumber(sdk, "SessionState") ?? 0,
       sessionTimeRemainSec: scalarNumber(sdk, "SessionTimeRemain") ?? 0,

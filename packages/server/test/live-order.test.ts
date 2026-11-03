@@ -8,7 +8,7 @@ import { normalizeSession } from "../src/session.js";
 import type { CarSample, Tick } from "../src/tick.js";
 import type { SessionSnapshot, StandingsFrame } from "../src/types.js";
 
-test("a pass puts the car ahead on the row and on the interval", () => {
+test("a pass puts the car ahead on the row", () => {
   const session = fieldSession();
   const tick = makeTick([car(1, 1, 5, 0.6, 0), car(2, 2, 5, 0.4, 15.5), car(3, 3, 5, 0.45, 15)]);
   const memory = new RaceMemory();
@@ -22,8 +22,8 @@ test("a pass puts the car ahead on the row and on the interval", () => {
   assert.equal(classOf(frame, 3), 2);
   assert.equal(classOf(frame, 2), 3);
   assert.equal(intervalOf(frame, 1), null);
-  assert.equal(intervalOf(frame, 3), 15);
-  assert.equal(intervalOf(frame, 2), 0.5);
+  assert.equal(intervalOf(frame, 3), null);
+  assert.equal(intervalOf(frame, 2), null);
   assert.equal(gapOf(frame, 1), -15.5);
   assert.equal(gapOf(frame, 3), -0.5);
   assert.equal(gapOf(frame, 2), 0);
@@ -67,8 +67,8 @@ test("the pre-green race follows the qualifying grid, not entry order", () => {
     assert.equal(placeOf(frame, 4)?.position, 0);
     assert.equal(placeOf(frame, 4)?.classPosition, 0);
     assert.equal(intervalOf(frame, 3), null);
-    assert.equal(intervalOf(frame, 1), 2);
-    assert.equal(intervalOf(frame, 2), 3);
+    assert.equal(intervalOf(frame, 1), null);
+    assert.equal(intervalOf(frame, 2), null);
   }
 });
 
@@ -144,10 +144,10 @@ test("each class keeps its own qualifying place", () => {
   assert.equal(placeOf(frame, 1)?.classPosition, 2);
   assert.equal(placeOf(frame, 2)?.position, 2);
   assert.equal(intervalOf(frame, 2), null);
-  assert.equal(intervalOf(frame, 1), 3);
+  assert.equal(intervalOf(frame, 1), null);
 });
 
-test("parade laps keep the official class order and intervals", () => {
+test("parade laps keep the official class order", () => {
   const session = fieldSession();
   const tick = makeTick([car(1, 1, 5, 0.6, 0), car(2, 2, 5, 0.4, 15.5), car(3, 3, 5, 0.45, 15)], {
     sessionState: 3,
@@ -161,8 +161,8 @@ test("parade laps keep the official class order and intervals", () => {
   assert.equal(classOf(frame, 2), 2);
   assert.equal(classOf(frame, 3), 3);
   assert.equal(intervalOf(frame, 1), null);
-  assert.equal(intervalOf(frame, 2), 15.5);
-  assert.equal(intervalOf(frame, 3), -0.5);
+  assert.equal(intervalOf(frame, 2), null);
+  assert.equal(intervalOf(frame, 3), null);
 });
 
 test("practice and lone qualify stay official, and a heat race is live", () => {
@@ -170,11 +170,11 @@ test("practice and lone qualify stay official, and a heat race is live", () => {
   for (const type of ["Practice", "Lone Qualify"]) {
     const frame = publish(new LiveOrder(), fieldSession(type), makeTick(cars));
     assert.equal(classOf(frame, 2), 2, type);
-    assert.equal(intervalOf(frame, 2), 15.5, type);
+    assert.equal(intervalOf(frame, 2), null, type);
   }
   const heat = publish(new LiveOrder(), fieldSession("Heat Race"), makeTick(cars));
   assert.equal(classOf(heat, 2), 3);
-  assert.equal(intervalOf(heat, 2), 0.5);
+  assert.equal(intervalOf(heat, 2), null);
 });
 
 test("a tow into the pit stall keeps the progress from the track", () => {
@@ -402,6 +402,7 @@ function makeTick(
 ): Tick {
   return {
     sessionTick: 1,
+    sessionTimeSec: 0,
     sessionNum: options.sessionNum ?? 1,
     sessionState: options.sessionState ?? 4,
     sessionTimeRemainSec: 100,

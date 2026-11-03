@@ -1,6 +1,7 @@
 import { decodeFlags, lampFlags, sessionStateName } from "./flags.js";
 import { hasLeftCar, type PostedLap } from "./posted-laps.js";
 import { EMPTY_NOTE, type RaceNote } from "./race-memory.js";
+import type { CountedGap } from "./sector-gaps.js";
 import { tireLetter } from "./tire.js";
 import type { CarSample, Tick } from "./tick.js";
 import type { DriverSnapshot, FlagsFrame, GarageFrame, SessionResult, SessionSnapshot, StandingRow, StandingsFrame, TelemetryFrame } from "./types.js";
@@ -74,6 +75,7 @@ export function buildStandings(
   note: RaceNote = EMPTY_NOTE,
   liveClassPosition: ReadonlyMap<number, number> | null = null,
   postedLaps: ReadonlyMap<number, PostedLap> | null = null,
+  sectorGaps: ReadonlyMap<number, CountedGap> | null = null,
 ): StandingsFrame {
   const grid = qualifyingGrid(tick, session);
   const byPlace = grid !== null || liveClassPosition !== null || raceUnderway(tick, session);
@@ -116,7 +118,7 @@ export function buildStandings(
           position = latched > 0 ? latched : official > 0 ? official : position;
         }
       }
-      rows.push(toRow(tick, session, note, draft, ahead?.car ?? null, index === 0, leader, classPosition, position));
+      rows.push(toRow(tick, session, note, draft, ahead?.car ?? null, index === 0, leader, classPosition, position, sectorGaps));
     }
   }
   if (grid) {
@@ -145,6 +147,7 @@ function toRow(
   classLeader: CarSample | undefined,
   classPosition: number,
   position: number,
+  sectorGaps: ReadonlyMap<number, CountedGap> | null,
 ): StandingRow {
   const { car, driver, gap } = draft;
   return {
@@ -160,7 +163,7 @@ function toRow(
     tire: tireLetter(car.tireCompound, session?.tires ?? []),
     pitStops: note.pitStops.get(car.carIdx) ?? 0,
     startClassPosition: note.startClassPosition.get(car.carIdx) ?? 0,
-    intervalSec: leader || ahead === null ? null : interval(ahead, car),
+    intervalSec: raceInterval(leader, ahead?.carIdx, car.carIdx, sectorGaps),
     lapsDown: classLeader ? lapsDown(classLeader, car) : 0,
     lap: car.lap,
     lastLapSec: lapTime(car.lastLapSec),
@@ -230,6 +233,48 @@ function gridClass(grid: ReadonlyMap<number, GridPlace>, carIdx: number): number
 
 function gridRank(grid: ReadonlyMap<number, GridPlace>, carIdx: number): number {
   return grid.get(carIdx)?.position ?? Number.MAX_SAFE_INTEGER;
+}
+
+/**
+ * Car ahead of each competitor in race class order.
+ * Null when this session is not showing a race order.
+ * The sector interval is counted against that car.
+ */
+export function raceClassAhead(
+  tick: Tick,
+  session: SessionSnapshot | null,
+  liveClassPosition: ReadonlyMap<number, number> | null,
+): ReadonlyMap<number, number | null> | null {
+  if (session === null || !isRaceSession(session.session.type)) {
+    return null;
+  }
+  const grid = qualifyingGrid(tick, session);
+  const byPlace = grid !== null || liveClassPosition !== null || raceUnderway(tick, session);
+  if (!byPlace) {
+    return null;
+  }
+  const groups = new Map<number, CarSample[]>();
+  for (const car of standingCars(tick, session)) {
+    const classId = session.drivers[String(car.carIdx)]?.classId ?? 0;
+    const list = groups.get(classId) ?? [];
+    list.push(car);
+    groups.set(classId, list);
+  }
+  const ahead = new Map<number, number | null>();
+  const compare = byClass(liveClassPosition, grid, true);
+  for (const list of groups.values()) {
+    const drafts = list.map((car) => ({ car, driver: undefined, gap: null, bestLapSec: null }));
+    drafts.sort(compare);
+    for (let index = 0; index < drafts.length; index += 1) {
+      const draft = drafts[index];
+      if (!draft) {
+        continue;
+      }
+      const previous = index > 0 ? drafts[index - 1] : undefined;
+      ahead.set(draft.car.carIdx, previous ? previous.car.carIdx : null);
+    }
+  }
+  return ahead;
 }
 
 function isRaceSession(type: string): boolean {
@@ -324,73 +369,21 @@ function gapToPlayer(carEstSec: number, playerEstSec: number): number | null {
   return Math.round((carEstSec - playerEstSec) * 1000) / 1000;
 }
 
-/**
- * CarIdxEstTime follows the raw lap-percent delta. After one car crosses
- * the start/finish line, a leader at 0.1 and a follower at 0.9 therefore
- * look 0.8 of a lap apart. Completed laps plus the lap fraction put them
- * 0.2 apart. Shift the estimate by whole laps until it matches that gap.
- */
-function interval(ahead: CarSample, car: CarSample): number | null {
-  if (!Number.isFinite(ahead.estTimeSec) || !Number.isFinite(car.estTimeSec)) {
+/** Sector interval for this row. Empty for the leader, a pass, or a line not yet seen. */
+function raceInterval(
+  leader: boolean,
+  aheadCarIdx: number | undefined,
+  carIdx: number,
+  sectorGaps: ReadonlyMap<number, CountedGap> | null,
+): number | null {
+  if (leader || aheadCarIdx === undefined || sectorGaps === null) {
     return null;
   }
-  let value = car.estTimeSec - ahead.estTimeSec;
-  if (straddlesStartFinish(ahead, car)) {
-    const lapTime = crossingLapSec(ahead) ?? crossingLapSec(car);
-    if (lapTime !== null) {
-      value = matchLapGap(value, lapGap(ahead, car), lapTime);
-    }
-  }
-  if (!Number.isFinite(value)) {
+  const gap = sectorGaps.get(carIdx);
+  if (!gap || gap.aheadCarIdx !== aheadCarIdx) {
     return null;
   }
-  return Math.round(value * 1000) / 1000;
-}
-
-/** The leader's percent has wrapped and the next car is still on the previous pass. */
-function straddlesStartFinish(ahead: CarSample, car: CarSample): boolean {
-  return lapFraction(ahead) + 0.5 < lapFraction(car);
-}
-
-function lapGap(ahead: CarSample, car: CarSample): number {
-  let gap = trackProgress(ahead) - trackProgress(car);
-  // The completed-lap counter can still show the old lap on the first samples after the line.
-  if (gap < 0) {
-    gap += 1;
-  }
-  return gap;
-}
-
-function trackProgress(car: CarSample): number {
-  const laps = car.lapCompleted >= 0 ? car.lapCompleted : (Number.isFinite(car.lap) ? car.lap : 0);
-  return laps + lapFraction(car);
-}
-
-function lapFraction(car: CarSample): number {
-  if (!Number.isFinite(car.lapDistPct) || car.lapDistPct < 0) {
-    return 0;
-  }
-  return car.lapDistPct;
-}
-
-function matchLapGap(raw: number, laps: number, lapTime: number): number {
-  const target = laps * lapTime;
-  const steps = Math.round((target - raw) / lapTime);
-  if (steps === 0) {
-    return raw;
-  }
-  const adjusted = raw + steps * lapTime;
-  return Math.abs(adjusted - target) < Math.abs(raw - target) ? adjusted : raw;
-}
-
-function crossingLapSec(car: CarSample): number | null {
-  if (Number.isFinite(car.lastLapSec) && car.lastLapSec > 0) {
-    return car.lastLapSec;
-  }
-  if (Number.isFinite(car.bestLapSec) && car.bestLapSec > 0) {
-    return car.bestLapSec;
-  }
-  return null;
+  return gap.sec;
 }
 
 function lapsDown(leader: CarSample, car: CarSample): number {

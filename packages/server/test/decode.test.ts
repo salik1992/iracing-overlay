@@ -115,6 +115,7 @@ test("pace lap keeps the green bit off the digiflag lamp until the lights go", (
   assert.equal(lampFlags(4, paceGreen).includes("green"), true);
   const tick = {
     sessionTick: 1,
+    sessionTimeSec: 0,
     sessionNum: 1,
     sessionState: 3,
     sessionTimeRemainSec: 0,
@@ -253,6 +254,7 @@ test("a competitor with no lap time stays after the cars that posted one", () =>
   assert.ok(session);
   const tick: Tick = {
     sessionTick: 1,
+    sessionTimeSec: 0,
     sessionNum: 0,
     sessionState: 4,
     sessionTimeRemainSec: 0,
@@ -330,6 +332,7 @@ test("standings drop pace cars, spectators, and cars not in the world", () => {
   assert.ok(session);
   const tick: Tick = {
     sessionTick: 12,
+    sessionTimeSec: 0,
     sessionNum: 2,
     sessionState: 4,
     sessionTimeRemainSec: 100,
@@ -377,7 +380,7 @@ test("standings drop pace cars, spectators, and cars not in the world", () => {
   assert.equal(frame.rows[0]?.startClassPosition, 0);
   assert.equal(frame.rows[0]?.intervalSec, null);
   assert.equal(frame.rows[0]?.lapsDown, 0);
-  assert.equal(frame.rows[1]?.intervalSec, 0.4);
+  assert.equal(frame.rows[1]?.intervalSec, null);
   assert.equal(frame.rows[1]?.isPlayer, true);
   assert.equal(frame.rows[1]?.lastLapSec, null);
 

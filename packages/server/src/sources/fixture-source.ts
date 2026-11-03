@@ -155,6 +155,7 @@ export class FixtureSource implements TelemetrySource {
     const leaderLap = ordered[0]?.lap ?? 0;
     return {
       sessionTick: this.sessionTick,
+      sessionTimeSec: this.elapsedSec,
       sessionNum: this.session.session.number,
       sessionState: finished ? STATE_CHECKERED : STATE_RACING,
       sessionTimeRemainSec: this.timeRemainSec,
