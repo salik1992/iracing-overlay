@@ -28,12 +28,18 @@ export interface DriverSnapshot {
   ai: boolean;
 }
 
-/** One ResultsPositions entry. Class position is 0-based, as the sim publishes it. */
+/**
+ * One result entry from ResultsPositions or QualifyResultsInfo.
+ * Class position is 0-based, as the sim publishes it. Position on
+ * ResultsPositions is 1-based; on the qualifying grid it is 0-based.
+ */
 export interface SessionResult {
   carIdx: number;
   position: number;
   classPosition: number;
   lapsComplete: number;
+  /** FastestTime in seconds from the YAML list this entry came from. -1 when absent. */
+  fastestTimeSec: number;
 }
 
 export interface SessionSnapshot {

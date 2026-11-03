@@ -135,6 +135,7 @@ function readResults(value: unknown): SessionResult[] {
       position: asNumber(record["Position"]) ?? 0,
       classPosition: asNumber(record["ClassPosition"]) ?? 0,
       lapsComplete: asNumber(record["LapsComplete"]) ?? -1,
+      fastestTimeSec: asNumber(record["FastestTime"]) ?? -1,
     });
   }
   return results;

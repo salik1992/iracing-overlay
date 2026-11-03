@@ -243,6 +243,126 @@ test("a qualifying time stays when the driver leaves the car", () => {
   assert.equal(racing.rows.find((row) => row.carIdx === 2)?.bestLapSec, null);
 });
 
+test("practice shows session times posted before the server attached", () => {
+  const session = practiceSession("Practice", [1, 2, 3, 4], [
+    { CarIdx: 1, Position: 4, ClassPosition: 3, FastestTime: 82 },
+    { CarIdx: 2, Position: 1, ClassPosition: 0, FastestTime: 79.5 },
+    { CarIdx: 3, Position: 2, ClassPosition: 1, FastestTime: "80.400" },
+    { CarIdx: 4, Position: 3, ClassPosition: 2, FastestTime: 81.1 },
+  ]);
+  const player = qualifyCar(1, 82, 0);
+  const alreadyOut = [2, 3, 4].map((carIdx) => leaveCar(qualifyCar(carIdx, -1, 0)));
+  const frame = buildStandings(makeTick([player, ...alreadyOut], { sessionState: 4, sessionNum: 1 }), session);
+  assert.deepEqual(
+    frame.rows.map((row) => row.carIdx),
+    [2, 3, 4, 1],
+  );
+  assert.equal(frame.rows.find((row) => row.carIdx === 2)?.bestLapSec, 79.5);
+  assert.equal(frame.rows.find((row) => row.carIdx === 3)?.bestLapSec, 80.4);
+  assert.equal(frame.rows.find((row) => row.carIdx === 4)?.bestLapSec, 81.1);
+  assert.equal(frame.rows.find((row) => row.carIdx === 1)?.bestLapSec, 82);
+  assert.deepEqual(
+    frame.rows.map((row) => row.classPosition),
+    [1, 2, 3, 4],
+  );
+  assert.equal(frame.rows.find((row) => row.carIdx === 2)?.position, 1);
+  assert.equal(frame.rows.find((row) => row.carIdx === 1)?.position, 4);
+});
+
+test("a slower live lap does not outrank a faster session time", () => {
+  const session = practiceSession("Practice", [1, 2], [
+    { CarIdx: 1, Position: 1, ClassPosition: 0, FastestTime: 80.1 },
+    { CarIdx: 2, Position: 2, ClassPosition: 1, FastestTime: 81 },
+  ]);
+  const frame = buildStandings(
+    makeTick([qualifyCar(1, 82, 2), qualifyCar(2, 81, 1)], { sessionState: 4, sessionNum: 1 }),
+    session,
+  );
+  assert.equal(frame.rows.find((row) => row.carIdx === 1)?.bestLapSec, 80.1);
+  assert.equal(frame.rows.find((row) => row.carIdx === 1)?.classPosition, 1);
+  assert.equal(frame.rows.find((row) => row.carIdx === 2)?.classPosition, 2);
+});
+
+test("a faster live lap beats a stale session time", () => {
+  const session = practiceSession("Lone Qualify", [1, 2], [
+    { CarIdx: 1, Position: 2, ClassPosition: 1, FastestTime: 81 },
+    { CarIdx: 2, Position: 1, ClassPosition: 0, FastestTime: 80 },
+  ]);
+  const frame = buildStandings(
+    makeTick([qualifyCar(1, 79.2, 2), qualifyCar(2, 80, 1)], { sessionState: 4, sessionNum: 1 }),
+    session,
+  );
+  assert.equal(frame.rows.find((row) => row.carIdx === 1)?.bestLapSec, 79.2);
+  assert.equal(frame.rows.find((row) => row.carIdx === 1)?.classPosition, 1);
+  assert.equal(frame.rows.find((row) => row.carIdx === 2)?.bestLapSec, 80);
+  assert.equal(frame.rows.find((row) => row.carIdx === 2)?.classPosition, 2);
+});
+
+test("an exited car keeps the faster of the latched lap and the session time", () => {
+  const fasterLatch = practiceSession("Practice", [1], [
+    { CarIdx: 1, Position: 2, ClassPosition: 0, FastestTime: 82 },
+  ]);
+  const posted = new PostedLaps();
+  const quick = qualifyCar(1, 79, 1);
+  posted.note(makeTick([quick], { sessionState: 4, sessionNum: 1 }));
+  const left = leaveCar(quick);
+  const frame = buildStandings(
+    makeTick([left], { sessionState: 4, sessionNum: 1 }),
+    fasterLatch,
+    undefined,
+    null,
+    posted.note(makeTick([left], { sessionState: 4, sessionNum: 1 })),
+  );
+  assert.equal(frame.rows.find((row) => row.carIdx === 1)?.bestLapSec, 79);
+  assert.equal(frame.rows.find((row) => row.carIdx === 1)?.position, 1);
+
+  const fasterResult = practiceSession("Practice", [1], [
+    { CarIdx: 1, Position: 1, ClassPosition: 0, FastestTime: 78 },
+  ]);
+  const older = new PostedLaps();
+  const slow = qualifyCar(1, 82, 0);
+  older.note(makeTick([slow], { sessionState: 4, sessionNum: 1 }));
+  const gone = leaveCar(slow);
+  const updated = buildStandings(
+    makeTick([gone], { sessionState: 4, sessionNum: 1 }),
+    fasterResult,
+    undefined,
+    null,
+    older.note(makeTick([gone], { sessionState: 4, sessionNum: 1 })),
+  );
+  assert.equal(updated.rows.find((row) => row.carIdx === 1)?.bestLapSec, 78);
+  assert.equal(updated.rows.find((row) => row.carIdx === 1)?.position, 1);
+});
+
+test("a lap cleared on track stays while the session result still lists it", () => {
+  const session = practiceSession("Practice", [1], [
+    { CarIdx: 1, Position: 1, ClassPosition: 0, FastestTime: 81.5 },
+  ]);
+  const posted = new PostedLaps();
+  const car = qualifyCar(1, 81.5, 1);
+  posted.note(makeTick([car], { sessionState: 4, sessionNum: 1 }));
+  car.bestLapSec = -1;
+  const stillOut = makeTick([car], { sessionState: 4, sessionNum: 1 });
+  const frame = buildStandings(stillOut, session, undefined, null, posted.note(stillOut));
+  assert.equal(frame.rows.find((row) => row.carIdx === 1)?.bestLapSec, 81.5);
+});
+
+test("a race does not restore a best lap from the session result", () => {
+  const session = practiceSession("Race", [1, 2], [
+    { CarIdx: 1, Position: 1, ClassPosition: 0, FastestTime: 80, LapsComplete: 4 },
+    { CarIdx: 2, Position: 2, ClassPosition: 1, FastestTime: 70, LapsComplete: 4 },
+  ]);
+  const leader = sample(1, 1, 1, 4, 0.4, 0, -1);
+  leader.bestLapSec = 90;
+  const behind = sample(2, 2, 2, 4, 0.2, 1.5, -1);
+  behind.bestLapSec = -1;
+  const frame = buildStandings(makeTick([leader, behind], { sessionState: 4, sessionNum: 1 }), session);
+  assert.equal(frame.rows.find((row) => row.carIdx === 1)?.bestLapSec, 90);
+  assert.equal(frame.rows.find((row) => row.carIdx === 2)?.bestLapSec, null);
+  assert.equal(frame.rows.find((row) => row.carIdx === 2)?.classPosition, 2);
+  assert.equal(frame.rows.find((row) => row.carIdx === 1)?.classPosition, 1);
+});
+
 test("a car two laps behind the class leader reports two laps down", () => {
   const tick = makeTick([
     sample(1, 1, 1, 10, 0.1, 0, -1),
@@ -329,6 +449,35 @@ function makeTick(
     garageVisible: false,
     cars,
   };
+}
+
+function practiceSession(
+  type: string,
+  drivers: number[],
+  results: Array<Record<string, unknown>>,
+) {
+  const session = normalizeSession(
+    {
+      DriverInfo: {
+        DriverCarIdx: drivers[0] ?? 0,
+        Drivers: drivers.map((carIdx) => ({
+          CarIdx: carIdx,
+          UserName: `Driver ${carIdx}`,
+          CarNumber: String(carIdx),
+          CarClassID: 1,
+          CarClassShortName: "GTP",
+        })),
+      },
+      SessionInfo: {
+        Sessions: [{ SessionNum: 1, SessionType: type, ResultsPositions: results }],
+      },
+    },
+    { sessionNum: 1, displayUnits: 1 },
+  );
+  if (!session) {
+    throw new Error("session");
+  }
+  return session;
 }
 
 function qualifyCar(carIdx: number, bestLapSec: number, classPosition: number): CarSample {

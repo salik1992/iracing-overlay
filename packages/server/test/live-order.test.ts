@@ -245,9 +245,9 @@ test("checkered stays live until the leader takes another lap, then finished car
     ],
   );
   assert.deepEqual(session.session.results, [
-    { carIdx: 1, position: 1, classPosition: 0, lapsComplete: 2 },
-    { carIdx: 2, position: 2, classPosition: 1, lapsComplete: 2 },
-    { carIdx: 4, position: 4, classPosition: 0, lapsComplete: 1 },
+    { carIdx: 1, position: 1, classPosition: 0, lapsComplete: 2, fastestTimeSec: -1 },
+    { carIdx: 2, position: 2, classPosition: 1, lapsComplete: 2, fastestTimeSec: -1 },
+    { carIdx: 4, position: 4, classPosition: 0, lapsComplete: 1, fastestTimeSec: -1 },
   ]);
 
   const opening = publish(

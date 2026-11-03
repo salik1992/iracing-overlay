@@ -3,7 +3,7 @@ import { hasLeftCar, type PostedLap } from "./posted-laps.js";
 import { EMPTY_NOTE, type RaceNote } from "./race-memory.js";
 import { tireLetter } from "./tire.js";
 import type { CarSample, Tick } from "./tick.js";
-import type { DriverSnapshot, FlagsFrame, GarageFrame, SessionSnapshot, StandingRow, StandingsFrame, TelemetryFrame } from "./types.js";
+import type { DriverSnapshot, FlagsFrame, GarageFrame, SessionResult, SessionSnapshot, StandingRow, StandingsFrame, TelemetryFrame } from "./types.js";
 
 const NOT_IN_WORLD = -1;
 const STATE_GET_IN_CAR = 1;
@@ -47,7 +47,7 @@ interface Draft {
   car: CarSample;
   driver: DriverSnapshot | undefined;
   gap: number | null;
-  /** Live best lap, or the lap kept after the driver got out. Null when none was posted. */
+  /** Best lap shown on the row. Null when this car has no positive time. */
   bestLapSec: number | null;
 }
 
@@ -77,11 +77,12 @@ export function buildStandings(
 ): StandingsFrame {
   const grid = qualifyingGrid(tick, session);
   const byPlace = grid !== null || liveClassPosition !== null || raceUnderway(tick, session);
+  const results = sessionResults(session);
   const drafts: Draft[] = standingCars(tick, session).map((car) => ({
     car,
     driver: session?.drivers[String(car.carIdx)],
     gap: gapToPlayer(car.estTimeSec, tick.playerEstTimeSec),
-    bestLapSec: keptBest(car, !byPlace, postedLaps),
+    bestLapSec: keptBest(car, !byPlace, postedLaps, postedTime(results.get(car.carIdx)?.fastestTimeSec)),
   }));
 
   const groups = new Map<number, Draft[]>();
@@ -110,7 +111,9 @@ export function buildStandings(
         timed += 1;
         classPosition = timed;
         if (position <= 0) {
-          position = postedLaps?.get(draft.car.carIdx)?.position ?? position;
+          const latched = postedLaps?.get(draft.car.carIdx)?.position ?? 0;
+          const official = results.get(draft.car.carIdx)?.position ?? 0;
+          position = latched > 0 ? latched : official > 0 ? official : position;
         }
       }
       rows.push(toRow(tick, session, note, draft, ahead?.car ?? null, index === 0, leader, classPosition, position));
@@ -235,21 +238,45 @@ function isRaceSession(type: string): boolean {
 }
 
 /**
- * Practice and qualifying order by the posted best lap.
- * The live value wins while the car is in the world. After the driver gets out,
- * the last lap recorded in the world stands, and the place is that time's rank.
+ * Practice and qualifying show the faster positive time among the live best,
+ * the lap latched after the driver got out, and ResultsPositions.FastestTime.
+ * A race, the pre-green grid, and the checkered lock use the live value only.
+ * FastestTime supplies laps posted before the server attached.
  */
 function keptBest(
   car: CarSample,
   keepTime: boolean,
   postedLaps: ReadonlyMap<number, PostedLap> | null,
+  sessionBest: number | null,
 ): number | null {
   const live = lapTime(car.bestLapSec);
-  if (!keepTime || live !== null || !hasLeftCar(car)) {
+  if (!keepTime) {
     return live;
   }
+  if (live !== null) {
+    return sessionBest !== null ? Math.min(live, sessionBest) : live;
+  }
+  if (!hasLeftCar(car)) {
+    return sessionBest;
+  }
   const kept = postedLaps?.get(car.carIdx)?.bestLapSec;
-  return kept !== undefined && Number.isFinite(kept) && kept > 0 ? kept : null;
+  const latched = kept !== undefined && Number.isFinite(kept) && kept > 0 ? kept : null;
+  if (latched !== null && sessionBest !== null) {
+    return Math.min(latched, sessionBest);
+  }
+  return latched ?? sessionBest;
+}
+
+function sessionResults(session: SessionSnapshot | null): ReadonlyMap<number, SessionResult> {
+  const index = new Map<number, SessionResult>();
+  for (const result of session?.session.results ?? []) {
+    index.set(result.carIdx, result);
+  }
+  return index;
+}
+
+function postedTime(value: number | undefined): number | null {
+  return value !== undefined && Number.isFinite(value) && value > 0 ? value : null;
 }
 
 function byBest(a: Draft, b: Draft): number {
