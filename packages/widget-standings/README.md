@@ -70,6 +70,6 @@ The session type is muted. A lap-limited session shows the overall leader's lap 
 
 ## Idle and preview
 
-While the server reports `idle`, the panel takes the shared idle opacity and keeps the last rows.
+While the server reports `idle`, the panel is fully hidden and keeps the last rows.
 
 `/standings#preview` paints a generated multiclass race through this layout and ignores the live frame. `/standings#team` is that race on the team-name frame. The live page has no hash. A screenshot uses a query as well as the hash, because a hash change on an open page does not reload it.

@@ -9,4 +9,4 @@ Numeral overlay for the OBS browser source at `/telemetry`. The source width and
 - Five seconds of clutch, brake, and throttle on the left, bottom, and right edges of the panel. The trace keeps its height. The panel is shorter by the gap that used to sit above the trace and the pad that used to sit below it. The newest sample is at the right edge. A stall longer than 100 ms breaks the line instead of drawing a ramp.
 - Three vertical bars flush with the right edge of the trace, touching, unlabeled. Order is clutch, brake, throttle. Clutch uses `--accent`, brake uses `--bad`, throttle uses `--good`. An empty bar is the `--rule` track. All three show pedal travel, full when the pedal is pressed.
 
-While the server reports `idle`, the panel takes the shared `is-idle` opacity and keeps the last frame.
+While the server reports `idle`, the panel is fully hidden and keeps the last frame.

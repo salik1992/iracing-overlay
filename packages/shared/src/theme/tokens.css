@@ -15,7 +15,7 @@
   --number: #ff9e64;
   --panel-alpha: 0.91;
   --panel: rgb(26 27 38 / var(--panel-alpha));
-  --idle-opacity: 0.55;
+  --idle-opacity: 0;
   --font-family: "Fira Code", monospace;
   --font-size: 14px;
   --line-height: 1.25;

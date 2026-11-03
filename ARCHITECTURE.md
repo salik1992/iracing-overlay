@@ -193,7 +193,7 @@ The panel fill is `--bg` at `--panel-alpha: 0.91`, exposed as `--panel`. Text, b
   --bg: #1a1b26;
   --panel-alpha: 0.91;
   --panel: rgb(26 27 38 / var(--panel-alpha));
-  --idle-opacity: 0.55;
+  --idle-opacity: 0;
   --font-family: "Fira Code", monospace;
   --font-size: 14px;
   --line-height: 1.25;
@@ -202,7 +202,7 @@ The panel fill is `--bg` at `--panel-alpha: 0.91`, exposed as `--panel`. Text, b
 }
 ```
 
-When status `phase` is `"idle"`, the page adds `is-idle` to the panel. That class sets `opacity: var(--idle-opacity)` on the whole panel, text included, and leaves the last frame in place. The fill alpha compounds with it (0.91 × 0.55). Widgets do not invent a second dim.
+When status `phase` is `"idle"`, the page adds `is-idle` to the panel. That class sets `opacity: var(--idle-opacity)` on the whole panel, text included. The value is 0, so the widget is fully hidden. The last frame stays in the page and returns when ticks resume. Widgets do not invent a second dim.
 
 ### Frame
 
@@ -320,7 +320,7 @@ Delivery follows the sim clock.
 * A garage subscriber receives that same sixth tick. The frame is whether the garage screen is visible (`IsGarageVisible`).
 * A session subscriber receives a session message when the snapshot changes, including once on hello. The snapshot changes on a new YAML version and on a new telemetry session number. The garage page does not subscribe to session messages.
 
-Paused or disconnected sim means ticks stop. The server then sends `{ type: "status", phase: "idle" }` and the widgets keep the last frame on screen, dimmed with the shared `is-idle` class, until ticks resume. The garage cover does not use that dim. It keeps the last visibility at full opacity. Sockets with no subscriber do no work for that channel. One shared-memory read serves every OBS source.
+Paused or disconnected sim means ticks stop. The server then sends `{ type: "status", phase: "idle" }` and the widgets hide with the shared `is-idle` class, until ticks resume. The garage cover does not use that class. It keeps the last visibility at full opacity. Sockets with no subscriber do no work for that channel. One shared-memory read serves every OBS source.
 
 ### Race-PC run
 

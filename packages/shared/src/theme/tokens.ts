@@ -16,7 +16,7 @@ export const theme = {
   info: "#7dcfff",
   number: "#ff9e64",
   panelAlpha: 0.91,
-  idleOpacity: 0.55,
+  idleOpacity: 0,
   fontFamily: '"Fira Code", monospace',
   fontSizePx: 14,
   lineHeight: 1.25,

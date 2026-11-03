@@ -23,6 +23,6 @@ The rest hold still. Green, green held, and start go are green. Yellow and cauti
 
 The lamp colors are signal colors, written in `src/leds.ts`. They are not Tokyo Night tokens, for the same reason a class color stays the session hex.
 
-While the server reports `idle`, the matrix takes the shared idle opacity and keeps the last lamp.
+While the server reports `idle`, the matrix is fully hidden and keeps the last lamp.
 
 A hash such as `/digiflag#debris` pins that lamp and ignores the live frame, so each flag can be checked on its own. The live page uses no hash.
