@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import { buildStandings } from "../src/frames.js";
+import { PostedLaps } from "../src/posted-laps.js";
 import { RaceMemory } from "../src/race-memory.js";
 import { normalizeSession } from "../src/session.js";
 import { tireLetter } from "../src/tire.js";
@@ -135,6 +136,84 @@ test("an invalidated lap keeps the race place when no best lap exists", () => {
   assert.equal(live.rows.find((row) => row.carIdx === 2)?.intervalSec, 1.25);
 });
 
+test("a qualifying time stays when the driver leaves the car", () => {
+  const session = normalizeSession(
+    {
+      DriverInfo: {
+        DriverCarIdx: 1,
+        Drivers: [1, 2, 3].map((carIdx) => ({
+          CarIdx: carIdx,
+          UserName: `Driver ${carIdx}`,
+          CarNumber: String(carIdx),
+          CarClassID: 1,
+          CarClassShortName: "GTP",
+        })),
+      },
+      SessionInfo: { Sessions: [{ SessionNum: 1, SessionType: "Lone Qualify" }] },
+    },
+    { sessionNum: 1, displayUnits: 1 },
+  );
+  const posted = new PostedLaps();
+  const leader = qualifyCar(1, 80.1, 1);
+  const middle = qualifyCar(2, 81.5, 2);
+  const back = qualifyCar(3, 82.4, 3);
+  posted.note(makeTick([leader, middle, back], { sessionState: 4, sessionNum: 1 }));
+
+  const left = leaveCar(middle);
+  const exited = makeTick([leader, left, back], { sessionState: 4, sessionNum: 1 });
+  const frame = buildStandings(exited, session, undefined, null, posted.note(exited));
+  assert.deepEqual(
+    frame.rows.map((row) => row.carIdx),
+    [1, 2, 3],
+  );
+  assert.equal(frame.rows.find((row) => row.carIdx === 2)?.bestLapSec, 81.5);
+  assert.equal(frame.rows.find((row) => row.carIdx === 2)?.classPosition, 2);
+  assert.equal(frame.rows.find((row) => row.carIdx === 1)?.classPosition, 1);
+  assert.equal(frame.rows.find((row) => row.carIdx === 3)?.classPosition, 3);
+
+  back.bestLapSec = 81;
+  const improved = makeTick([leader, left, back], { sessionState: 4, sessionNum: 1 });
+  const moved = buildStandings(improved, session, undefined, null, posted.note(improved));
+  assert.equal(moved.rows.find((row) => row.carIdx === 2)?.bestLapSec, 81.5);
+  assert.equal(moved.rows.find((row) => row.carIdx === 2)?.classPosition, 3);
+  assert.equal(moved.rows.find((row) => row.carIdx === 3)?.classPosition, 2);
+  assert.equal(moved.rows.find((row) => row.carIdx === 1)?.classPosition, 1);
+
+  const cleared = new PostedLaps();
+  const runner = qualifyCar(2, 81.5, 1);
+  cleared.note(makeTick([runner], { sessionState: 4, sessionNum: 1 }));
+  runner.bestLapSec = -1;
+  cleared.note(makeTick([runner], { sessionState: 4, sessionNum: 1 }));
+  const forgotten = leaveCar(runner);
+  const dropped = buildStandings(
+    makeTick([forgotten], { sessionState: 4, sessionNum: 1 }),
+    session,
+    undefined,
+    null,
+    cleared.note(makeTick([forgotten], { sessionState: 4, sessionNum: 1 })),
+  );
+  assert.equal(dropped.rows.find((row) => row.carIdx === 2)?.bestLapSec, null);
+
+  const race = normalizeSession(
+    {
+      DriverInfo: {
+        DriverCarIdx: 2,
+        Drivers: [{ CarIdx: 2, UserName: "Vit Salomon", CarNumber: "8", CarClassID: 1, CarClassShortName: "GTP" }],
+      },
+      SessionInfo: { Sessions: [{ SessionNum: 1, SessionType: "Race" }] },
+    },
+    { sessionNum: 1, displayUnits: 1 },
+  );
+  const racing = buildStandings(
+    makeTick([forgotten], { sessionState: 4, sessionNum: 1 }),
+    race,
+    undefined,
+    null,
+    new Map([[2, { bestLapSec: 81.5, position: 2 }]]),
+  );
+  assert.equal(racing.rows.find((row) => row.carIdx === 2)?.bestLapSec, null);
+});
+
 test("a car two laps behind the class leader reports two laps down", () => {
   const tick = makeTick([
     sample(1, 1, 1, 10, 0.1, 0, -1),
@@ -221,6 +300,16 @@ function makeTick(
     garageVisible: false,
     cars,
   };
+}
+
+function qualifyCar(carIdx: number, bestLapSec: number, classPosition: number): CarSample {
+  const car = sample(carIdx, classPosition, classPosition, 2, 0.4, 0, -1);
+  car.bestLapSec = bestLapSec;
+  return car;
+}
+
+function leaveCar(car: CarSample): CarSample {
+  return { ...car, bestLapSec: -1, classPosition: 0, position: 0, trackSurface: -1, lapDistPct: -1 };
 }
 
 function sample(

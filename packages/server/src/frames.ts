@@ -1,4 +1,5 @@
 import { decodeFlags, lampFlags, sessionStateName } from "./flags.js";
+import { hasLeftCar, type PostedLap } from "./posted-laps.js";
 import { EMPTY_NOTE, type RaceNote } from "./race-memory.js";
 import { tireLetter } from "./tire.js";
 import type { CarSample, Tick } from "./tick.js";
@@ -46,6 +47,8 @@ interface Draft {
   car: CarSample;
   driver: DriverSnapshot | undefined;
   gap: number | null;
+  /** Live best lap, or the lap kept after the driver got out. Null when none was posted. */
+  bestLapSec: number | null;
 }
 
 /** Cars the standings tower shows. Pace car, spectators, and empty slots stay out. */
@@ -70,11 +73,15 @@ export function buildStandings(
   session: SessionSnapshot | null,
   note: RaceNote = EMPTY_NOTE,
   liveClassPosition: ReadonlyMap<number, number> | null = null,
+  postedLaps: ReadonlyMap<number, PostedLap> | null = null,
 ): StandingsFrame {
+  const grid = qualifyingGrid(tick, session);
+  const byPlace = grid !== null || liveClassPosition !== null || raceUnderway(tick, session);
   const drafts: Draft[] = standingCars(tick, session).map((car) => ({
     car,
     driver: session?.drivers[String(car.carIdx)],
     gap: gapToPlayer(car.estTimeSec, tick.playerEstTimeSec),
+    bestLapSec: keptBest(car, !byPlace, postedLaps),
   }));
 
   const groups = new Map<number, Draft[]>();
@@ -85,12 +92,11 @@ export function buildStandings(
     groups.set(classId, list);
   }
 
-  const grid = qualifyingGrid(tick, session);
-  const byPlace = grid !== null || liveClassPosition !== null || raceUnderway(tick, session);
   const rows: StandingRow[] = [];
   for (const list of groups.values()) {
-    list.sort(byClass(liveClassPosition, grid, byPlace));
+    list.sort(byPlace ? byClass(liveClassPosition, grid, byPlace) : byBest);
     const leader = list[0]?.car;
+    let timed = 0;
     for (let index = 0; index < list.length; index += 1) {
       const draft = list[index];
       if (!draft) {
@@ -98,8 +104,15 @@ export function buildStandings(
       }
       const ahead = index > 0 ? list[index - 1] : undefined;
       const place = grid?.get(draft.car.carIdx);
-      const classPosition = place?.classPosition ?? liveClassPosition?.get(draft.car.carIdx) ?? draft.car.classPosition;
-      const position = place?.position ?? draft.car.position;
+      let classPosition = place?.classPosition ?? liveClassPosition?.get(draft.car.carIdx) ?? draft.car.classPosition;
+      let position = place?.position ?? draft.car.position;
+      if (!byPlace && draft.bestLapSec !== null) {
+        timed += 1;
+        classPosition = timed;
+        if (position <= 0) {
+          position = postedLaps?.get(draft.car.carIdx)?.position ?? position;
+        }
+      }
       rows.push(toRow(tick, session, note, draft, ahead?.car ?? null, index === 0, leader, classPosition, position));
     }
   }
@@ -148,7 +161,7 @@ function toRow(
     lapsDown: classLeader ? lapsDown(classLeader, car) : 0,
     lap: car.lap,
     lastLapSec: lapTime(car.lastLapSec),
-    bestLapSec: lapTime(car.bestLapSec),
+    bestLapSec: draft.bestLapSec,
     gapToPlayerSec: gap,
     onPitRoad: car.onPitRoad,
     trackSurface: car.trackSurface,
@@ -219,6 +232,39 @@ function gridRank(grid: ReadonlyMap<number, GridPlace>, carIdx: number): number 
 function isRaceSession(type: string): boolean {
   const text = type.trim().toLowerCase();
   return text === "race" || text.endsWith(" race");
+}
+
+/**
+ * Practice and qualifying order by the posted best lap.
+ * The live value wins while the car is in the world. After the driver gets out,
+ * the last lap recorded in the world stands, and the place is that time's rank.
+ */
+function keptBest(
+  car: CarSample,
+  keepTime: boolean,
+  postedLaps: ReadonlyMap<number, PostedLap> | null,
+): number | null {
+  const live = lapTime(car.bestLapSec);
+  if (!keepTime || live !== null || !hasLeftCar(car)) {
+    return live;
+  }
+  const kept = postedLaps?.get(car.carIdx)?.bestLapSec;
+  return kept !== undefined && Number.isFinite(kept) && kept > 0 ? kept : null;
+}
+
+function byBest(a: Draft, b: Draft): number {
+  return byPostedTime(a.bestLapSec, b.bestLapSec)
+    || placeRank(a.car.classPosition) - placeRank(b.car.classPosition)
+    || placeRank(a.car.position) - placeRank(b.car.position)
+    || a.car.carIdx - b.car.carIdx;
+}
+
+function byPostedTime(a: number | null, b: number | null): number {
+  const rank = postedRank(a) - postedRank(b);
+  if (rank !== 0 || a === null || b === null) {
+    return rank;
+  }
+  return a - b;
 }
 
 /** Practice and qualifying: cars that have not posted a lap sort after cars that have. */

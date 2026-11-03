@@ -2,6 +2,7 @@ import type { RawData, WebSocket } from "ws";
 
 import { buildFlags, buildGarage, buildStandings, buildTelemetry } from "./frames.js";
 import { LiveOrder } from "./live-order.js";
+import { PostedLaps, type PostedLap } from "./posted-laps.js";
 import { EMPTY_NOTE, RaceMemory, type RaceNote } from "./race-memory.js";
 import type { TelemetrySource } from "./sources/telemetry-source.js";
 import type { Tick } from "./tick.js";
@@ -22,6 +23,8 @@ export class Hub {
   private raceNote: RaceNote = EMPTY_NOTE;
   private readonly live = new LiveOrder();
   private liveRanks: ReadonlyMap<number, number> | null = null;
+  private readonly posted = new PostedLaps();
+  private postedLaps: ReadonlyMap<number, PostedLap> = new Map();
   private delivered = 0;
 
   constructor(private readonly widgets: readonly WidgetServe[]) {}
@@ -80,6 +83,7 @@ export class Hub {
     this.tick = tick;
     this.raceNote = this.race.note(tick);
     this.liveRanks = this.live.note(tick, this.session);
+    this.postedLaps = this.posted.note(tick);
     this.delivered += 1;
     for (const client of this.clients) {
       const widget = client.widget;
@@ -90,7 +94,7 @@ export class Hub {
       if (this.delivered % every !== 0) {
         continue;
       }
-      const message = frameMessage(widget, tick, this.session, this.raceNote, this.liveRanks);
+      const message = frameMessage(widget, tick, this.session, this.raceNote, this.liveRanks, this.postedLaps);
       if (message) {
         this.send(client.socket, message);
       }
@@ -125,7 +129,7 @@ export class Hub {
       });
     }
     if (this.tick) {
-      const message = frameMessage(widget, this.tick, this.session, this.raceNote, this.liveRanks);
+      const message = frameMessage(widget, this.tick, this.session, this.raceNote, this.liveRanks, this.postedLaps);
       if (message) {
         this.send(client.socket, message);
       }
@@ -164,6 +168,7 @@ function frameMessage(
   session: SessionSnapshot | null,
   note: RaceNote,
   liveClassPosition: ReadonlyMap<number, number> | null,
+  postedLaps: ReadonlyMap<number, PostedLap>,
 ): ServerMessage | null {
   if (widget.id === "telemetry") {
     return { type: "telemetry", tick: tick.sessionTick, frame: buildTelemetry(tick) };
@@ -172,7 +177,7 @@ function frameMessage(
     return {
       type: "standings",
       tick: tick.sessionTick,
-      frame: buildStandings(tick, session, note, liveClassPosition),
+      frame: buildStandings(tick, session, note, liveClassPosition, postedLaps),
     };
   }
   if (widget.id === "digiflag") {
