@@ -91,6 +91,35 @@ test("crossing the start finish does not add a lap to the interval", () => {
   assert.equal(fromBest.rows.find((row) => row.carIdx === 2)?.intervalSec, 4);
 });
 
+test("a start finish straddle uses the short lap gap", () => {
+  const lap = 90;
+  const ahead = sample(1, 1, 1, 4, 0.1, 0, -1, lap);
+  ahead.lapCompleted = 3;
+  const behind = sample(2, 2, 2, 3, 0.9, -0.8 * lap, -1, lap);
+  behind.lapCompleted = 2;
+
+  const negative = buildStandings(makeTick([ahead, behind]), null);
+  assert.equal(negative.rows.find((row) => row.carIdx === 2)?.lapsDown, 0);
+  assert.equal(negative.rows.find((row) => row.carIdx === 2)?.intervalSec, 18);
+
+  behind.estTimeSec = 0.8 * lap;
+  const positive = buildStandings(makeTick([ahead, behind]), null);
+  assert.equal(positive.rows.find((row) => row.carIdx === 2)?.intervalSec, -18);
+
+  ahead.lap = 3;
+  ahead.lapCompleted = 2;
+  behind.lap = 3;
+  behind.lapCompleted = 2;
+  behind.estTimeSec = -0.8 * lap;
+  const lagged = buildStandings(makeTick([ahead, behind]), null);
+  assert.equal(lagged.rows.find((row) => row.carIdx === 2)?.intervalSec, 18);
+
+  const leader = sample(1, 1, 1, 5, 0.9, 0, -1, lap);
+  const trailer = sample(2, 2, 2, 5, 0.1, 0.8 * lap, -1, lap);
+  const far = buildStandings(makeTick([leader, trailer]), null);
+  assert.equal(far.rows.find((row) => row.carIdx === 2)?.intervalSec, 72);
+});
+
 test("an invalidated lap keeps the race place when no best lap exists", () => {
   const session = normalizeSession(
     {

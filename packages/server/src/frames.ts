@@ -298,30 +298,62 @@ function gapToPlayer(carEstSec: number, playerEstSec: number): number | null {
 }
 
 /**
- * CarIdxEstTime restarts near a full lap when that car crosses the
- * start/finish line. Until the next car crosses, the raw difference
- * includes that lap. Adding the crossed car's last lap, or its best lap,
- * removes the jump when the cars are on different laps.
+ * CarIdxEstTime follows the raw lap-percent delta. After one car crosses
+ * the start/finish line, a leader at 0.1 and a follower at 0.9 therefore
+ * look 0.8 of a lap apart. Completed laps plus the lap fraction put them
+ * 0.2 apart. Shift the estimate by whole laps until it matches that gap.
  */
 function interval(ahead: CarSample, car: CarSample): number | null {
   if (!Number.isFinite(ahead.estTimeSec) || !Number.isFinite(car.estTimeSec)) {
     return null;
   }
   let value = car.estTimeSec - ahead.estTimeSec;
-  const laps = ahead.lap - car.lap;
-  if (laps !== 0) {
-    const crossedLap = crossingLapSec(laps > 0 ? ahead : car) ?? crossingLapSec(laps > 0 ? car : ahead);
-    if (crossedLap !== null) {
-      const wrapped = value + laps * crossedLap;
-      if (Math.abs(wrapped) < Math.abs(value)) {
-        value = wrapped;
-      }
+  if (straddlesStartFinish(ahead, car)) {
+    const lapTime = crossingLapSec(ahead) ?? crossingLapSec(car);
+    if (lapTime !== null) {
+      value = matchLapGap(value, lapGap(ahead, car), lapTime);
     }
   }
   if (!Number.isFinite(value)) {
     return null;
   }
   return Math.round(value * 1000) / 1000;
+}
+
+/** The leader's percent has wrapped and the next car is still on the previous pass. */
+function straddlesStartFinish(ahead: CarSample, car: CarSample): boolean {
+  return lapFraction(ahead) + 0.5 < lapFraction(car);
+}
+
+function lapGap(ahead: CarSample, car: CarSample): number {
+  let gap = trackProgress(ahead) - trackProgress(car);
+  // The completed-lap counter can still show the old lap on the first samples after the line.
+  if (gap < 0) {
+    gap += 1;
+  }
+  return gap;
+}
+
+function trackProgress(car: CarSample): number {
+  const laps = car.lapCompleted >= 0 ? car.lapCompleted : (Number.isFinite(car.lap) ? car.lap : 0);
+  return laps + lapFraction(car);
+}
+
+function lapFraction(car: CarSample): number {
+  if (!Number.isFinite(car.lapDistPct) || car.lapDistPct < 0) {
+    return 0;
+  }
+  return car.lapDistPct;
+}
+
+function matchLapGap(raw: number, laps: number, lapTime: number): number {
+  const target = laps * lapTime;
+  const steps = Math.round((target - raw) / lapTime);
+  if (steps === 0) {
+    return raw;
+  }
+  const adjusted = raw + steps * lapTime;
+  return Math.abs(adjusted - target) < Math.abs(raw - target) ? adjusted : raw;
 }
 
 function crossingLapSec(car: CarSample): number | null {
