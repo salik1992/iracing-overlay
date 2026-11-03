@@ -21,22 +21,22 @@ test("short names follow the trigram rule", () => {
 });
 
 test("the player class splits the spare rows around the driver", () => {
-  assert.equal(labels(playerClassWindow(60, 9, 1)), `${span(1, 20)},g40`);
-  assert.equal(labels(playerClassWindow(60, 53, 1)), `${span(1, 5)},g40,${span(46, 60)}`);
-  assert.equal(labels(playerClassWindow(60, 1, 1)), `${span(1, 20)},g40`);
-  assert.equal(labels(playerClassWindow(21, 1, 1)), span(1, 21));
-  assert.equal(labels(playerClassWindow(22, 1, 1)), `${span(1, 20)},g2`);
-  assert.equal(labels(playerClassWindow(30, 14, 1)), `${span(1, 21)},g9`);
-  assert.equal(labels(playerClassWindow(60, 9, 3)), `${span(1, 14)},g46`);
+  assert.equal(labels(playerClassWindow(60, 9, 1)), `${span(1, 27)},g33`);
+  assert.equal(labels(playerClassWindow(60, 53, 1)), `${span(1, 5)},g33,${span(39, 60)}`);
+  assert.equal(labels(playerClassWindow(60, 1, 1)), `${span(1, 27)},g33`);
+  assert.equal(labels(playerClassWindow(28, 1, 1)), span(1, 28));
+  assert.equal(labels(playerClassWindow(29, 1, 1)), `${span(1, 27)},g2`);
+  assert.equal(labels(playerClassWindow(30, 14, 1)), `${span(1, 27)},g3`);
+  assert.equal(labels(playerClassWindow(60, 9, 3)), `${span(1, 17)},g43`);
   assert.equal(labels(playerClassWindow(18, 8, 1)), span(1, 18));
 });
 
-test("other classes keep the top 3 and draw a one-car tail", () => {
-  assert.equal(labels(otherClassWindow(2)), span(1, 2));
-  assert.equal(labels(otherClassWindow(3)), span(1, 3));
+test("other classes keep the top 5 and draw a one-car tail", () => {
   assert.equal(labels(otherClassWindow(4)), span(1, 4));
-  assert.equal(labels(otherClassWindow(5)), `${span(1, 3)},g2`);
-  assert.equal(labels(otherClassWindow(6)), `${span(1, 3)},g3`);
+  assert.equal(labels(otherClassWindow(5)), span(1, 5));
+  assert.equal(labels(otherClassWindow(6)), span(1, 6));
+  assert.equal(labels(otherClassWindow(7)), `${span(1, 5)},g2`);
+  assert.equal(labels(otherClassWindow(8)), `${span(1, 5)},g3`);
 });
 
 test("pit road, the stall, and the garage dim a row", () => {
@@ -156,15 +156,15 @@ test("a pre-green race follows class place, and a car with no place sorts last",
   );
 });
 
-test("standings type is 16px and the row is 22px tall", () => {
+test("standings type is 14px and the row is 20px tall", () => {
   const css = readFileSync(new URL("../style.css", import.meta.url), "utf8");
-  assert.match(css, /\.panel\s*\{[^}]*font-size:\s*16px/);
-  assert.match(css, /\.row\s*\{[^}]*height:\s*22px/);
-  assert.match(css, /\.num\s*\{[^}]*height:\s*18px/);
-  assert.match(css, /\.tire\s*\{[^}]*font-size:\s*13px/);
-  assert.match(css, /\.omit\s*\{[^}]*font-size:\s*14px/);
-  assert.match(css, /\.classhead\s*\{[^}]*font-size:\s*16px/);
-  assert.match(css, /\.classname\s*\{[^}]*font-size:\s*14px/);
+  assert.match(css, /\.panel\s*\{[^}]*font-size:\s*14px/);
+  assert.match(css, /\.row\s*\{[^}]*height:\s*20px/);
+  assert.match(css, /\.num\s*\{[^}]*height:\s*16px/);
+  assert.match(css, /\.tire\s*\{[^}]*font-size:\s*11px/);
+  assert.match(css, /\.omit\s*\{[^}]*font-size:\s*12px/);
+  assert.match(css, /\.classhead\s*\{[^}]*font-size:\s*14px/);
+  assert.match(css, /\.classname\s*\{[^}]*font-size:\s*12px/);
 });
 
 test("a car with no lap time stays up, with an empty column, after the timed cars", () => {
@@ -274,7 +274,7 @@ test("race mode uses the class interval and laps down", () => {
   assert.equal(cars[2]?.car.gained, 0);
 });
 
-test("multiclass keeps the top 3 of other classes and the player's window", () => {
+test("multiclass keeps the top 5 of other classes and the player's window", () => {
   const rows = [
     ...klass(1, "GTP", "#ff2d2d", 1, 20, null),
     ...klass(2, "LMP2", "#1c6bff", 21, 60, 9),
@@ -282,10 +282,10 @@ test("multiclass keeps the top 3 of other classes and the player's window", () =
   ];
   const board = buildBoard(session({ type: "Race", laps: "30" }), frame(rows));
   const grouped = carsByClass(board);
-  assert.deepEqual(grouped.get("GTP"), { cars: 3, gaps: [17] });
-  assert.deepEqual(grouped.get("LMP2"), { cars: 14, gaps: [46] });
+  assert.deepEqual(grouped.get("GTP"), { cars: 5, gaps: [15] });
+  assert.deepEqual(grouped.get("LMP2"), { cars: 17, gaps: [43] });
   assert.deepEqual(grouped.get("GTD"), { cars: 4, gaps: [] });
-  assert.equal(carItems(board).length, 21);
+  assert.equal(carItems(board).length, 26);
   const player = carItems(board).filter((item) => item.car.player);
   assert.equal(player.length, 1);
   assert.equal(player[0]?.car.position, 9);
@@ -299,7 +299,7 @@ test("multiclass keeps the top 3 of other classes and the player's window", () =
   );
 });
 
-test("other classes stay at the top 3 when five of them already fill the cap", () => {
+test("other classes stay at the top 5 when five of them already fill the cap", () => {
   const rows = [
     ...klass(1, "A", "#ff2d2d", 1, 20, null),
     ...klass(2, "B", "#ff2d2d", 21, 20, null),
@@ -311,13 +311,13 @@ test("other classes stay at the top 3 when five of them already fill the cap", (
   const board = buildBoard(session({ type: "Race", laps: "40" }), frame(rows));
   const grouped = carsByClass(board);
   for (const name of ["A", "B", "C", "D", "F"]) {
-    assert.deepEqual(grouped.get(name), { cars: 3, gaps: [17] }, name);
+    assert.deepEqual(grouped.get(name), { cars: 5, gaps: [15] }, name);
   }
   assert.deepEqual(grouped.get("E"), { cars: 6, gaps: [17, 17] });
-  assert.equal(carItems(board).length, 21);
+  assert.equal(carItems(board).length, 31);
 });
 
-test("a short class stays whole while the other classes stay at 3", () => {
+test("a short class stays whole while the other classes stay at 5", () => {
   const rows = [
     ...klass(1, "A", "#ff2d2d", 1, 20, null),
     ...klass(2, "B", "#ff2d2d", 21, 20, null),
@@ -329,9 +329,9 @@ test("a short class stays whole while the other classes stay at 3", () => {
   const board = buildBoard(session({ type: "Race", laps: "40" }), frame(rows));
   const grouped = carsByClass(board);
   assert.deepEqual(grouped.get("D"), { cars: 4, gaps: [] });
-  assert.deepEqual(grouped.get("G"), { cars: 3, gaps: [17] });
+  assert.deepEqual(grouped.get("G"), { cars: 5, gaps: [15] });
   assert.deepEqual(grouped.get("E"), { cars: 6, gaps: [17, 17] });
-  assert.equal(carItems(board).length, 22);
+  assert.equal(carItems(board).length, 30);
 });
 
 test("the preview is a multiclass race through the same board", () => {
@@ -341,9 +341,9 @@ test("the preview is a multiclass race through the same board", () => {
   assert.equal(board.meta, "23/48");
   const names = board.items.filter((item) => item.kind === "class").map((item) => (item.kind === "class" ? item.name : ""));
   assert.deepEqual(names, ["GTP", "LMP2", "GTD"]);
-  assert.deepEqual(carsByClass(board).get("GTP"), { cars: 3, gaps: [6] });
+  assert.deepEqual(carsByClass(board).get("GTP"), { cars: 5, gaps: [4] });
   assert.deepEqual(carsByClass(board).get("LMP2"), { cars: 10, gaps: [] });
-  assert.deepEqual(carsByClass(board).get("GTD"), { cars: 3, gaps: [3] });
+  assert.deepEqual(carsByClass(board).get("GTD"), { cars: 6, gaps: [] });
   const player = carItems(board).find((item) => item.car.player);
   assert.equal(player?.car.initial, "V");
   assert.equal(player?.car.trigram, "SAL");
