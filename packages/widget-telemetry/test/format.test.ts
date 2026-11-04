@@ -20,6 +20,7 @@ test("units are orange and the trace sits on the panel edges", () => {
   assert.match(css, /\.trace-row\s*\{[^}]*\bleft:\s*0;/);
   assert.match(css, /\.trace-row\s*\{[^}]*\bright:\s*0;/);
   assert.match(css, /\.trace-row\s*\{[^}]*\bbottom:\s*0;/);
+  assert.match(css, /\.trace-row\s*\{[^}]*height:\s*calc\(100vh \* 55 \/ 103\)/);
   assert.match(css, /\.rpm-segment\.green \.rpm-light\.is-on\s*\{[^}]*background:\s*var\(--good\)/);
   assert.match(css, /\.rpm-segment\.red \.rpm-light\.is-on\s*\{[^}]*background:\s*var\(--bad\)/);
   assert.match(css, /\.rpm-segment\.blue \.rpm-light\.is-on\s*\{[^}]*background:\s*var\(--accent\)/);
