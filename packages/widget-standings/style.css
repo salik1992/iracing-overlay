@@ -29,11 +29,11 @@ body {
   font-weight: 400;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--muted);
+  color: var(--fg);
 }
 
 .meta {
-  color: var(--fg);
+  color: var(--number);
   font-weight: 400;
 }
 
@@ -85,6 +85,7 @@ body {
 
 .pos {
   font-weight: 600;
+  color: var(--number);
 }
 
 .initial {
@@ -96,7 +97,7 @@ body {
 }
 
 .stops {
-  color: var(--dim);
+  color: var(--fg);
 }
 
 .driver,
@@ -132,7 +133,7 @@ body {
 
 .gap {
   font-weight: 600;
-  color: var(--fg);
+  color: var(--accent);
 }
 
 .delta {

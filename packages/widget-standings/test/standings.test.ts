@@ -156,6 +156,15 @@ test("a pre-green race follows class place, and a car with no place sorts last",
   );
 });
 
+test("standings column colors follow the text roles", () => {
+  const css = readFileSync(new URL("../style.css", import.meta.url), "utf8");
+  assert.match(css, /\.session\s*\{[^}]*color:\s*var\(--fg\)/);
+  assert.match(css, /\.meta\s*\{[^}]*color:\s*var\(--number\)/);
+  assert.match(css, /\.pos\s*\{[^}]*color:\s*var\(--number\)/);
+  assert.match(css, /\.stops\s*\{[^}]*color:\s*var\(--fg\)/);
+  assert.match(css, /\.gap\s*\{[^}]*color:\s*var\(--accent\)/);
+});
+
 test("standings type is 14px and the row is 20px tall", () => {
   const css = readFileSync(new URL("../style.css", import.meta.url), "utf8");
   assert.match(css, /\.panel\s*\{[^}]*font-size:\s*14px/);

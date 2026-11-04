@@ -2,11 +2,11 @@
 
 Composite timing tower for the OBS browser source at `/standings`. The panel sits at the top left. The preferred source is 291×594. The height is the 720p frame with the 126px telemetry above it. The width is the narrowest race row: a two-digit position, a three-digit car number, the short driver name, two-digit stops, a two-digit place change, and a gap of `12:34.567`. The panel uses the full width, and its height follows the rows. Rows past the source edge are clipped.
 
-The page background stays transparent. The panel is the shared terminal panel at 14px, with 6px 8px of padding.
+The page background stays transparent. The panel is the shared terminal panel at 14px and 70% fill, with 6px 8px of padding.
 
 ## Columns
 
-A race session uses position, car number, driver, stops, tyre, position change, and gap. The session type is `Race`, or any type whose text ends with ` race`. Parade laps of a race keep the race columns.
+A race session uses position, car number, driver, stops, tyre, position change, and gap. Position is the number color. Stops are the normal text color. The best lap, its delta, and the race gap are accent blue. The session type is `Race`, or any type whose text ends with ` race`. Parade laps of a race keep the race columns.
 
 Practice, qualify, warmup, and lone qualify drop the stops and the position change. The last column becomes the best lap.
 
@@ -66,7 +66,7 @@ Stops count entries into the pit stall after the server has already seen that ca
 
 ## Header
 
-The session type is muted. A lap-limited session shows the overall leader's lap over the limit, such as `23/48`. A timed session shows the time remaining, `m:ss`, and `h:mm:ss` from one hour. An unlimited session shows the type alone. The type, the lap or time limit, and the columns follow the current session, so a page opened in practice switches to the race columns when the sim advances.
+The session type is the normal text color. The lap count or the time remaining is the number color. A lap-limited session shows the overall leader's lap over the limit, such as `23/48`. A timed session shows the time remaining, `m:ss`, and `h:mm:ss` from one hour. An unlimited session shows the type alone. The type, the lap or time limit, and the columns follow the current session, so a page opened in practice switches to the race columns when the sim advances.
 
 ## Idle and preview
 
