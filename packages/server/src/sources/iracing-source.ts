@@ -215,7 +215,10 @@ export class IRacingSource implements TelemetrySource {
         sessionNum: this.normalizedSessionNum,
         session: this.session,
       },
-      { version: sdk.currDataVersion, sessionNum, displayUnits },
+      // currDataVersion is the version of the string already read. It stays
+      // still until getSessionData runs, so a driver who joins an open
+      // practice would never be noticed. The header counter is the live one.
+      { version: sdk.getSessionVersionNum(), sessionNum, displayUnits },
       () => sdk.getSessionData(),
     );
     this.sessionVersion = next.held.version;
@@ -290,11 +293,13 @@ export interface SessionAdvance {
 }
 
 /**
- * Re-read the weekend YAML when its version changes or when telemetry SessionNum
- * changes. Practice, qualifying, and the race are already in that YAML, so a
- * session change often leaves the version alone. The stored number is the one
- * requested. A missing record falls back inside normalizeSession, and storing
- * the fallback's number would select it again on every tick.
+ * Re-read the weekend YAML when sessionInfoUpdate changes or when telemetry
+ * SessionNum changes. Open practice adds drivers after the first read, and
+ * that is a new YAML version. Practice, qualifying, and the race are already
+ * in that YAML, so a session change often leaves the version alone. The stored
+ * number is the one requested. A missing record falls back inside
+ * normalizeSession, and storing the fallback's number would select it again
+ * on every tick.
  */
 export function advanceSession(
   held: HeldSession,

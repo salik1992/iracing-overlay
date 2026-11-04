@@ -91,6 +91,52 @@ test("a session number change selects the new session without a yaml version cha
   assert.equal(held.publish, null);
 });
 
+test("a later session version adds a driver who joined after the first read", () => {
+  const early = {
+    DriverInfo: {
+      DriverCarIdx: 66,
+      Drivers: [{ CarIdx: 66, UserName: "Vit Salomon", CarNumber: "66", CarClassID: 1, CarClassShortName: "GT3" }],
+    },
+    SessionInfo: { Sessions: [{ SessionNum: 0, SessionType: "Practice" }] },
+  };
+  const withLate = {
+    ...early,
+    DriverInfo: {
+      ...early.DriverInfo,
+      Drivers: [
+        ...early.DriverInfo.Drivers,
+        { CarIdx: 12, UserName: "Late Joiner", CarNumber: "12", CarClassID: 1, CarClassShortName: "GT3" },
+      ],
+    },
+  };
+  const empty: HeldSession = { version: null, sessionNum: null, session: null };
+  let yaml: unknown = early;
+  let reads = 0;
+  const read = (): unknown => {
+    reads += 1;
+    return yaml;
+  };
+
+  const first = advanceSession(empty, { version: 3, sessionNum: 0, displayUnits: 1 }, read);
+  assert.equal(first.publish?.session.drivers["66"]?.name, "Vit Salomon");
+  assert.equal(first.publish?.session.drivers["12"], undefined);
+  assert.equal(reads, 1);
+
+  reads = 0;
+  const quiet = advanceSession(first.held, { version: 3, sessionNum: 0, displayUnits: 1 }, read);
+  assert.equal(quiet.publish, null);
+  assert.equal(reads, 0);
+  assert.equal(quiet.held.session?.drivers["12"], undefined);
+
+  yaml = withLate;
+  const joined = advanceSession(quiet.held, { version: 4, sessionNum: 0, displayUnits: 1 }, read);
+  assert.equal(reads, 1);
+  assert.equal(joined.publish?.session.drivers["66"]?.carNumber, "66");
+  assert.equal(joined.publish?.session.drivers["12"]?.name, "Late Joiner");
+  assert.equal(joined.publish?.session.drivers["12"]?.carNumber, "12");
+  assert.equal(joined.held.version, 4);
+});
+
 test("clutch pedal is the complement of iRacing engagement", () => {
   assert.equal(clutchPedal(1), 0);
   assert.equal(clutchPedal(0), 1);

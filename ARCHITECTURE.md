@@ -310,7 +310,7 @@ Source selection:
 `irsdk-node` waits on the sim event, about every 16 ms while a session is active. Each successful wait replaces the snapshot:
 
 * The telemetry fields the widgets need, copied out of the latest buffer.
-* The session snapshot. YAML is parsed when `sessionInfoUpdate` changes and when telemetry `SessionNum` changes, then reduced to `SessionSnapshot`. The weekend YAML already lists practice, qualifying, and the race, so moving between them selects the matching record while the version stays the same. The raw YAML string is not kept for the browsers.
+* The session snapshot. YAML is parsed when `sessionInfoUpdate` changes and when telemetry `SessionNum` changes, then reduced to `SessionSnapshot`. The trigger is `getSessionVersionNum()`, the live header counter. `currDataVersion` is only the version of the string already read, so it stays still until that read and cannot see a driver who joins later. The weekend YAML already lists practice, qualifying, and the race, so moving between them selects the matching record while the version stays the same. The raw YAML string is not kept for the browsers.
 
 Delivery follows the sim clock.
 
@@ -398,7 +398,7 @@ The standings page draws the Composite layout from this frame and retunes each c
 iRacing writes a memory-mapped file, `Local\IRSDKMemMapFileName`, and signals `Local\IRSDKDataValidEvent` on each tick. Two payloads share that file.
 
 * Telemetry variables, about 60 times a second. The variable list is fixed for a session and changes when the car or session changes. `IRacingSource` clears its field cache on each new session.
-* A YAML session string. `sessionInfoUpdate` increments when the string changes. Drivers joining and results posting are typical reasons. Practice, qualifying, and the race are records in that string. Telemetry `SessionNum` selects the current one, and that number changes without a new YAML version.
+* A YAML session string. `sessionInfoUpdate` increments when the string changes. Drivers joining and results posting are typical reasons. The server reads that live counter with `getSessionVersionNum()`. Practice, qualifying, and the race are records in that string. Telemetry `SessionNum` selects the current one, and that number changes without a new YAML version.
 
 The reader copies the latest of up to four telemetry buffers so a frame is internally consistent. Several readers may attach. This server is the only reader we run.
 
