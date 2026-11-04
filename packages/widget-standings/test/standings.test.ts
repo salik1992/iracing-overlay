@@ -162,7 +162,7 @@ test("standings column colors follow the text roles", () => {
   assert.match(css, /\.meta\s*\{[^}]*color:\s*var\(--number\)/);
   assert.match(css, /\.pos\s*\{[^}]*color:\s*var\(--number\)/);
   assert.match(css, /\.stops\s*\{[^}]*color:\s*var\(--fg\)/);
-  assert.match(css, /\.gap\s*\{[^}]*color:\s*var\(--number\)/);
+  assert.match(css, /\.gap\s*\{[^}]*color:\s*var\(--accent\)/);
 });
 
 test("standings type is 14px and the row is 20px tall", () => {

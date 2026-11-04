@@ -137,7 +137,7 @@ body {
 
 .gap {
   font-weight: 600;
-  color: var(--number);
+  color: var(--accent);
 }
 
 .delta {
