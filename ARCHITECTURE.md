@@ -186,12 +186,12 @@ Class color is the session's own hex. Shared styles do not remap it onto this pa
 
 `html` and `body` use `background: transparent`. The track shows through everywhere the panel does not cover.
 
-The panel fill is `--bg` at `--panel-alpha: 0.7`, exposed as `--panel`. Text, borders, and role colors stay fully opaque, so the glyphs do not blend into the track. There is no backdrop blur and no gradient. A washed-out scene is handled by raising `--panel-alpha`, not by changing the text color.
+The panel fill is `--bg` at `--panel-alpha: 0.88`, exposed as `--panel`. Text, borders, and role colors stay fully opaque, so the glyphs do not blend into the track. There is no backdrop blur and no gradient. A washed-out scene is handled by raising `--panel-alpha`, not by changing the text color.
 
 ```css
 :root {
   --bg: #1a1b26;
-  --panel-alpha: 0.7;
+  --panel-alpha: 0.88;
   --panel: rgb(26 27 38 / var(--panel-alpha));
   --idle-opacity: 0;
   --font-family: "Fira Code", monospace;

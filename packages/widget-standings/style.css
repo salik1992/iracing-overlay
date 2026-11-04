@@ -44,6 +44,10 @@ body {
   height: 20px;
 }
 
+.row + .row {
+  border-top: 1px solid var(--rule);
+}
+
 .panel[data-mode="race"] .row {
   grid-template-columns: 2.4ch 4ch minmax(5.5ch, 1fr) 2ch 16px 4.6ch 6.2ch;
 }
@@ -133,7 +137,7 @@ body {
 
 .gap {
   font-weight: 600;
-  color: var(--accent);
+  color: var(--number);
 }
 
 .delta {

@@ -13,7 +13,7 @@
   --caution: #e0af68;
   --info: #7dcfff;
   --number: #ff9e64;
-  --panel-alpha: 0.7;
+  --panel-alpha: 0.88;
   --panel: rgb(26 27 38 / var(--panel-alpha));
   --idle-opacity: 0;
   --font-family: "Fira Code", monospace;

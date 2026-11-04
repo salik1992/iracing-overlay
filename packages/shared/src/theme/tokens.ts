@@ -15,7 +15,7 @@ export const theme = {
   caution: "#e0af68",
   info: "#7dcfff",
   number: "#ff9e64",
-  panelAlpha: 0.7,
+  panelAlpha: 0.88,
   idleOpacity: 0,
   fontFamily: '"Fira Code", monospace',
   fontSizePx: 14,

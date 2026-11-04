@@ -2,11 +2,11 @@
 
 Composite timing tower for the OBS browser source at `/standings`. The panel sits at the top left. The preferred source is 291×617. The height is the 720p frame with the 103px telemetry above it. The 23px below a full board is spare room for class headings. The width is the narrowest race row: a two-digit position, a three-digit car number, the short driver name, two-digit stops, a two-digit place change, and a gap of `12:34.567`. The panel uses the full width, and its height follows the rows. Rows past the source edge are clipped.
 
-The page background stays transparent. The panel is the shared terminal panel at 14px and 70% fill, with 6px 8px of padding.
+The page background stays transparent. The panel is the shared terminal panel at 14px and 88% fill, with 6px 8px of padding. Adjacent car rows are separated by the same 1px rule that sits under the session header.
 
 ## Columns
 
-A race session uses position, car number, driver, stops, tyre, position change, and gap. Position is the number color. Stops are the normal text color. The best lap, its delta, and the race gap are accent blue. The session type is `Race`, or any type whose text ends with ` race`. Parade laps of a race keep the race columns.
+A race session uses position, car number, driver, stops, tyre, position change, and gap. Position is the number color. Stops are the normal text color. The best lap, its delta, and the race gap are the number color. The session type is `Race`, or any type whose text ends with ` race`. Parade laps of a race keep the race columns.
 
 Practice, qualify, warmup, and lone qualify drop the stops and the position change. The last column becomes the best lap.
 
