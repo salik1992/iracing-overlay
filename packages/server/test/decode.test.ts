@@ -293,7 +293,13 @@ test("a competitor with no lap time stays after the cars that posted one", () =>
           { CarIdx: 0, UserName: "Pace", CarNumber: "0", CarIsPaceCar: 1 },
         ],
       },
-      SessionInfo: { Sessions: [{ SessionNum: 0, SessionType: "Practice" }] },
+      SessionInfo: {
+        Sessions: [{
+          SessionNum: 0,
+          SessionType: "Practice",
+          ResultsPositions: [{ CarIdx: 1, Position: 1, ClassPosition: 0, FastestTime: 30 }],
+        }],
+      },
     },
     { sessionNum: 0, displayUnits: 1 },
   );
@@ -325,7 +331,7 @@ test("a competitor with no lap time stays after the cars that posted one", () =>
     onTrack: true,
     garageVisible: false,
     cars: [
-      car(1, 1, 0),
+      { ...car(1, 1, 0), bestLapSec: 20 },
       { ...car(2, 0, 1), classPosition: 0, lap: 0, lapCompleted: -1, bestLapSec: -1, lastLapSec: -1 },
       { ...car(3, 0, 2), classPosition: 0, lap: 0, lapCompleted: -1, bestLapSec: -1, trackSurface: -1 },
       { ...car(8, 0, 3), trackSurface: -1 },
@@ -337,6 +343,7 @@ test("a competitor with no lap time stays after the cars that posted one", () =>
     [1, 2, 3],
   );
   assert.equal(frame.rows[0]?.intervalSec, null);
+  assert.equal(frame.rows[0]?.bestLapSec, 30);
   assert.equal(frame.rows[1]?.bestLapSec, null);
   assert.equal(frame.rows[2]?.driverName, "Garage");
   assert.equal(frame.rows[2]?.bestLapSec, null);

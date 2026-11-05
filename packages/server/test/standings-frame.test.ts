@@ -131,13 +131,23 @@ test("a qualifying time stays when the driver leaves the car", () => {
           CarClassShortName: "GTP",
         })),
       },
-      SessionInfo: { Sessions: [{ SessionNum: 1, SessionType: "Lone Qualify" }] },
+      SessionInfo: {
+        Sessions: [{
+          SessionNum: 1,
+          SessionType: "Lone Qualify",
+          ResultsPositions: [
+            { CarIdx: 1, Position: 1, ClassPosition: 0, FastestTime: 80.1 },
+            { CarIdx: 2, Position: 2, ClassPosition: 1, FastestTime: 81.5 },
+            { CarIdx: 3, Position: 3, ClassPosition: 2, FastestTime: 82.4 },
+          ],
+        }],
+      },
     },
     { sessionNum: 1, displayUnits: 1 },
   );
   const posted = new PostedLaps();
   const leader = qualifyCar(1, 80.1, 1);
-  const middle = qualifyCar(2, 81.5, 2);
+  const middle = qualifyCar(2, 79, 2);
   const back = qualifyCar(3, 82.4, 3);
   posted.note(makeTick([leader, middle, back], { sessionState: 4, sessionNum: 1 }));
 
@@ -156,9 +166,10 @@ test("a qualifying time stays when the driver leaves the car", () => {
   back.bestLapSec = 81;
   const improved = makeTick([leader, left, back], { sessionState: 4, sessionNum: 1 });
   const moved = buildStandings(improved, session, undefined, null, posted.note(improved));
+  assert.equal(moved.rows.find((row) => row.carIdx === 3)?.bestLapSec, 82.4);
   assert.equal(moved.rows.find((row) => row.carIdx === 2)?.bestLapSec, 81.5);
-  assert.equal(moved.rows.find((row) => row.carIdx === 2)?.classPosition, 3);
-  assert.equal(moved.rows.find((row) => row.carIdx === 3)?.classPosition, 2);
+  assert.equal(moved.rows.find((row) => row.carIdx === 2)?.classPosition, 2);
+  assert.equal(moved.rows.find((row) => row.carIdx === 3)?.classPosition, 3);
   assert.equal(moved.rows.find((row) => row.carIdx === 1)?.classPosition, 1);
 
   const cleared = new PostedLaps();
@@ -169,7 +180,7 @@ test("a qualifying time stays when the driver leaves the car", () => {
   const forgotten = leaveCar(runner);
   const dropped = buildStandings(
     makeTick([forgotten], { sessionState: 4, sessionNum: 1 }),
-    session,
+    practiceSession("Lone Qualify", [2], []),
     undefined,
     null,
     cleared.note(makeTick([forgotten], { sessionState: 4, sessionNum: 1 })),
@@ -236,7 +247,7 @@ test("a slower live lap does not outrank a faster session time", () => {
   assert.equal(frame.rows.find((row) => row.carIdx === 2)?.classPosition, 2);
 });
 
-test("a faster live lap beats a stale session time", () => {
+test("a live lap the standings have not accepted does not count", () => {
   const session = practiceSession("Lone Qualify", [1, 2], [
     { CarIdx: 1, Position: 2, ClassPosition: 1, FastestTime: 81 },
     { CarIdx: 2, Position: 1, ClassPosition: 0, FastestTime: 80 },
@@ -245,13 +256,28 @@ test("a faster live lap beats a stale session time", () => {
     makeTick([qualifyCar(1, 79.2, 2), qualifyCar(2, 80, 1)], { sessionState: 4, sessionNum: 1 }),
     session,
   );
-  assert.equal(frame.rows.find((row) => row.carIdx === 1)?.bestLapSec, 79.2);
-  assert.equal(frame.rows.find((row) => row.carIdx === 1)?.classPosition, 1);
+  assert.equal(frame.rows.find((row) => row.carIdx === 1)?.bestLapSec, 81);
+  assert.equal(frame.rows.find((row) => row.carIdx === 1)?.classPosition, 2);
   assert.equal(frame.rows.find((row) => row.carIdx === 2)?.bestLapSec, 80);
-  assert.equal(frame.rows.find((row) => row.carIdx === 2)?.classPosition, 2);
+  assert.equal(frame.rows.find((row) => row.carIdx === 2)?.classPosition, 1);
+
+  const practice = practiceSession("Practice", [1, 2], [
+    { CarIdx: 1, Position: 1, ClassPosition: 0, FastestTime: 82 },
+  ]);
+  const onlyInvalid = buildStandings(
+    makeTick([qualifyCar(1, 82, 1), qualifyCar(2, 77.4, 2)], { sessionState: 4, sessionNum: 1 }),
+    practice,
+  );
+  assert.equal(onlyInvalid.rows.find((row) => row.carIdx === 1)?.bestLapSec, 82);
+  assert.equal(onlyInvalid.rows.find((row) => row.carIdx === 2)?.bestLapSec, null);
+  assert.deepEqual(
+    onlyInvalid.rows.map((row) => row.carIdx),
+    [1, 2],
+  );
+  assert.equal(onlyInvalid.rows.find((row) => row.carIdx === 1)?.classPosition, 1);
 });
 
-test("an exited car keeps the faster of the latched lap and the session time", () => {
+test("an exited car keeps the session time when a faster live lap was rejected", () => {
   const fasterLatch = practiceSession("Practice", [1], [
     { CarIdx: 1, Position: 2, ClassPosition: 0, FastestTime: 82 },
   ]);
@@ -266,7 +292,7 @@ test("an exited car keeps the faster of the latched lap and the session time", (
     null,
     posted.note(makeTick([left], { sessionState: 4, sessionNum: 1 })),
   );
-  assert.equal(frame.rows.find((row) => row.carIdx === 1)?.bestLapSec, 79);
+  assert.equal(frame.rows.find((row) => row.carIdx === 1)?.bestLapSec, 82);
   assert.equal(frame.rows.find((row) => row.carIdx === 1)?.position, 1);
 
   const fasterResult = practiceSession("Practice", [1], [

@@ -84,7 +84,13 @@ export function buildStandings(
     car,
     driver: session?.drivers[String(car.carIdx)],
     gap: gapToPlayer(car.estTimeSec, tick.playerEstTimeSec),
-    bestLapSec: keptBest(car, !byPlace, postedLaps, postedTime(results.get(car.carIdx)?.fastestTimeSec)),
+    bestLapSec: keptBest(
+      car,
+      !byPlace,
+      session !== null && !isRaceSession(session.session.type),
+      postedLaps,
+      postedTime(results.get(car.carIdx)?.fastestTimeSec),
+    ),
   }));
 
   const groups = new Map<number, Draft[]>();
@@ -283,20 +289,26 @@ function isRaceSession(type: string): boolean {
 }
 
 /**
- * Practice and qualifying show the faster positive time among the live best,
- * the lap latched after the driver got out, and ResultsPositions.FastestTime.
- * A race, the pre-green grid, and the checkered lock use the live value only.
- * FastestTime supplies laps posted before the server attached.
+ * Practice and qualifying show ResultsPositions.FastestTime.
+ * That is the lap iRacing's standings count. CarIdxBestLapTime also
+ * moves for a lap those standings reject, such as an off-track or a slowdown.
+ * A race that is not yet ordered by place still merges the live best with
+ * the result. A race under way, the pre-green grid, and the checkered lock
+ * use the live value only.
  */
 function keptBest(
   car: CarSample,
   keepTime: boolean,
+  officialOnly: boolean,
   postedLaps: ReadonlyMap<number, PostedLap> | null,
   sessionBest: number | null,
 ): number | null {
   const live = lapTime(car.bestLapSec);
   if (!keepTime) {
     return live;
+  }
+  if (officialOnly) {
+    return sessionBest;
   }
   if (live !== null) {
     return sessionBest !== null ? Math.min(live, sessionBest) : live;
