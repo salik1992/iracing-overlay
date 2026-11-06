@@ -131,10 +131,81 @@ function positive(value: number): number {
   return Number.isFinite(value) && value > 0 ? value : 0;
 }
 
+/**
+ * Inverse of a log scale. Low rpm stays packed and the top of the range
+ * gets more width. 1 keeps every 100 rpm mark separable in the rpm slot.
+ */
+const RPM_CURVE = 1;
+const FALLBACK_RPM_MAX = 10000;
+
+export interface RpmAxis {
+  /** Right end of the scale. */
+  max: number;
+  /** Axis turns red after this rpm. 0 keeps the whole axis white. */
+  redAt: number;
+}
+
+/** Blink point plus 10% of that value. Last light, then 10000, when blink is missing. */
+export function rpmAxis(points: ShiftLightPoints): RpmAxis {
+  const blink = positive(points.blinkRpm);
+  const last = positive(points.lastRpm);
+  if (blink > 0) {
+    return { max: (blink * 11) / 10, redAt: blink };
+  }
+  if (last > 0) {
+    return { max: (last * 11) / 10, redAt: 0 };
+  }
+  return { max: FALLBACK_RPM_MAX, redAt: 0 };
+}
+
+/** 0 at the left, 1 at the right. Clamped to the axis. */
+export function rpmPosition(rpm: number, max: number): number {
+  if (!(max > 0) || !Number.isFinite(rpm)) {
+    return 0;
+  }
+  const t = Math.min(1, Math.max(0, rpm / max));
+  return (Math.exp(RPM_CURVE * t) - 1) / (Math.exp(RPM_CURVE) - 1);
+}
+
+export type RpmMark = "minor" | "mid" | "major";
+
+export interface RpmTick {
+  rpm: number;
+  mark: RpmMark;
+  /** Thousands digit on a 1000 mark. Empty otherwise. */
+  label: string;
+  red: boolean;
+}
+
+export function rpmTicks(axis: RpmAxis): RpmTick[] {
+  const ticks: RpmTick[] = [];
+  if (!(axis.max > 0)) {
+    return ticks;
+  }
+  const last = Math.floor((axis.max + 1e-6) / 100) * 100;
+  for (let rpm = 100; rpm <= last; rpm += 100) {
+    const major = rpm % 1000 === 0;
+    const mid = !major && rpm % 500 === 0;
+    ticks.push({
+      rpm,
+      mark: major ? "major" : mid ? "mid" : "minor",
+      label: major ? String(rpm / 1000) : "",
+      red: axis.redAt > 0 && rpm > axis.redAt,
+    });
+  }
+  return ticks;
+}
+
 export function speedReadout(speedMps: number, units: DisplayUnits): { value: string; unit: string } {
   const speed = Number.isFinite(speedMps) ? Math.abs(speedMps) : 0;
   if (units === 1) {
-    return { value: String(Math.round(speed * 3.6)), unit: " km/h" };
+    return { value: String(Math.round(speed * 3.6)), unit: "km/h" };
   }
-  return { value: String(Math.round(speed * MPS_TO_MPH)), unit: " mph" };
+  return { value: String(Math.round(speed * MPS_TO_MPH)), unit: "mph" };
+}
+
+/** Pedal travel as a whole percent from 0 to 100. */
+export function pedalPercent(value: number): string {
+  const clamped = !Number.isFinite(value) || value <= 0 ? 0 : value >= 1 ? 1 : value;
+  return `${Math.round(clamped * 100)}%`;
 }

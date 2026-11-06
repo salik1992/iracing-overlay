@@ -192,7 +192,11 @@ function frameMessage(
   sectorGaps: ReadonlyMap<number, CountedGap>,
 ): ServerMessage | null {
   if (widget.id === "telemetry") {
-    return { type: "telemetry", tick: tick.sessionTick, frame: buildTelemetry(tick) };
+    return {
+      type: "telemetry",
+      tick: tick.sessionTick,
+      frame: buildTelemetry(tick, session, note, liveClassPosition, postedLaps, sectorGaps),
+    };
   }
   if (widget.id === "standings") {
     return {

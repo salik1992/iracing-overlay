@@ -3,121 +3,48 @@
 html,
 body {
   height: 100%;
-}
-
-body {
   overflow: hidden;
 }
 
 .panel {
-  width: 100%;
-  height: 100%;
+  box-sizing: border-box;
+  width: 1280px;
+  height: 52px;
   padding: 0;
-  position: relative;
+  display: grid;
+  grid-template-columns: 360px 360px 360px;
+  column-gap: 100px;
+  align-items: stretch;
+  overflow: hidden;
+  border: none;
+  border-top: 1px solid var(--border);
+  font-variant-numeric: tabular-nums;
+}
+
+.inputs,
+.center,
+.relatives {
+  min-width: 0;
+  height: 100%;
   overflow: hidden;
 }
 
-/* 6 by 18 on the 103 canvas, in the gap above the gear. */
-.rpm-lights {
-  position: absolute;
-  top: calc(100vh * 3 / 103);
-  left: 50%;
-  transform: translateX(-50%);
+.inputs {
   display: flex;
-  gap: calc(100vh * 6 / 103);
-  z-index: 1;
-  pointer-events: none;
+  align-items: stretch;
+  column-gap: 8px;
 }
 
-.rpm-segment {
-  display: flex;
-  gap: calc(100vh * 2 / 103);
-}
-
-.rpm-light {
-  width: calc(100vh * 18 / 103);
-  height: calc(100vh * 6 / 103);
-  flex: none;
-  background: var(--rule);
-}
-
-.rpm-segment.green .rpm-light.is-on { background: var(--good); }
-.rpm-segment.red .rpm-light.is-on { background: var(--bad); }
-.rpm-segment.blue .rpm-light.is-on { background: var(--accent); }
-
-.gear {
-  position: absolute;
-  left: 0;
-  right: 0;
-  /* Shares a center line with the 28px speed and steering figures at top 16. */
-  top: calc(100vh * 12 / 103);
-  text-align: center;
-  font-size: calc(100vh * 36 / 103);
-  font-weight: var(--font-weight-strong);
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.03em;
-  line-height: 1;
-  color: var(--number);
-  pointer-events: none;
-  z-index: 1;
-}
-
-.steer-lock,
-.speed-lock {
-  position: absolute;
-  top: calc(100vh * 16 / 103);
-  z-index: 1;
-  white-space: nowrap;
-}
-
-.steer-lock {
-  left: calc(100vw * 16 / 440);
-  display: flex;
-  align-items: center;
-  gap: calc(100vw * 8 / 440);
-}
-
-.speed-lock {
-  right: calc(100vw * 16 / 440);
-  text-align: right;
-}
-
-.wheel {
-  width: calc(100vh * 26 / 103);
-  height: calc(100vh * 26 / 103);
-  flex: none;
-  display: block;
-}
-
-.readout {
-  font-size: calc(100vh * 28 / 103);
-  font-weight: var(--font-weight-strong);
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.03em;
-  line-height: 1;
-}
-
-.unit {
-  font-size: calc(100vh * 11 / 103);
-  font-weight: var(--font-weight);
-  letter-spacing: 0.06em;
-  line-height: 1;
-  color: var(--number);
-}
-
-/* Side and bottom edges of the panel. The top meets the gear box on the 103 canvas. */
 .trace-row {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: calc(100vh * 55 / 103);
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100%;
   display: flex;
   align-items: stretch;
 }
 
 .traces {
-  flex: 1;
+  flex: 1 1 auto;
   min-width: 0;
   height: 100%;
 }
@@ -151,7 +78,7 @@ body {
 }
 
 .vbar {
-  width: calc(100vw * 8 / 440);
+  width: 8px;
   height: 100%;
   background: var(--rule);
   position: relative;
@@ -167,3 +94,191 @@ body {
 .vbar.clutch > span { background: var(--accent); }
 .vbar.brake > span { background: var(--bad); }
 .vbar.throttle > span { background: var(--good); }
+
+.pedals {
+  flex: none;
+  display: grid;
+  grid-template-columns: 4ch 4ch;
+  grid-template-rows: 1fr 1fr;
+  align-items: center;
+  justify-items: stretch;
+  column-gap: 8px;
+  height: 100%;
+  font-size: 14px;
+  font-weight: var(--font-weight-strong);
+  line-height: 1;
+}
+
+.pct {
+  min-width: 0;
+  text-align: right;
+}
+
+.pct.throttle { color: var(--good); }
+.pct.brake { color: var(--bad); }
+.pct.clutch { color: var(--accent); }
+.pct.steer { color: var(--fg); }
+
+.wheel {
+  width: 47px;
+  height: 47px;
+  flex: none;
+  align-self: center;
+  display: block;
+}
+
+.center {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+.speed {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1;
+  gap: 2px;
+}
+
+.speed-value {
+  font-size: 24px;
+  font-weight: var(--font-weight-strong);
+  color: var(--fg);
+}
+
+.speed-unit {
+  font-size: 11px;
+  font-weight: var(--font-weight);
+  letter-spacing: 0.04em;
+  color: var(--number);
+}
+
+.rpm {
+  position: relative;
+  align-self: stretch;
+  min-width: 0;
+  min-height: 0;
+}
+
+.rpm-scale {
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  top: 0;
+  bottom: 0;
+}
+
+.rpm-axis,
+.rpm-axis-red,
+.rpm-tick,
+.rpm-needle {
+  position: absolute;
+  top: 50%;
+}
+
+.rpm-axis,
+.rpm-axis-red {
+  height: 1px;
+  transform: translateY(-50%);
+}
+
+.rpm-axis {
+  left: 0;
+  right: 0;
+  background: var(--fg);
+}
+
+.rpm-axis-red {
+  right: 0;
+  background: var(--bad);
+}
+
+.rpm-tick {
+  width: 1px;
+  background: var(--fg);
+  transform: translate(-0.5px, -50%);
+}
+
+.rpm-tick.minor { height: 9px; }
+.rpm-tick.mid { height: 18px; }
+.rpm-tick.major { height: 27px; }
+.rpm-tick.is-red { background: var(--bad); }
+
+.rpm-label {
+  position: absolute;
+  top: calc(50% + 13.5px);
+  transform: translateX(-50%);
+  font-size: 11px;
+  line-height: 1;
+  color: var(--fg);
+  z-index: 2;
+}
+
+.rpm-label.is-red { color: var(--bad); }
+
+.rpm-needle {
+  width: 3px;
+  height: 44px;
+  background: var(--number);
+  transform: translate(-1.5px, -50%);
+  z-index: 1;
+}
+
+.gear {
+  font-size: 36px;
+  font-weight: var(--font-weight-strong);
+  line-height: 1;
+  color: var(--number);
+}
+
+.relatives {
+  display: grid;
+  grid-template-rows: 1fr 1fr;
+  align-items: center;
+}
+
+.relative {
+  display: grid;
+  grid-template-columns: 2.4ch 4ch minmax(0, 1fr) auto;
+  column-gap: 8px;
+  align-items: center;
+  min-width: 0;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.pos {
+  text-align: right;
+  font-weight: 600;
+  color: var(--number);
+}
+
+.num {
+  justify-self: stretch;
+  display: grid;
+  place-items: center;
+  height: 16px;
+  background: var(--plate, var(--rule));
+  text-align: center;
+  line-height: 1;
+}
+
+.relative.is-class .num {
+  color: var(--bg);
+}
+
+.name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--fg);
+}
+
+.gap {
+  text-align: right;
+  font-weight: 600;
+  color: var(--accent);
+  white-space: nowrap;
+}

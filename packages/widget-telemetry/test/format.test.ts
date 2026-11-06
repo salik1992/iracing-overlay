@@ -2,8 +2,13 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
+import { tokyo } from "../src/color.js";
 import {
   gearLabel,
+  pedalPercent,
+  rpmAxis,
+  rpmPosition,
+  rpmTicks,
   shiftBlinkOn,
   shiftLights,
   speedReadout,
@@ -14,17 +19,40 @@ import {
 import { HISTORY_GAP_MS, HISTORY_MS, pedalPaths, remember, type PedalSample } from "../src/history.js";
 import { parseMessage } from "../src/parse.js";
 
-test("units are orange and the trace sits on the panel edges", () => {
+test("the strip is 1280 by 52 with a top border and three sections", () => {
   const css = readFileSync(new URL("../style.css", import.meta.url), "utf8");
-  assert.match(css, /\.unit\s*\{[^}]*color:\s*var\(--number\)/);
-  assert.match(css, /\.trace-row\s*\{[^}]*\bleft:\s*0;/);
-  assert.match(css, /\.trace-row\s*\{[^}]*\bright:\s*0;/);
-  assert.match(css, /\.trace-row\s*\{[^}]*\bbottom:\s*0;/);
-  assert.match(css, /\.trace-row\s*\{[^}]*height:\s*calc\(100vh \* 55 \/ 103\)/);
-  assert.match(css, /\.rpm-segment\.green \.rpm-light\.is-on\s*\{[^}]*background:\s*var\(--good\)/);
-  assert.match(css, /\.rpm-segment\.red \.rpm-light\.is-on\s*\{[^}]*background:\s*var\(--bad\)/);
-  assert.match(css, /\.rpm-segment\.blue \.rpm-light\.is-on\s*\{[^}]*background:\s*var\(--accent\)/);
-  assert.doesNotMatch(css, /\.rpm-segment\.yellow/);
+  assert.match(css, /\.panel\s*\{[^}]*width:\s*1280px/);
+  assert.match(css, /\.panel\s*\{[^}]*height:\s*52px/);
+  assert.match(css, /\.panel\s*\{[^}]*border:\s*none/);
+  assert.match(css, /\.panel\s*\{[^}]*border-top:\s*1px solid var\(--border\)/);
+  assert.match(css, /\.panel\s*\{[^}]*grid-template-columns:\s*360px 360px 360px/);
+  assert.match(css, /\.panel\s*\{[^}]*column-gap:\s*100px/);
+  assert.match(css, /\.trace-row\s*\{[^}]*height:\s*100%/);
+  assert.match(css, /\.vbars\s*\{[^}]*height:\s*100%/);
+  assert.match(css, /\.wheel\s*\{[^}]*width:\s*47px/);
+  assert.match(css, /\.wheel\s*\{[^}]*height:\s*47px/);
+  assert.match(css, /\.pedals\s*\{[^}]*grid-template-columns:\s*4ch 4ch/);
+  assert.match(css, /\.pct\s*\{[^}]*text-align:\s*right/);
+  assert.match(css, /\.pct\.throttle\s*\{[^}]*color:\s*var\(--good\)/);
+  assert.match(css, /\.pct\.brake\s*\{[^}]*color:\s*var\(--bad\)/);
+  assert.match(css, /\.pct\.clutch\s*\{[^}]*color:\s*var\(--accent\)/);
+  assert.match(css, /\.pct\.steer\s*\{[^}]*color:\s*var\(--fg\)/);
+  assert.match(css, /\.speed-unit\s*\{[^}]*color:\s*var\(--number\)/);
+  assert.match(css, /\.gear\s*\{[^}]*color:\s*var\(--number\)/);
+  assert.match(css, /\.rpm-tick\.minor\s*\{[^}]*height:\s*9px/);
+  assert.match(css, /\.rpm-tick\.mid\s*\{[^}]*height:\s*18px/);
+  assert.match(css, /\.rpm-tick\.major\s*\{[^}]*height:\s*27px/);
+  assert.match(css, /\.rpm-label\s*\{[^}]*top:\s*calc\(50% \+ 13\.5px\)/);
+  assert.match(css, /\.rpm-axis\s*\{[^}]*background:\s*var\(--fg\)/);
+  assert.match(css, /\.rpm-axis-red\s*\{[^}]*background:\s*var\(--bad\)/);
+  assert.match(css, /\.rpm-needle\s*\{[^}]*width:\s*3px/);
+  assert.match(css, /\.rpm-needle\s*\{[^}]*height:\s*44px/);
+  assert.match(css, /\.rpm-needle\s*\{[^}]*background:\s*var\(--number\)/);
+  assert.match(css, /\.rpm-needle\s*\{[^}]*top:\s*50%/);
+  assert.match(css, /\.center\s*\{[^}]*grid-template-columns:\s*auto minmax\(0, 1fr\) auto/);
+  assert.doesNotMatch(css, /\.rpm-light/);
+  assert.doesNotMatch(css, /\.rpm-segment/);
+  assert.doesNotMatch(css, /100vh \* 55 \/ 103/);
 });
 
 test("gear labels use a digit, N, or R", () => {
@@ -58,10 +86,58 @@ test("steering shows absolute degrees and an L or R unit", () => {
 });
 
 test("speed follows display units and stays positive", () => {
-  assert.deepEqual(speedReadout(10, 1), { value: "36", unit: " km/h" });
-  assert.deepEqual(speedReadout(10, 0), { value: "22", unit: " mph" });
+  assert.deepEqual(speedReadout(10, 1), { value: "36", unit: "km/h" });
+  assert.deepEqual(speedReadout(10, 0), { value: "22", unit: "mph" });
   assert.equal(speedReadout(-12, 1).value, speedReadout(12, 1).value);
-  assert.deepEqual(speedReadout(Number.NaN, 1), { value: "0", unit: " km/h" });
+  assert.deepEqual(speedReadout(Number.NaN, 1), { value: "0", unit: "km/h" });
+});
+
+test("the rpm scale packs the bottom and turns red after the blink point", () => {
+  const axis = rpmAxis({ firstRpm: 6000, shiftRpm: 7000, lastRpm: 7500, blinkRpm: 7800 });
+  assert.equal(axis.max, 8580);
+  assert.equal(axis.redAt, 7800);
+  const low = rpmPosition(1000, axis.max) - rpmPosition(0, axis.max);
+  const high = rpmPosition(axis.max, axis.max) - rpmPosition(axis.max - 1000, axis.max);
+  assert.ok(high > low * 2);
+  assert.equal(rpmPosition(0, axis.max), 0);
+  assert.equal(rpmPosition(axis.max, axis.max), 1);
+  assert.equal(rpmPosition(-50, axis.max), 0);
+  assert.equal(rpmPosition(axis.max + 400, axis.max), 1);
+
+  const ticks = rpmTicks(axis);
+  const at = (rpm: number) => ticks.find((tick) => tick.rpm === rpm);
+  assert.equal(at(100)?.mark, "minor");
+  assert.equal(at(100)?.label, "");
+  assert.equal(at(500)?.mark, "mid");
+  assert.equal(at(2000)?.mark, "major");
+  assert.equal(at(2000)?.label, "2");
+  assert.equal(at(2000)?.red, false);
+  assert.equal(at(7800)?.red, false);
+  assert.equal(at(7900)?.mark, "minor");
+  assert.equal(at(7900)?.red, true);
+  assert.equal(at(8000)?.label, "8");
+  assert.equal(at(8000)?.red, true);
+  assert.equal(ticks.some((tick) => tick.rpm === 0 || tick.rpm === 9000), false);
+
+  const quiet = rpmAxis({ firstRpm: 0, shiftRpm: 0, lastRpm: 0, blinkRpm: 0 });
+  assert.equal(quiet.max, 10000);
+  assert.equal(quiet.redAt, 0);
+  assert.equal(rpmTicks(quiet).some((tick) => tick.red), false);
+});
+
+test("pedal percents are whole numbers from 0 to 100", () => {
+  assert.equal(pedalPercent(0), "0%");
+  assert.equal(pedalPercent(0.8), "80%");
+  assert.equal(pedalPercent(1), "100%");
+  assert.equal(pedalPercent(1.4), "100%");
+  assert.equal(pedalPercent(-0.2), "0%");
+  assert.equal(pedalPercent(Number.NaN), "0%");
+});
+
+test("a class plate keeps the session hue", () => {
+  assert.match(tokyo("#e10600"), /^#[0-9a-f]{6}$/);
+  assert.notEqual(tokyo("#e10600").toLowerCase(), "#e10600");
+  assert.equal(tokyo("nope"), "nope");
 });
 
 test("pedal history keeps five seconds and puts the newest sample on the right", () => {
@@ -173,8 +249,52 @@ test("parse keeps the fields this widget draws", () => {
       brake: 0,
       clutch: 0.2,
       steeringWheelAngleRad: 0.1,
+      ahead: null,
+      behind: null,
     },
   });
+  assert.deepEqual(
+    parseMessage(JSON.stringify({
+      type: "telemetry",
+      frame: {
+        speedMps: 1,
+        rpm: 2,
+        gear: 3,
+        throttle: 0,
+        brake: 0,
+        clutch: 0,
+        steeringWheelAngleRad: 0,
+        ahead: {
+          position: 1,
+          carNumber: "2",
+          driverName: "A. Nielsen",
+          classColor: "#e10600",
+          gap: "1:30.000",
+        },
+        behind: { position: "nope" },
+      },
+    })),
+    {
+      type: "telemetry",
+      frame: {
+        speedMps: 1,
+        rpm: 2,
+        gear: 3,
+        throttle: 0,
+        brake: 0,
+        clutch: 0,
+        steeringWheelAngleRad: 0,
+        ahead: {
+          position: 1,
+          carNumber: "2",
+          driverName: "A. Nielsen",
+          classColor: "#e10600",
+          gap: "1:30.000",
+        },
+        behind: null,
+      },
+    },
+  );
   assert.equal(parseMessage("nope"), null);
   assert.equal(parseMessage('{"type":"telemetry","frame":{"speedMps":1}}'), null);
   assert.equal(parseMessage('{"type":"standings","tick":1}'), null);

@@ -97,6 +97,22 @@ export interface SessionSnapshot {
   };
 }
 
+/** Same-class car next to the player on the standings tower. */
+export interface TelemetryNeighbor {
+  /** Class position. Overall position when the class place is unset. */
+  position: number;
+  carNumber: string;
+  driverName: string;
+  /** Class color when more than one class is on the tower. Null for a single class. */
+  classColor: string | null;
+  /**
+   * Gap text from the standings column.
+   * In a race this is the interval between this car and the player.
+   * Otherwise it is this car's own best-lap gap.
+   */
+  gap: string;
+}
+
 export interface TelemetryFrame {
   speedMps: number;
   rpm: number;
@@ -111,6 +127,10 @@ export interface TelemetryFrame {
   lapLastSec: number | null;
   lapBestSec: number | null;
   onTrack: boolean;
+  /** Same-class car immediately ahead. Null when the player leads the class. */
+  ahead: TelemetryNeighbor | null;
+  /** Same-class car immediately behind. Null when the player is last in class. */
+  behind: TelemetryNeighbor | null;
 }
 
 export type SessionStateName =
