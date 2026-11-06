@@ -8,7 +8,7 @@ import { normalizeSession } from "../src/session.js";
 import type { CarSample, Tick } from "../src/tick.js";
 import type { SessionSnapshot } from "../src/types.js";
 
-test("practice relatives stay in class and use the standings best-lap gap", () => {
+test("practice and qualifying relatives use the gap to the player's best lap", () => {
   const session = practiceSession();
   const tick = makeTick(2, [
     car(1, 2, 1, 3, 0.4, 90),
@@ -22,16 +22,21 @@ test("practice relatives stay in class and use the standings best-lap gap", () =
     carNumber: "2",
     driverName: "A. Nielsen",
     classColor: "#e10600",
-    gap: "1:30.000",
+    gap: "-1.200",
   });
   assert.deepEqual(frame.behind, {
     position: 3,
     carNumber: "7",
     driverName: "C. Berg",
     classColor: "#e10600",
-    gap: "+2.500",
+    gap: "+1.300",
   });
   assert.equal(frame.rpm, 7000);
+
+  const qualify = { ...session, session: { ...session.session, type: "Lone Qualify" } };
+  const qualifyFrame = buildTelemetry(tick, qualify);
+  assert.equal(qualifyFrame.ahead?.gap, "-1.200");
+  assert.equal(qualifyFrame.behind?.gap, "+1.300");
 });
 
 test("a single class uses a neutral plate and the ends of the class stay empty", () => {
@@ -44,7 +49,7 @@ test("a single class uses a neutral plate and the ends of the class stay empty",
 
   const last = buildTelemetry(makeTick(2, [car(1, 1, 1, 3, 0.4, 90), car(2, 2, 2, 3, 0.3, 91.2)]), session);
   assert.equal(last.behind, null);
-  assert.equal(last.ahead?.gap, "1:30.000");
+  assert.equal(last.ahead?.gap, "-1.200");
   assert.equal(last.ahead?.classColor, null);
 });
 
@@ -63,19 +68,19 @@ test("race relatives show the interval to the player", () => {
   const frame = buildTelemetry(makeTick(2, cars), session, EMPTY_NOTE, null, null, gaps);
   assert.equal(frame.ahead?.driverName, "A. Nielsen");
   assert.equal(frame.ahead?.position, 1);
-  assert.equal(frame.ahead?.gap, "0.432");
+  assert.equal(frame.ahead?.gap, "-0.432");
   assert.equal(frame.behind?.driverName, "C. Berg");
-  assert.equal(frame.behind?.gap, "1.205");
+  assert.equal(frame.behind?.gap, "+1.205");
   assert.notEqual(frame.ahead?.driverName, "M. Okada");
 
   const lapped = cars.map((entry) => (entry.carIdx === 2 ? { ...entry, lap: 5 } : entry));
   const down = buildTelemetry(makeTick(2, lapped), session, EMPTY_NOTE, null, null, gaps);
-  assert.equal(down.ahead?.gap, "+1L");
-  assert.equal(down.behind?.gap, "1.205");
+  assert.equal(down.ahead?.gap, "-1L");
+  assert.equal(down.behind?.gap, "+1.205");
 
   const lead = buildTelemetry(makeTick(1, cars), session, EMPTY_NOTE, null, null, gaps);
   assert.equal(lead.ahead, null);
-  assert.equal(lead.behind?.gap, "0.432");
+  assert.equal(lead.behind?.gap, "+0.432");
 });
 
 function practiceSession(multi = true): SessionSnapshot {
