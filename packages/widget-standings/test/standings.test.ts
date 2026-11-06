@@ -21,13 +21,13 @@ test("short names follow the trigram rule", () => {
 });
 
 test("the player class splits the spare rows around the driver", () => {
-  assert.equal(labels(playerClassWindow(60, 9, 1)), `${span(1, 27)},g33`);
-  assert.equal(labels(playerClassWindow(60, 53, 1)), `${span(1, 5)},g33,${span(39, 60)}`);
-  assert.equal(labels(playerClassWindow(60, 1, 1)), `${span(1, 27)},g33`);
+  assert.equal(labels(playerClassWindow(60, 9, 1)), `${span(1, 30)},g30`);
+  assert.equal(labels(playerClassWindow(60, 53, 1)), `${span(1, 5)},g30,${span(36, 60)}`);
+  assert.equal(labels(playerClassWindow(60, 1, 1)), `${span(1, 30)},g30`);
   assert.equal(labels(playerClassWindow(28, 1, 1)), span(1, 28));
-  assert.equal(labels(playerClassWindow(29, 1, 1)), `${span(1, 27)},g2`);
-  assert.equal(labels(playerClassWindow(30, 14, 1)), `${span(1, 27)},g3`);
-  assert.equal(labels(playerClassWindow(60, 9, 3)), `${span(1, 17)},g43`);
+  assert.equal(labels(playerClassWindow(29, 1, 1)), span(1, 29));
+  assert.equal(labels(playerClassWindow(30, 14, 1)), span(1, 30));
+  assert.equal(labels(playerClassWindow(60, 9, 3)), `${span(1, 29)},g31`);
   assert.equal(labels(playerClassWindow(18, 8, 1)), span(1, 18));
 });
 
@@ -114,7 +114,8 @@ test("other mode shows the class best and its delta", () => {
   assert.equal(cars[1]?.car.player, true);
   assert.equal(cars[1]?.car.team, "Salomon Racing");
   assert.equal(cars[0]?.car.plate, null);
-  assert.equal(board.items.some((item) => item.kind === "class"), false);
+  assert.equal(board.columns.length, 1);
+  assert.equal(board.columns[0]?.showHead, false);
 });
 
 test("a pre-green race follows class place, and a car with no place sorts last", () => {
@@ -152,7 +153,18 @@ test("standings column colors follow the text roles", () => {
 test("standings type is 14px and the row is 20px tall", () => {
   const css = readFileSync(new URL("../style.css", import.meta.url), "utf8");
   assert.match(css, /\.panel\s*\{[^}]*--panel-alpha:\s*0\.88/);
+  assert.match(css, /\.panel\s*\{[^}]*--panel:\s*rgb\(26 27 38 \/ var\(--panel-alpha\)\)/);
   assert.match(css, /\.panel\s*\{[^}]*font-size:\s*14px/);
+  assert.match(css, /\.panel\s*\{[^}]*height:\s*640px/);
+  assert.match(css, /\.panel\s*\{[^}]*border:\s*none/);
+  assert.match(css, /\.panel\s*\{[^}]*background:\s*transparent/);
+  assert.match(css, /\.column\s*\{[^}]*width:\s*290px/);
+  assert.match(css, /\.column\s*\{[^}]*background:\s*var\(--panel\)/);
+  assert.match(css, /\.column\s*\{[^}]*border-right:\s*1px solid var\(--border\)/);
+  assert.match(css, /\.column\s*\{[^}]*border-bottom:\s*1px solid var\(--border\)/);
+  assert.match(css, /\.column \+ \.column\s*\{[^}]*border-left:\s*1px solid var\(--border\)/);
+  assert.match(css, /\.column \+ \.column\s*\{[^}]*margin-left:\s*-1px/);
+  assert.match(css, /\.column > \.classhead\s*\{[^}]*margin-top:\s*0/);
   assert.match(css, /\.row\s*\{[^}]*height:\s*20px/);
   assert.doesNotMatch(css, /\.row \+ \.row\s*\{[^}]*border-top/);
   assert.match(css, /\.num\s*\{[^}]*height:\s*16px/);
@@ -277,23 +289,22 @@ test("multiclass keeps the top 5 of other classes and the player's window", () =
   const board = buildBoard(session({ type: "Race", laps: "30" }), frame(rows));
   const grouped = carsByClass(board);
   assert.deepEqual(grouped.get("GTP"), { cars: 5, gaps: [15] });
-  assert.deepEqual(grouped.get("LMP2"), { cars: 17, gaps: [43] });
+  assert.deepEqual(grouped.get("LMP2"), { cars: 29, gaps: [31] });
   assert.deepEqual(grouped.get("GTD"), { cars: 4, gaps: [] });
-  assert.equal(carItems(board).length, 26);
+  assert.equal(carItems(board).length, 38);
   const player = carItems(board).filter((item) => item.car.player);
   assert.equal(player.length, 1);
   assert.equal(player[0]?.car.position, 9);
   assert.equal(player[0]?.car.plate, "#8baae4");
   assert.equal(tokyo("#1c6bff"), "#8baae4");
   assert.equal(tokyo("#ff2d2d"), "#e48b8b");
-  const headings = board.items.filter((item) => item.kind === "class");
   assert.deepEqual(
-    headings.map((item) => (item.kind === "class" ? item.name : "")),
-    ["GTP", "LMP2", "GTD"],
+    board.columns.map((column) => column.name),
+    ["LMP2", "GTP", "GTD"],
   );
 });
 
-test("other classes stay at the top 5 when five of them already fill the cap", () => {
+test("other classes stay at the top 5 and do not shrink the player class", () => {
   const rows = [
     ...klass(1, "A", "#ff2d2d", 1, 20, null),
     ...klass(2, "B", "#ff2d2d", 21, 20, null),
@@ -307,8 +318,9 @@ test("other classes stay at the top 5 when five of them already fill the cap", (
   for (const name of ["A", "B", "C", "D", "F"]) {
     assert.deepEqual(grouped.get(name), { cars: 5, gaps: [15] }, name);
   }
-  assert.deepEqual(grouped.get("E"), { cars: 6, gaps: [17, 17] });
-  assert.equal(carItems(board).length, 31);
+  assert.deepEqual(grouped.get("E"), { cars: 29, gaps: [5, 6] });
+  assert.equal(carItems(board).length, 54);
+  assert.equal(board.columns[0]?.name, "E");
 });
 
 test("a short class stays whole while the other classes stay at 5", () => {
@@ -324,16 +336,19 @@ test("a short class stays whole while the other classes stay at 5", () => {
   const grouped = carsByClass(board);
   assert.deepEqual(grouped.get("D"), { cars: 4, gaps: [] });
   assert.deepEqual(grouped.get("G"), { cars: 5, gaps: [15] });
-  assert.deepEqual(grouped.get("E"), { cars: 6, gaps: [17, 17] });
-  assert.equal(carItems(board).length, 30);
+  assert.deepEqual(grouped.get("E"), { cars: 29, gaps: [5, 6] });
+  assert.equal(carItems(board).length, 53);
+  assert.equal(board.columns[0]?.name, "E");
 });
 
 test("the preview is a multiclass race through the same board", () => {
   const board = previewBoard();
   assert.equal(board.race, true);
   assert.equal(board.teamRacing, false);
-  const names = board.items.filter((item) => item.kind === "class").map((item) => (item.kind === "class" ? item.name : ""));
-  assert.deepEqual(names, ["GTP", "LMP2", "GTD"]);
+  assert.deepEqual(
+    board.columns.map((column) => column.name),
+    ["LMP2", "GTP", "GTD"],
+  );
   assert.deepEqual(carsByClass(board).get("GTP"), { cars: 5, gaps: [4] });
   assert.deepEqual(carsByClass(board).get("LMP2"), { cars: 10, gaps: [] });
   assert.deepEqual(carsByClass(board).get("GTD"), { cars: 6, gaps: [] });
@@ -489,25 +504,23 @@ function klass(
 }
 
 function carItems(board: Board): Extract<BoardItem, { kind: "car" }>[] {
-  return board.items.filter((item): item is Extract<BoardItem, { kind: "car" }> => item.kind === "car");
+  return board.columns.flatMap((column) =>
+    column.items.filter((item): item is Extract<BoardItem, { kind: "car" }> => item.kind === "car"),
+  );
 }
 
 function carsByClass(board: Board): Map<string, { cars: number; gaps: number[] }> {
   const map = new Map<string, { cars: number; gaps: number[] }>();
-  let current = "";
-  for (const item of board.items) {
-    if (item.kind === "class") {
-      current = item.name;
-      map.set(current, { cars: 0, gaps: [] });
-      continue;
+  for (const column of board.columns) {
+    const bucket = { cars: 0, gaps: [] as number[] };
+    for (const item of column.items) {
+      if (item.kind === "car") {
+        bucket.cars += 1;
+      } else {
+        bucket.gaps.push(item.count);
+      }
     }
-    const bucket = map.get(current) ?? { cars: 0, gaps: [] };
-    if (item.kind === "car") {
-      bucket.cars += 1;
-    } else {
-      bucket.gaps.push(item.count);
-    }
-    map.set(current, bucket);
+    map.set(column.name, bucket);
   }
   return map;
 }

@@ -1,4 +1,4 @@
-import { MAX_ROWS, OTHER_TOP, TOP_N } from "./constants.js";
+import { HEADING_ROWS, MAX_ROWS, OTHER_TOP, TOP_N } from "./constants.js";
 
 export type WindowItem = { kind: "car"; position: number } | { kind: "gap"; count: number };
 
@@ -15,7 +15,8 @@ export function otherClassWindow(count: number): WindowItem[] {
 
 /**
  * Player's class, for one class or many.
- * Other classes keep 5 rows each. The top 5 and the player take the next rows.
+ * The top 5 and the player take the first rows. Other classes do not reduce this window.
+ * A multiclass column keeps one row for the class heading.
  * The spare rows split above and below the player. Above rounds up, below rounds down.
  * Rows that fall inside the top 5 or before P1 move below the player.
  * Rows that fall past the last car move above the player.
@@ -28,9 +29,9 @@ export function playerClassWindow(count: number, playerPos: number, classCount: 
   }
   const player = Math.min(count, Math.max(1, playerPos));
   const top = Math.min(TOP_N, count);
-  const reservedOthers = Math.max(0, classCount - 1) * OTHER_TOP;
+  const heading = classCount > 1 ? HEADING_ROWS : 0;
   const separatePlayer = player > top ? 1 : 0;
-  const spare = Math.max(0, MAX_ROWS - reservedOthers - top - separatePlayer);
+  const spare = Math.max(0, MAX_ROWS - heading - top - separatePlayer);
   let above = Math.ceil(spare / 2);
   let below = spare - above;
 

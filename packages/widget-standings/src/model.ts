@@ -20,14 +20,21 @@ export interface CarView {
 }
 
 export type BoardItem =
-  | { kind: "class"; key: string; name: string; color: string }
   | { kind: "gap"; key: string; count: number }
   | { kind: "car"; key: string; car: CarView };
+
+export interface BoardColumn {
+  key: string;
+  name: string;
+  color: string;
+  showHead: boolean;
+  items: BoardItem[];
+}
 
 export interface Board {
   race: boolean;
   teamRacing: boolean;
-  items: BoardItem[];
+  columns: BoardColumn[];
 }
 
 interface ClassGroup {
@@ -43,31 +50,27 @@ export function buildBoard(session: SessionFields, frame: StandingsWire): Board 
   const race = isRace(session.type);
   const groups = groupRows(frame.rows, race);
   const multi = groups.length > 1;
-  const items: BoardItem[] = [];
-  if (!multi) {
-    const group = groups[0];
-    if (group) {
-      items.push(...materialize(group, windowFor(group, groups.length), race, false));
+  const player = groups.find((group) => group.player);
+  const ordered = player ? [player, ...groups.filter((group) => group !== player)] : groups;
+  const columns: BoardColumn[] = [];
+  for (const group of ordered) {
+    const window = windowFor(group, groups.length);
+    const items = materialize(group, window, race, multi);
+    if (!items.some((item) => item.kind === "car")) {
+      continue;
     }
-  } else {
-    for (const group of groups) {
-      const window = windowFor(group, groups.length);
-      if (!window.some((item) => item.kind === "car")) {
-        continue;
-      }
-      items.push({
-        kind: "class",
-        key: `class:${group.classId}`,
-        name: group.name,
-        color: tokyo(group.color),
-      });
-      items.push(...materialize(group, window, race, true));
-    }
+    columns.push({
+      key: `class:${group.classId}`,
+      name: group.name,
+      color: tokyo(group.color),
+      showHead: multi,
+      items,
+    });
   }
   return {
     race,
     teamRacing: session.teamRacing,
-    items,
+    columns,
   };
 }
 

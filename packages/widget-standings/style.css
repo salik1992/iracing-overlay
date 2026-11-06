@@ -8,12 +8,41 @@ body {
 
 .panel {
   --panel-alpha: 0.88;
-  width: 100%;
-  max-height: 100%;
+  /* The root token resolves --panel-alpha on :root, so the override has to be declared here. */
+  --panel: rgb(26 27 38 / var(--panel-alpha));
+  box-sizing: border-box;
+  width: max-content;
+  height: 640px;
+  display: flex;
+  align-items: flex-start;
   overflow: hidden;
-  padding: 6px 8px 4px;
+  padding: 0;
+  border: none;
+  background: transparent;
   font-size: 14px;
   font-variant-numeric: tabular-nums;
+}
+
+.column {
+  box-sizing: border-box;
+  width: 290px;
+  flex: none;
+  max-height: 100%;
+  padding: 6px 8px 4px;
+  min-width: 0;
+  overflow: hidden;
+  background: var(--panel);
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.column + .column {
+  border-left: 1px solid var(--border);
+  margin-left: -1px;
+}
+
+.column > .classhead {
+  margin-top: 0;
 }
 
 .row {

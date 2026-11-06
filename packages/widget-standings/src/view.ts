@@ -27,7 +27,12 @@ interface CarParts {
   team: HTMLSpanElement;
 }
 
-type Parts = ClassParts | GapParts | CarParts;
+type Parts = GapParts | CarParts;
+
+interface ColumnParts {
+  root: HTMLDivElement;
+  head: ClassParts | null;
+}
 
 export interface StandingsView {
   setIdle(idle: boolean): void;
@@ -38,11 +43,9 @@ export interface StandingsView {
 export function createView(root: ParentNode): StandingsView {
   const panel = document.createElement("div");
   panel.className = "panel";
-  const body = document.createElement("div");
-  body.className = "body";
-  panel.append(body);
   root.append(panel);
 
+  const columns = new Map<string, ColumnParts>();
   const pool = new Map<string, Parts>();
 
   return {
@@ -54,16 +57,39 @@ export function createView(root: ParentNode): StandingsView {
     },
     show(board) {
       panel.dataset.mode = board.race ? "race" : "other";
+      const seenColumns = new Set<string>();
       const seen = new Set<string>();
-      for (const item of board.items) {
-        seen.add(item.key);
-        let parts = pool.get(item.key);
-        if (!parts) {
-          parts = createParts(item);
-          pool.set(item.key, parts);
+      for (const column of board.columns) {
+        seenColumns.add(column.key);
+        let col = columns.get(column.key);
+        if (!col) {
+          const element = document.createElement("div");
+          element.className = "column";
+          col = { root: element, head: null };
+          columns.set(column.key, col);
         }
-        updateParts(parts, item);
-        body.appendChild(parts.root);
+        if (column.showHead) {
+          if (!col.head) {
+            col.head = createClass();
+          }
+          col.head.root.style.setProperty("--class", column.color);
+          col.head.name.textContent = column.name;
+          col.root.appendChild(col.head.root);
+        } else if (col.head) {
+          col.head.root.remove();
+          col.head = null;
+        }
+        for (const item of column.items) {
+          seen.add(item.key);
+          let parts = pool.get(item.key);
+          if (!parts) {
+            parts = createParts(item);
+            pool.set(item.key, parts);
+          }
+          updateParts(parts, item);
+          col.root.appendChild(parts.root);
+        }
+        panel.appendChild(col.root);
       }
       for (const [key, parts] of pool) {
         if (!seen.has(key)) {
@@ -71,14 +97,17 @@ export function createView(root: ParentNode): StandingsView {
           pool.delete(key);
         }
       }
+      for (const [key, col] of columns) {
+        if (!seenColumns.has(key)) {
+          col.root.remove();
+          columns.delete(key);
+        }
+      }
     },
   };
 }
 
 function createParts(item: BoardItem): Parts {
-  if (item.kind === "class") {
-    return createClass();
-  }
   if (item.kind === "gap") {
     return createGap();
   }
@@ -86,11 +115,6 @@ function createParts(item: BoardItem): Parts {
 }
 
 function updateParts(parts: Parts, item: BoardItem): void {
-  if (parts.kind === "class" && item.kind === "class") {
-    parts.root.style.setProperty("--class", item.color);
-    parts.name.textContent = item.name;
-    return;
-  }
   if (parts.kind === "gap" && item.kind === "gap") {
     parts.count.textContent = String(item.count);
     return;
