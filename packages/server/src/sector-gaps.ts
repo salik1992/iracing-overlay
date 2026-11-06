@@ -1,9 +1,11 @@
-import { raceClassAhead, standingCars } from "./frames.js";
+import { lapsDown, raceClassAhead, standingCars } from "./frames.js";
 import { beginSession, emptyStamp, type SessionStamp } from "./session-stamp.js";
 import type { CarSample, Tick } from "./tick.js";
 import type { SessionSnapshot } from "./types.js";
 
 const NOT_IN_WORLD = -1;
+const STATE_CHECKERED = 5;
+const STATE_COOLDOWN = 6;
 /**
  * A lap-percent step larger than this is a tow or a reset.
  * A real sector crossing at the sample rate is a few thousandths of a lap.
@@ -14,6 +16,8 @@ const MAX_STEP = 0.15;
 export interface CountedGap {
   aheadCarIdx: number;
   sec: number;
+  /** Set when the gap was frozen at the checkered start/finish line. */
+  lapsDown?: number;
 }
 
 interface Place {
@@ -25,6 +29,7 @@ interface Place {
  * Race intervals are the session-clock gap at the last sector line the car
  * behind crossed. The stamp matches the class car ahead on that same lap.
  * The number holds until the next line. A new car ahead clears it.
+ * Under the checkered flag the start/finish crossing is the last update.
  * SplitTimeInfo gives the lines. The start/finish line is one of them.
  */
 export class SectorGaps {
@@ -33,6 +38,8 @@ export class SectorGaps {
   private stamps = new Map<number, Map<string, number>>();
   private lastHit = new Map<number, { lap: number; sector: number }>();
   private shown = new Map<number, CountedGap>();
+  private frozen = new Map<number, CountedGap>();
+  private done = new Set<number>();
 
   note(
     tick: Tick,
@@ -44,48 +51,105 @@ export class SectorGaps {
       this.stamps = new Map();
       this.lastHit = new Map();
       this.shown = new Map();
+      this.frozen = new Map();
+      this.done = new Set();
+    }
+    const finished = tick.sessionState === STATE_CHECKERED || tick.sessionState === STATE_COOLDOWN;
+    if (!finished) {
+      this.frozen = new Map();
+      this.done = new Set();
     }
     const ahead = raceClassAhead(tick, session, liveClassPosition);
-    if (ahead === null || !Number.isFinite(tick.sessionTimeSec)) {
-      return new Map();
+    if (ahead === null || !Number.isFinite(tick.sessionTimeSec) || tick.sessionState === STATE_COOLDOWN) {
+      return finished ? this.publish() : new Map();
     }
     const lines = session?.sectorStartPct ?? [];
     const boundaries = lines.length > 0 ? lines : [0];
+    const finishLine = boundaries.indexOf(0);
     const crossed = new Set<number>();
+    const finishers = new Set<number>();
     for (const car of standingCars(tick, session)) {
-      if (this.observe(car, boundaries, tick.sessionTimeSec)) {
-        crossed.add(car.carIdx);
+      const hits = this.observe(car, boundaries, tick.sessionTimeSec);
+      if (hits.length === 0) {
+        continue;
+      }
+      crossed.add(car.carIdx);
+      if (hits.includes(finishLine)) {
+        finishers.add(car.carIdx);
       }
     }
+    const checkered = tick.sessionState === STATE_CHECKERED;
     for (const carIdx of crossed) {
+      if (this.done.has(carIdx)) {
+        continue;
+      }
+      const previous = this.shown.get(carIdx);
       this.count(carIdx, ahead);
+      if (!checkered || !finishers.has(carIdx)) {
+        continue;
+      }
+      this.done.add(carIdx);
+      const gap = this.shown.get(carIdx) ?? previous;
+      if (!gap) {
+        continue;
+      }
+      const frozen: CountedGap = {
+        aheadCarIdx: gap.aheadCarIdx,
+        sec: gap.sec,
+        lapsDown: this.finishLaps(tick, ahead, carIdx),
+      };
+      this.frozen.set(carIdx, frozen);
+      this.shown.set(carIdx, frozen);
     }
     for (const carIdx of [...this.shown.keys()]) {
+      if (this.done.has(carIdx)) {
+        continue;
+      }
       const gap = this.shown.get(carIdx);
       if (!gap || ahead.get(carIdx) !== gap.aheadCarIdx) {
         this.shown.delete(carIdx);
       }
     }
+    return this.publish();
+  }
+
+  private publish(): ReadonlyMap<number, CountedGap> {
+    for (const [carIdx, gap] of this.frozen) {
+      this.shown.set(carIdx, gap);
+    }
     return this.shown;
   }
 
-  private observe(car: CarSample, lines: readonly number[], time: number): boolean {
+  private finishLaps(tick: Tick, ahead: ReadonlyMap<number, number | null>, carIdx: number): number {
+    const aheadIdx = ahead.get(carIdx);
+    if (aheadIdx === undefined || aheadIdx === null) {
+      return 0;
+    }
+    const aheadCar = tick.cars.find((car) => car.carIdx === aheadIdx);
+    const car = tick.cars.find((item) => item.carIdx === carIdx);
+    if (!aheadCar || !car) {
+      return 0;
+    }
+    return lapsDown(aheadCar, car);
+  }
+
+  private observe(car: CarSample, lines: readonly number[], time: number): number[] {
     if (!onTrackPct(car)) {
       this.place.delete(car.carIdx);
-      return false;
+      return [];
     }
     const pct = car.lapDistPct >= 1 ? 0 : car.lapDistPct;
     const prev = this.place.get(car.carIdx);
     this.place.set(car.carIdx, { pct, lap: car.lap });
     if (!prev) {
-      return false;
+      return [];
     }
     const wrapped = wrap(prev.pct, pct);
     if (wrapped === null) {
-      return false;
+      return [];
     }
     const hits = boundariesCrossed(lines, prev.pct, pct, wrapped);
-    let counted = false;
+    const counted: number[] = [];
     for (const sector of hits) {
       const line = lines[sector] ?? 0;
       const lap = wrapped ? (line <= pct ? lapAfter(prev.lap, car.lap) : prev.lap) : car.lap;
@@ -98,7 +162,7 @@ export class SectorGaps {
       bag.set(key, time);
       this.stamps.set(car.carIdx, bag);
       this.lastHit.set(car.carIdx, { lap, sector });
-      counted = true;
+      counted.push(sector);
     }
     return counted;
   }

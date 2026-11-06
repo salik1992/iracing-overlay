@@ -167,8 +167,8 @@ function toRow(
     tire: tireLetter(car.tireCompound, session?.tires ?? []),
     pitStops: note.pitStops.get(car.carIdx) ?? 0,
     startClassPosition: note.startClassPosition.get(car.carIdx) ?? 0,
-    intervalSec: raceInterval(leader, ahead?.carIdx, car.carIdx, sectorGaps),
-    lapsDown: ahead ? lapsDown(ahead, car) : 0,
+    intervalSec: frozenGap(leader, ahead?.carIdx, car.carIdx, sectorGaps),
+    lapsDown: frozenLaps(ahead, car, sectorGaps),
     lap: car.lap,
     lastLapSec: lapTime(car.lastLapSec),
     bestLapSec: draft.bestLapSec,
@@ -379,24 +379,42 @@ function gapToPlayer(carEstSec: number, playerEstSec: number): number | null {
   return Math.round((carEstSec - playerEstSec) * 1000) / 1000;
 }
 
-/** Sector interval for this row. Empty for the leader, a pass, or a line not yet seen. */
-function raceInterval(
+/**
+ * Sector interval for this row.
+ * A checkered start/finish gap stays put. Otherwise empty for the leader, a pass, or a line not yet seen.
+ */
+function frozenGap(
   leader: boolean,
   aheadCarIdx: number | undefined,
   carIdx: number,
   sectorGaps: ReadonlyMap<number, CountedGap> | null,
 ): number | null {
-  if (leader || aheadCarIdx === undefined || sectorGaps === null) {
+  if (sectorGaps === null) {
     return null;
   }
   const gap = sectorGaps.get(carIdx);
-  if (!gap || gap.aheadCarIdx !== aheadCarIdx) {
+  if (gap?.lapsDown !== undefined) {
+    return gap.sec;
+  }
+  if (leader || aheadCarIdx === undefined || !gap || gap.aheadCarIdx !== aheadCarIdx) {
     return null;
   }
   return gap.sec;
 }
 
-function lapsDown(ahead: CarSample, car: CarSample): number {
+function frozenLaps(
+  ahead: CarSample | null,
+  car: CarSample,
+  sectorGaps: ReadonlyMap<number, CountedGap> | null,
+): number {
+  const held = sectorGaps?.get(car.carIdx)?.lapsDown;
+  if (held !== undefined) {
+    return held;
+  }
+  return ahead ? lapsDown(ahead, car) : 0;
+}
+
+export function lapsDown(ahead: CarSample, car: CarSample): number {
   let down = ahead.lap - car.lap;
   if (car.lapDistPct > ahead.lapDistPct) {
     down -= 1;

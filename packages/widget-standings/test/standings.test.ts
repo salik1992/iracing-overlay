@@ -92,6 +92,27 @@ test("the header follows the session limit", () => {
     "0/48",
   );
   assert.equal(
+    headerMeta(
+      session({ type: "Race", laps: "25", time: "unlimited" }),
+      { ...frame([wire({ carIdx: 1, position: 1, lap: 26 })]), sessionState: "racing" },
+    ),
+    "25/25",
+  );
+  assert.equal(
+    headerMeta(
+      session({ type: "Race", laps: "25", time: "unlimited" }),
+      { ...frame([wire({ carIdx: 1, position: 1, lap: -1 })]), sessionState: "checkered" },
+    ),
+    "25/25",
+  );
+  assert.equal(
+    headerMeta(
+      session({ type: "Race", laps: "25", time: "unlimited" }),
+      { ...frame([wire({ carIdx: 1, position: 1, lap: 0 })]), sessionState: "coolDown" },
+    ),
+    "25/25",
+  );
+  assert.equal(
     headerMeta(session({ type: "Practice", laps: "unlimited", time: "1800.000 sec" }), frame(rows, 2832)),
     "47:12",
   );

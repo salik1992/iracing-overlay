@@ -206,6 +206,49 @@ test("backing across a line does not replace the interval", () => {
   assert.equal(again.get(2)?.sec, 8);
 });
 
+test("checkered freezes each gap at the start finish line", () => {
+  const session = raceSession(field(2), [0, 0.5]);
+  const gaps = new SectorGaps();
+  const see = (leader: CarSample, follower: CarSample, time: number, state = 4) =>
+    note(gaps, session, [leader, follower], time, null, state);
+
+  see(at(1, 1, 8, 0.96), at(2, 2, 8, 0.4), 5);
+  see(at(1, 1, 9, 0.02), at(2, 2, 8, 0.5), 10);
+  see(at(1, 1, 9, 0.9), at(2, 2, 8, 0.9), 20);
+  see(at(1, 1, 9, 0.96), at(2, 2, 8, 0.96), 26);
+  see(at(1, 1, 10, 0.02), at(2, 2, 8, 0.97), 30, 5);
+  const finished = see(at(1, 1, 10, 0.3), at(2, 2, 9, 0.02), 40, 5);
+  assert.equal(finished.get(2)?.sec, 30);
+  assert.equal(finished.get(2)?.lapsDown, 1);
+
+  see(at(1, 1, 10, 0.4), at(2, 2, 9, 0.1), 44, 5);
+  see(at(1, 1, 10, 0.48), at(2, 2, 9, 0.46), 50, 5);
+  const later = see(at(1, 1, 10, 0.55), at(2, 2, 9, 0.51), 55, 5);
+  assert.equal(later.get(2)?.sec, 30);
+  assert.equal(later.get(2)?.lapsDown, 1);
+
+  const exited = at(1, 1, -1, -1);
+  exited.trackSurface = -1;
+  const held = see(exited, at(2, 2, 9, 0.6), 70, 5);
+  assert.equal(held.get(2)?.sec, 30);
+  assert.equal(held.get(2)?.lapsDown, 1);
+
+  const cool = see(exited, at(2, 2, 9, 0.6), 80, 6);
+  assert.equal(cool.get(2)?.sec, 30);
+  assert.equal(cool.get(2)?.lapsDown, 1);
+
+  const frame = buildStandings(
+    makeTick([exited, at(2, 2, -1, -1)], 80, 6),
+    session,
+    undefined,
+    null,
+    null,
+    cool,
+  );
+  assert.equal(frame.rows.find((row) => row.carIdx === 2)?.intervalSec, 30);
+  assert.equal(frame.rows.find((row) => row.carIdx === 2)?.lapsDown, 1);
+});
+
 test("a new session clears sector intervals", () => {
   const session = raceSession(field(2), [0, 0.5]);
   const gaps = new SectorGaps();

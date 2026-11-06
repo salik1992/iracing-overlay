@@ -38,9 +38,13 @@ export function formatLap(sec: number): string {
 export function headerMeta(session: SessionFields, frame: StandingsWire): string {
   const laps = lapLimit(session.laps);
   if (laps !== null) {
+    // The finish line starts an extra lap, and climbing out sets the lap to -1.
+    if (finishedSession(frame.sessionState)) {
+      return `${laps}/${laps}`;
+    }
     const leader = frame.rows.find((row) => row.position === 1);
     // CarIdxLap is -1 while the field is still gridding.
-    const current = Math.max(0, leader?.lap ?? 0);
+    const current = Math.min(laps, Math.max(0, leader?.lap ?? 0));
     return `${current}/${laps}`;
   }
   if (!timedSession(session.time)) {
@@ -76,6 +80,10 @@ export function gainedPlaces(start: number, current: number): number {
     return 0;
   }
   return start - current;
+}
+
+function finishedSession(state: string | undefined): boolean {
+  return state === "checkered" || state === "coolDown";
 }
 
 function lapLimit(laps: string): number | null {
