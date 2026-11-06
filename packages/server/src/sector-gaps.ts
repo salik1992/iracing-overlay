@@ -1,4 +1,5 @@
 import { raceClassAhead, standingCars } from "./frames.js";
+import { beginSession, emptyStamp, type SessionStamp } from "./session-stamp.js";
 import type { CarSample, Tick } from "./tick.js";
 import type { SessionSnapshot } from "./types.js";
 
@@ -27,7 +28,7 @@ interface Place {
  * SplitTimeInfo gives the lines. The start/finish line is one of them.
  */
 export class SectorGaps {
-  private sessionNum = -1;
+  private stamp: SessionStamp = emptyStamp();
   private place = new Map<number, Place>();
   private stamps = new Map<number, Map<string, number>>();
   private lastHit = new Map<number, { lap: number; sector: number }>();
@@ -38,8 +39,7 @@ export class SectorGaps {
     session: SessionSnapshot | null,
     liveClassPosition: ReadonlyMap<number, number> | null,
   ): ReadonlyMap<number, CountedGap> {
-    if (tick.sessionNum !== this.sessionNum) {
-      this.sessionNum = tick.sessionNum;
+    if (beginSession(this.stamp, tick)) {
       this.place = new Map();
       this.stamps = new Map();
       this.lastHit = new Map();

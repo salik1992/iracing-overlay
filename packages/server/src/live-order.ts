@@ -1,4 +1,5 @@
 import { standingCars } from "./frames.js";
+import { beginSession, emptyStamp, type SessionStamp } from "./session-stamp.js";
 import type { CarSample, Tick } from "./tick.js";
 import type { SessionResult, SessionSnapshot } from "./types.js";
 
@@ -22,7 +23,7 @@ interface ResultIndex {
  * irDashies copies them once, on the first racing tick.
  */
 export class LiveOrder {
-  private sessionNum = -1;
+  private stamp: SessionStamp = emptyStamp();
   private surfaces = new Map<number, number>();
   private lastProgress = new Map<number, number>();
   private p1CarIdx: number | null = null;
@@ -31,8 +32,7 @@ export class LiveOrder {
   private snapshotActive = false;
 
   note(tick: Tick, session: SessionSnapshot | null): ReadonlyMap<number, number> | null {
-    if (tick.sessionNum !== this.sessionNum) {
-      this.sessionNum = tick.sessionNum;
+    if (beginSession(this.stamp, tick)) {
       this.surfaces = new Map();
       this.lastProgress = new Map();
       this.clearCheckered();

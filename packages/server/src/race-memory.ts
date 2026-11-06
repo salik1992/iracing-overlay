@@ -1,3 +1,4 @@
+import { beginSession, emptyStamp, type SessionStamp } from "./session-stamp.js";
 import type { Tick } from "./tick.js";
 
 const IN_PIT_STALL = 1;
@@ -19,15 +20,14 @@ export const EMPTY_NOTE: RaceNote = {
  * The baseline is that car's class position on the first racing tick.
  */
 export class RaceMemory {
-  private sessionNum = -1;
+  private stamp: SessionStamp = emptyStamp();
   private inStall = new Map<number, boolean>();
   private pitStops = new Map<number, number>();
   private startClassPosition = new Map<number, number>();
   private racing = false;
 
   note(tick: Tick): RaceNote {
-    if (tick.sessionNum !== this.sessionNum) {
-      this.sessionNum = tick.sessionNum;
+    if (beginSession(this.stamp, tick)) {
       this.inStall = new Map();
       this.pitStops = new Map();
       this.startClassPosition = new Map();

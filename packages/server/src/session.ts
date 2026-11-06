@@ -27,6 +27,8 @@ export function normalizeSession(input: unknown, options: NormalizeOptions): Ses
       trackConfigName: asText(weekend["TrackConfigName"], ""),
       trackLengthMeters: trackLength,
       seriesId: asNumber(weekend["SeriesID"]) ?? 0,
+      sessionId: asNumber(weekend["SessionID"]) ?? 0,
+      subSessionId: asNumber(weekend["SubSessionID"]) ?? 0,
       eventType: asText(weekend["EventType"], ""),
       simMode: asText(weekend["SimMode"], ""),
       teamRacing: asBool(weekend["TeamRacing"]),

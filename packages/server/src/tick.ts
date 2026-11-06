@@ -24,6 +24,12 @@ export interface Tick {
   /** SessionTime. Sector intervals are stamped with this clock. */
   sessionTimeSec: number;
   sessionNum: number;
+  /** Telemetry SessionUniqueID. 0 before the sim publishes one. */
+  uniqueId: number;
+  /** WeekendInfo.SessionID of the YAML currently held. 0 before that read. */
+  sessionId: number;
+  /** WeekendInfo.SubSessionID of the YAML currently held. 0 before that read. */
+  subSessionId: number;
   sessionState: number;
   sessionTimeRemainSec: number;
   sessionLapsRemain: number;

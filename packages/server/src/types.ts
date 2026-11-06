@@ -48,6 +48,10 @@ export interface SessionSnapshot {
     trackConfigName: string;
     trackLengthMeters: number;
     seriesId: number;
+    /** WeekendInfo.SessionID. 0 when the YAML does not publish one. */
+    sessionId: number;
+    /** WeekendInfo.SubSessionID. A new launched server has a new one. 0 when absent. */
+    subSessionId: number;
     eventType: string;
     simMode: string;
     teamRacing: boolean;

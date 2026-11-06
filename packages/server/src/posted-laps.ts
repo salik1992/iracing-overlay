@@ -1,3 +1,4 @@
+import { beginSession, emptyStamp, type SessionStamp } from "./session-stamp.js";
 import type { CarSample, Tick } from "./tick.js";
 
 const NOT_IN_WORLD = -1;
@@ -14,12 +15,11 @@ export interface PostedLap {
  * A lap cleared on track is forgotten, so an invalidated lap does not return on exit.
  */
 export class PostedLaps {
-  private sessionNum = -1;
+  private stamp: SessionStamp = emptyStamp();
   private laps = new Map<number, PostedLap>();
 
   note(tick: Tick): ReadonlyMap<number, PostedLap> {
-    if (tick.sessionNum !== this.sessionNum) {
-      this.sessionNum = tick.sessionNum;
+    if (beginSession(this.stamp, tick)) {
       this.laps = new Map();
     }
     for (const car of tick.cars) {
