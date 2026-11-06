@@ -39,7 +39,9 @@ export function headerMeta(session: SessionFields, frame: StandingsWire): string
   const laps = lapLimit(session.laps);
   if (laps !== null) {
     const leader = frame.rows.find((row) => row.position === 1);
-    return `${leader?.lap ?? 0}/${laps}`;
+    // CarIdxLap is -1 while the field is still gridding.
+    const current = Math.max(0, leader?.lap ?? 0);
+    return `${current}/${laps}`;
   }
   if (!timedSession(session.time)) {
     return "";

@@ -84,6 +84,14 @@ test("the header follows the session limit", () => {
   const rows = [wire({ carIdx: 1, position: 1, lap: 23 })];
   assert.equal(headerMeta(session({ type: "Race", laps: "48", time: "unlimited" }), frame(rows, 10)), "23/48");
   assert.equal(
+    headerMeta(session({ type: "Race", laps: "48", time: "unlimited" }), frame([wire({ carIdx: 1, position: 1, lap: -1 })])),
+    "0/48",
+  );
+  assert.equal(
+    headerMeta(session({ type: "Race", laps: "48", time: "unlimited" }), frame([wire({ carIdx: 1, position: 1, lap: 0 })])),
+    "0/48",
+  );
+  assert.equal(
     headerMeta(session({ type: "Practice", laps: "unlimited", time: "1800.000 sec" }), frame(rows, 2832)),
     "47:12",
   );
