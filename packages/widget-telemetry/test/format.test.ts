@@ -37,6 +37,7 @@ test("the strip is 1280 by 52 with a top border and three sections", () => {
   assert.match(css, /\.pct\.brake\s*\{[^}]*color:\s*var\(--bad\)/);
   assert.match(css, /\.pct\.clutch\s*\{[^}]*color:\s*var\(--accent\)/);
   assert.match(css, /\.pct\.steer\s*\{[^}]*color:\s*var\(--fg\)/);
+  assert.match(css, /\.speed-value\s*\{[^}]*width:\s*3ch/);
   assert.match(css, /\.speed-unit\s*\{[^}]*color:\s*var\(--number\)/);
   assert.match(css, /\.gear\s*\{[^}]*color:\s*var\(--number\)/);
   assert.match(css, /\.rpm-tick\.minor\s*\{[^}]*height:\s*9px/);
