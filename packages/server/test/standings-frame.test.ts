@@ -342,13 +342,58 @@ test("a race does not restore a best lap from the session result", () => {
   assert.equal(frame.rows.find((row) => row.carIdx === 1)?.classPosition, 1);
 });
 
-test("a car two laps behind the class leader reports two laps down", () => {
+test("a car two laps behind the car ahead reports two laps down", () => {
   const tick = makeTick([
     sample(1, 1, 1, 10, 0.1, 0, -1),
     sample(2, 2, 2, 8, 0.05, 2, -1),
   ]);
   const frame = buildStandings(tick, null);
   assert.equal(frame.rows.find((row) => row.carIdx === 2)?.lapsDown, 2);
+});
+
+test("cars a lap down to the leader keep the gap while they share a lap", () => {
+  const session = practiceSession("Race", [1, 2, 3, 4], []);
+  const tick = makeTick(
+    [
+      sample(1, 1, 1, 10, 0.4, 0, -1),
+      sample(2, 2, 2, 9, 0.3, 0, -1),
+      sample(3, 3, 3, 9, 0.12, 0, -1),
+      sample(4, 4, 4, 7, 0.05, 0, -1),
+    ],
+    { sessionState: 4 },
+  );
+  const gaps = new Map([
+    [2, { aheadCarIdx: 1, sec: 48.2 }],
+    [3, { aheadCarIdx: 2, sec: 1.42 }],
+    [4, { aheadCarIdx: 3, sec: 90 }],
+  ]);
+  const frame = buildStandings(tick, session, undefined, null, null, gaps);
+  const row = (carIdx: number) => frame.rows.find((item) => item.carIdx === carIdx);
+  assert.equal(row(1)?.lapsDown, 0);
+  assert.equal(row(1)?.intervalSec, null);
+  assert.equal(row(2)?.lapsDown, 1);
+  assert.equal(row(3)?.lapsDown, 0);
+  assert.equal(row(3)?.intervalSec, 1.42);
+  assert.equal(row(4)?.lapsDown, 2);
+});
+
+test("a car within a lap of the car ahead keeps the time gap across the start line", () => {
+  const session = practiceSession("Race", [1, 2, 3], []);
+  const tick = makeTick(
+    [
+      sample(1, 1, 1, 10, 0.5, 0, -1),
+      sample(2, 2, 2, 9, 0.02, 0, -1),
+      sample(3, 3, 3, 8, 0.97, 0, -1),
+    ],
+    { sessionState: 4 },
+  );
+  const gaps = new Map([[3, { aheadCarIdx: 2, sec: 0.8 }]]);
+  const frame = buildStandings(tick, session, undefined, null, null, gaps);
+  const second = frame.rows.find((row) => row.carIdx === 2);
+  const third = frame.rows.find((row) => row.carIdx === 3);
+  assert.equal(second?.lapsDown, 1);
+  assert.equal(third?.lapsDown, 0);
+  assert.equal(third?.intervalSec, 0.8);
 });
 
 test("pit stops count stall entries after the car has been seen", () => {

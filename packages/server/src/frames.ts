@@ -104,7 +104,6 @@ export function buildStandings(
   const rows: StandingRow[] = [];
   for (const list of groups.values()) {
     list.sort(byPlace ? byClass(liveClassPosition, grid, byPlace) : byBest);
-    const leader = list[0]?.car;
     let timed = 0;
     for (let index = 0; index < list.length; index += 1) {
       const draft = list[index];
@@ -124,7 +123,7 @@ export function buildStandings(
           position = latched > 0 ? latched : official > 0 ? official : position;
         }
       }
-      rows.push(toRow(tick, session, note, draft, ahead?.car ?? null, index === 0, leader, classPosition, position, sectorGaps));
+      rows.push(toRow(tick, session, note, draft, ahead?.car ?? null, index === 0, classPosition, position, sectorGaps));
     }
   }
   if (grid) {
@@ -150,7 +149,6 @@ function toRow(
   draft: Draft,
   ahead: CarSample | null,
   leader: boolean,
-  classLeader: CarSample | undefined,
   classPosition: number,
   position: number,
   sectorGaps: ReadonlyMap<number, CountedGap> | null,
@@ -170,7 +168,7 @@ function toRow(
     pitStops: note.pitStops.get(car.carIdx) ?? 0,
     startClassPosition: note.startClassPosition.get(car.carIdx) ?? 0,
     intervalSec: raceInterval(leader, ahead?.carIdx, car.carIdx, sectorGaps),
-    lapsDown: classLeader ? lapsDown(classLeader, car) : 0,
+    lapsDown: ahead ? lapsDown(ahead, car) : 0,
     lap: car.lap,
     lastLapSec: lapTime(car.lastLapSec),
     bestLapSec: draft.bestLapSec,
@@ -398,9 +396,9 @@ function raceInterval(
   return gap.sec;
 }
 
-function lapsDown(leader: CarSample, car: CarSample): number {
-  let down = leader.lap - car.lap;
-  if (car.lapDistPct > leader.lapDistPct) {
+function lapsDown(ahead: CarSample, car: CarSample): number {
+  let down = ahead.lap - car.lap;
+  if (car.lapDistPct > ahead.lapDistPct) {
     down -= 1;
   }
   if (!Number.isFinite(down)) {

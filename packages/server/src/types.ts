@@ -147,7 +147,7 @@ export interface StandingRow {
   startClassPosition: number;
   /** Gap to the class car ahead. Null for the class leader. */
   intervalSec: number | null;
-  /** Whole laps behind the class leader, after the lap-distance correction. */
+  /** Whole laps behind the class car ahead, after the lap-distance correction. */
   lapsDown: number;
   lap: number;
   lastLapSec: number | null;
