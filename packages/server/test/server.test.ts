@@ -43,6 +43,33 @@ test("fixture publishes a joined standings frame", async () => {
     assert.equal(player?.teamName, "Salomon Racing");
     assert.equal(player?.tire, "W");
 
+    const headerPage = await fetch(`http://127.0.0.1:${port}/header`);
+    assert.equal(headerPage.status, 200);
+    assert.match(await headerPage.text(), /\/header\/index\.js/);
+
+    const header = await hello(port, "header", 3);
+    assert.equal(header[0]?.type, "status");
+    assert.equal(header[1]?.type, "session");
+    assert.equal(header[2]?.type, "header");
+    if (header[1]?.type === "session") {
+      assert.equal(header[1].session.session.type, "Practice");
+      assert.equal(header[1].session.session.name, "PRACTICE");
+    }
+    if (header[2]?.type === "header" && messages[2]?.type === "standings") {
+      const leader = messages[2].frame.rows.find((row) => row.position === 1);
+      assert.equal(header[2].frame.leaderLap, leader?.lap ?? 0);
+      assert.equal(header[2].frame.sessionState, messages[2].frame.sessionState);
+      assert.ok(Number.isFinite(header[2].frame.sessionTimeRemainSec));
+      assert.equal(header[2].frame.airTempC, 27);
+      assert.equal(header[2].frame.trackTempC, 41);
+      assert.equal(header[2].frame.windVelMps, 4);
+      const wind = header[2].frame.windDirRad;
+      assert.equal(typeof wind, "number");
+      if (typeof wind === "number") {
+        assert.ok(Math.abs((wind * 180) / Math.PI - 241) < 1e-6);
+      }
+    }
+
     const flags = await hello(port, "digiflag", 2);
     assert.equal(flags[0]?.type, "status");
     assert.equal(flags[1]?.type, "flags");

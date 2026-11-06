@@ -4,7 +4,7 @@ import { EMPTY_NOTE, type RaceNote } from "./race-memory.js";
 import type { CountedGap } from "./sector-gaps.js";
 import { tireLetter } from "./tire.js";
 import type { CarSample, Tick } from "./tick.js";
-import type { DriverSnapshot, FlagsFrame, GarageFrame, SessionResult, SessionSnapshot, StandingRow, StandingsFrame, TelemetryFrame } from "./types.js";
+import type { DriverSnapshot, FlagsFrame, GarageFrame, HeaderFrame, SessionResult, SessionSnapshot, StandingRow, StandingsFrame, TelemetryFrame } from "./types.js";
 
 const NOT_IN_WORLD = -1;
 const STATE_GET_IN_CAR = 1;
@@ -140,6 +140,32 @@ export function buildStandings(
     flags: decodeFlags(tick.sessionFlags),
     rows,
   };
+}
+
+/** The lap counter uses the same overall leader the standings tower shows. */
+export function buildHeader(
+  tick: Tick,
+  session: SessionSnapshot | null,
+  note: RaceNote = EMPTY_NOTE,
+  liveClassPosition: ReadonlyMap<number, number> | null = null,
+  postedLaps: ReadonlyMap<number, PostedLap> | null = null,
+  sectorGaps: ReadonlyMap<number, CountedGap> | null = null,
+): HeaderFrame {
+  const standings = buildStandings(tick, session, note, liveClassPosition, postedLaps, sectorGaps);
+  const leader = standings.rows.find((row) => row.position === 1);
+  return {
+    sessionState: standings.sessionState,
+    sessionTimeRemainSec: standings.sessionTimeRemainSec,
+    leaderLap: leader?.lap ?? 0,
+    airTempC: finiteOrNull(tick.airTempC),
+    trackTempC: finiteOrNull(tick.trackTempC),
+    windVelMps: finiteOrNull(tick.windVelMps),
+    windDirRad: finiteOrNull(tick.windDirRad),
+  };
+}
+
+function finiteOrNull(value: number | null): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
 function toRow(

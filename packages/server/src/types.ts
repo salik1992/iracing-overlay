@@ -167,6 +167,21 @@ export interface StandingsFrame {
   rows: StandingRow[];
 }
 
+export interface HeaderFrame {
+  sessionState: SessionStateName;
+  sessionTimeRemainSec: number;
+  /** Lap of the standings row at overall position 1. 0 when that row is absent. */
+  leaderLap: number;
+  /** AirTemp. Celsius. Null when the sim did not publish it. */
+  airTempC: number | null;
+  /** TrackTempCrew, the live track-surface temperature. Celsius. */
+  trackTempC: number | null;
+  /** WindVel. Meters per second. */
+  windVelMps: number | null;
+  /** WindDir. Radians. */
+  windDirRad: number | null;
+}
+
 export interface FlagsFrame {
   flags: string[];
 }
@@ -180,6 +195,7 @@ export type ServerMessage =
   | { type: "session"; version: number; session: SessionSnapshot }
   | { type: "telemetry"; tick: number; frame: TelemetryFrame }
   | { type: "standings"; tick: number; frame: StandingsFrame }
+  | { type: "header"; tick: number; frame: HeaderFrame }
   | { type: "flags"; tick: number; frame: FlagsFrame }
   | { type: "garage"; tick: number; frame: GarageFrame }
   | { type: "error"; message: string };
@@ -190,7 +206,7 @@ export interface ClientHello {
 }
 
 export interface WidgetServe {
-  id: "telemetry" | "standings" | "digiflag" | "garage";
+  id: "telemetry" | "standings" | "digiflag" | "garage" | "header";
   route: string;
   hz: number;
   session: boolean;

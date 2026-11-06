@@ -1,0 +1,7 @@
+{
+  "extends": "../../tsconfig.widget.json",
+  "compilerOptions": {
+    "rootDir": "."
+  },
+  "include": ["src", "test"]
+}

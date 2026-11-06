@@ -1,5 +1,5 @@
 import { tokyo } from "./color.js";
-import { gainedPlaces, headerMeta, inPitLane, isRace, otherGap, raceGap } from "./format.js";
+import { gainedPlaces, inPitLane, isRace, otherGap, raceGap } from "./format.js";
 import { splitShort } from "./names.js";
 import type { SessionFields, StandingWire, StandingsWire } from "./types.js";
 import { otherClassWindow, playerClassWindow, type WindowItem } from "./window.js";
@@ -27,8 +27,6 @@ export type BoardItem =
 export interface Board {
   race: boolean;
   teamRacing: boolean;
-  sessionLabel: string;
-  meta: string;
   items: BoardItem[];
 }
 
@@ -69,8 +67,6 @@ export function buildBoard(session: SessionFields, frame: StandingsWire): Board 
   return {
     race,
     teamRacing: session.teamRacing,
-    sessionLabel: session.type,
-    meta: headerMeta(session, frame),
     items,
   };
 }

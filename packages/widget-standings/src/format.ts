@@ -1,4 +1,4 @@
-import type { SessionFields, StandingWire, StandingsWire } from "./types.js";
+import type { StandingWire } from "./types.js";
 
 const GARAGE = -1;
 const PIT_STALL = 1;
@@ -13,44 +13,12 @@ export function isRace(type: string): boolean {
   return text === "race" || text.endsWith(" race");
 }
 
-export function formatRemain(sec: number): string {
-  if (!Number.isFinite(sec) || sec < 0) {
-    return "";
-  }
-  const total = Math.floor(sec);
-  const hours = Math.floor(total / 3600);
-  const minutes = Math.floor((total % 3600) / 60);
-  const seconds = total % 60;
-  if (hours > 0) {
-    return `${hours}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
-  }
-  return `${minutes}:${String(seconds).padStart(2, "0")}`;
-}
-
 export function formatLap(sec: number): string {
   const totalMs = Math.round(sec * 1000);
   const minutes = Math.floor(totalMs / 60000);
   const seconds = Math.floor((totalMs % 60000) / 1000);
   const millis = totalMs % 1000;
   return `${minutes}:${String(seconds).padStart(2, "0")}.${String(millis).padStart(3, "0")}`;
-}
-
-export function headerMeta(session: SessionFields, frame: StandingsWire): string {
-  const laps = lapLimit(session.laps);
-  if (laps !== null) {
-    // The finish line starts an extra lap, and climbing out sets the lap to -1.
-    if (finishedSession(frame.sessionState)) {
-      return `${laps}/${laps}`;
-    }
-    const leader = frame.rows.find((row) => row.position === 1);
-    // CarIdxLap is -1 while the field is still gridding.
-    const current = Math.min(laps, Math.max(0, leader?.lap ?? 0));
-    return `${current}/${laps}`;
-  }
-  if (!timedSession(session.time)) {
-    return "";
-  }
-  return formatRemain(frame.sessionTimeRemainSec);
 }
 
 export function raceGap(row: StandingWire, leader: boolean): string {
@@ -82,24 +50,3 @@ export function gainedPlaces(start: number, current: number): number {
   return start - current;
 }
 
-function finishedSession(state: string | undefined): boolean {
-  return state === "checkered" || state === "coolDown";
-}
-
-function lapLimit(laps: string): number | null {
-  const text = laps.trim();
-  if (!/^\d+$/.test(text)) {
-    return null;
-  }
-  const value = Number(text);
-  return value > 0 ? value : null;
-}
-
-function timedSession(time: string): boolean {
-  const match = /^\s*(\d+(?:\.\d+)?)\s*sec\s*$/i.exec(time);
-  if (!match?.[1]) {
-    return false;
-  }
-  const value = Number(match[1]);
-  return Number.isFinite(value) && value > 0;
-}

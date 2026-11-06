@@ -53,5 +53,13 @@ export interface Tick {
   onTrack: boolean;
   /** IsGarageVisible. True while the garage screen is open. */
   garageVisible: boolean;
+  /** AirTemp. Celsius. Null when the sim did not publish it. */
+  airTempC: number | null;
+  /** TrackTempCrew, the live track-surface temperature. Celsius. */
+  trackTempC: number | null;
+  /** WindVel. Meters per second. */
+  windVelMps: number | null;
+  /** WindDir. Radians, the direction the wind comes from. */
+  windDirRad: number | null;
   cars: CarSample[];
 }

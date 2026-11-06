@@ -1,6 +1,6 @@
 import type { RawData, WebSocket } from "ws";
 
-import { buildFlags, buildGarage, buildStandings, buildTelemetry } from "./frames.js";
+import { buildFlags, buildGarage, buildHeader, buildStandings, buildTelemetry } from "./frames.js";
 import { LiveOrder } from "./live-order.js";
 import { PostedLaps, type PostedLap } from "./posted-laps.js";
 import { EMPTY_NOTE, RaceMemory, type RaceNote } from "./race-memory.js";
@@ -199,6 +199,13 @@ function frameMessage(
       type: "standings",
       tick: tick.sessionTick,
       frame: buildStandings(tick, session, note, liveClassPosition, postedLaps, sectorGaps),
+    };
+  }
+  if (widget.id === "header") {
+    return {
+      type: "header",
+      tick: tick.sessionTick,
+      frame: buildHeader(tick, session, note, liveClassPosition, postedLaps, sectorGaps),
     };
   }
   if (widget.id === "digiflag") {

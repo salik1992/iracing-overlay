@@ -1,0 +1,20 @@
+export interface HeaderSession {
+  type: string;
+  laps: string;
+  time: string;
+}
+
+export interface HeaderWire {
+  sessionState?: string;
+  sessionTimeRemainSec: number;
+  /** Lap of the standings row at overall position 1. -1 while the field is gridding. */
+  leaderLap: number;
+  /** AirTemp. Celsius. Null when the sim did not publish it. */
+  airTempC: number | null;
+  /** Track surface temperature. Celsius. */
+  trackTempC: number | null;
+  /** Wind speed. Meters per second. */
+  windVelMps: number | null;
+  /** Wind direction. Radians. */
+  windDirRad: number | null;
+}

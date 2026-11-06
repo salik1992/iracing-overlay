@@ -191,6 +191,10 @@ function tick(cars: CarSample[], subSessionId: number): Tick {
     lapBestSec: -1,
     onTrack: true,
     garageVisible: false,
+    airTempC: null,
+    trackTempC: null,
+    windVelMps: null,
+    windDirRad: null,
     cars,
   };
 }

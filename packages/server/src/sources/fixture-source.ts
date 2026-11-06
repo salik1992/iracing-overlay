@@ -182,6 +182,10 @@ export class FixtureSource implements TelemetrySource {
       lapBestSec: player?.bestLapSec ?? -1,
       onTrack: true,
       garageVisible: false,
+      airTempC: 27,
+      trackTempC: 41,
+      windVelMps: 4,
+      windDirRad: (241 * Math.PI) / 180,
       cars: samples,
     };
   }

@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
 import { tokyo } from "../src/color.js";
-import { formatLap, formatRemain, gainedPlaces, headerMeta, inPitLane, isRace } from "../src/format.js";
+import { formatLap, gainedPlaces, inPitLane, isRace } from "../src/format.js";
 import { buildBoard, type Board, type BoardItem } from "../src/model.js";
 import { shortName } from "../src/names.js";
 import { parseMessage } from "../src/parse.js";
@@ -68,55 +68,12 @@ test("race mode is the session type", () => {
   assert.equal(isRace("Qualify"), false);
 });
 
-test("clocks format laps, remain, and deltas", () => {
+test("clocks format laps and place deltas", () => {
   assert.equal(formatLap(82.481), "1:22.481");
   assert.equal(formatLap(30.8), "0:30.800");
-  assert.equal(formatRemain(47 * 60 + 12), "47:12");
-  assert.equal(formatRemain(3661), "1:01:01");
-  assert.equal(formatRemain(1800), "30:00");
-  assert.equal(formatRemain(-1), "");
   assert.equal(gainedPlaces(5, 3), 2);
   assert.equal(gainedPlaces(3, 5), -2);
   assert.equal(gainedPlaces(0, 4), 0);
-});
-
-test("the header follows the session limit", () => {
-  const rows = [wire({ carIdx: 1, position: 1, lap: 23 })];
-  assert.equal(headerMeta(session({ type: "Race", laps: "48", time: "unlimited" }), frame(rows, 10)), "23/48");
-  assert.equal(
-    headerMeta(session({ type: "Race", laps: "48", time: "unlimited" }), frame([wire({ carIdx: 1, position: 1, lap: -1 })])),
-    "0/48",
-  );
-  assert.equal(
-    headerMeta(session({ type: "Race", laps: "48", time: "unlimited" }), frame([wire({ carIdx: 1, position: 1, lap: 0 })])),
-    "0/48",
-  );
-  assert.equal(
-    headerMeta(
-      session({ type: "Race", laps: "25", time: "unlimited" }),
-      { ...frame([wire({ carIdx: 1, position: 1, lap: 26 })]), sessionState: "racing" },
-    ),
-    "25/25",
-  );
-  assert.equal(
-    headerMeta(
-      session({ type: "Race", laps: "25", time: "unlimited" }),
-      { ...frame([wire({ carIdx: 1, position: 1, lap: -1 })]), sessionState: "checkered" },
-    ),
-    "25/25",
-  );
-  assert.equal(
-    headerMeta(
-      session({ type: "Race", laps: "25", time: "unlimited" }),
-      { ...frame([wire({ carIdx: 1, position: 1, lap: 0 })]), sessionState: "coolDown" },
-    ),
-    "25/25",
-  );
-  assert.equal(
-    headerMeta(session({ type: "Practice", laps: "unlimited", time: "1800.000 sec" }), frame(rows, 2832)),
-    "47:12",
-  );
-  assert.equal(headerMeta(session({ type: "Practice", laps: "unlimited", time: "unlimited" }), frame(rows, 99999)), "");
 });
 
 test("other mode shows the class best and its delta", () => {
@@ -145,7 +102,6 @@ test("other mode shows the class best and its delta", () => {
     ], 1800),
   );
   assert.equal(board.race, false);
-  assert.equal(board.meta, "30:00");
   const cars = carItems(board);
   assert.equal(cars.length, 2);
   assert.equal(cars[0]?.car.number, "2");
@@ -187,8 +143,7 @@ test("a pre-green race follows class place, and a car with no place sorts last",
 
 test("standings column colors follow the text roles", () => {
   const css = readFileSync(new URL("../style.css", import.meta.url), "utf8");
-  assert.match(css, /\.session\s*\{[^}]*color:\s*var\(--fg\)/);
-  assert.match(css, /\.meta\s*\{[^}]*color:\s*var\(--number\)/);
+  assert.doesNotMatch(css, /\.head\s*\{/);
   assert.match(css, /\.pos\s*\{[^}]*color:\s*var\(--number\)/);
   assert.match(css, /\.stops\s*\{[^}]*color:\s*var\(--fg\)/);
   assert.match(css, /\.gap\s*\{[^}]*color:\s*var\(--accent\)/);
@@ -304,7 +259,6 @@ test("race mode uses the class interval and laps down", () => {
   );
   const cars = carItems(board);
   assert.equal(board.race, true);
-  assert.equal(board.meta, "23/48");
   assert.equal(cars[0]?.car.gap, "");
   assert.equal(cars[0]?.car.gained, 0);
   assert.equal(cars[1]?.car.gap, "1.180");
@@ -378,7 +332,6 @@ test("the preview is a multiclass race through the same board", () => {
   const board = previewBoard();
   assert.equal(board.race, true);
   assert.equal(board.teamRacing, false);
-  assert.equal(board.meta, "23/48");
   const names = board.items.filter((item) => item.kind === "class").map((item) => (item.kind === "class" ? item.name : ""));
   assert.deepEqual(names, ["GTP", "LMP2", "GTD"]);
   assert.deepEqual(carsByClass(board).get("GTP"), { cars: 5, gaps: [4] });

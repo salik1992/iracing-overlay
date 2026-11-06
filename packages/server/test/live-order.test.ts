@@ -429,6 +429,10 @@ function makeTick(
     lapBestSec: -1,
     onTrack: true,
     garageVisible: false,
+    airTempC: null,
+    trackTempC: null,
+    windVelMps: null,
+    windDirRad: null,
     cars,
   };
 }

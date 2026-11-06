@@ -16,28 +16,6 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-.head {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 16px;
-  padding-bottom: 4px;
-  margin-bottom: 2px;
-  border-bottom: 1px solid var(--rule);
-}
-
-.session {
-  font-weight: 400;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--fg);
-}
-
-.meta {
-  color: var(--number);
-  font-weight: 400;
-}
-
 .row {
   display: grid;
   align-items: center;

@@ -1,0 +1,29 @@
+{
+  "name": "@salik1992/iracing-overlay-widget-header",
+  "version": "0.0.0",
+  "private": true,
+  "author": "Vit Salomon (salik1992)",
+  "description": "Session type, time or laps, and session name for iRacing.",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "exports": {
+    ".": "./src/manifest.ts"
+  },
+  "scripts": {
+    "build": "node ../shared/scripts/build-widget.mjs",
+    "prepare": "node ../shared/scripts/build-widget.mjs",
+    "test": "node --import tsx --test test/*.test.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@salik1992/iracing-overlay-shared": "0.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.0",
+    "esbuild": "^0.28.2",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3"
+  }
+}

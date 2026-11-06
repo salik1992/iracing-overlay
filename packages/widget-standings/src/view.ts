@@ -38,16 +38,9 @@ export interface StandingsView {
 export function createView(root: ParentNode): StandingsView {
   const panel = document.createElement("div");
   panel.className = "panel";
-  const head = document.createElement("div");
-  head.className = "head";
-  const session = document.createElement("div");
-  session.className = "session";
-  const meta = document.createElement("div");
-  meta.className = "meta";
-  head.append(session, meta);
   const body = document.createElement("div");
   body.className = "body";
-  panel.append(head, body);
+  panel.append(body);
   root.append(panel);
 
   const pool = new Map<string, Parts>();
@@ -61,8 +54,6 @@ export function createView(root: ParentNode): StandingsView {
     },
     show(board) {
       panel.dataset.mode = board.race ? "race" : "other";
-      session.textContent = board.sessionLabel;
-      meta.textContent = board.meta;
       const seen = new Set<string>();
       for (const item of board.items) {
         seen.add(item.key);

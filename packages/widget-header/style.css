@@ -1,0 +1,53 @@
+@import "@salik1992/iracing-overlay-shared/theme/base.css";
+
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+}
+
+.panel {
+  box-sizing: border-box;
+  width: 1280px;
+  height: 28px;
+  padding: 0 8px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  column-gap: 16px;
+  overflow: hidden;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.type,
+.weather {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.counter {
+  white-space: nowrap;
+}
+
+.type {
+  text-align: start;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fg);
+}
+
+.counter {
+  text-align: center;
+  color: var(--number);
+  font-weight: 400;
+}
+
+.weather {
+  text-align: end;
+  color: var(--fg);
+}

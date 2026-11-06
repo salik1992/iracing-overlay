@@ -378,6 +378,10 @@ function makeTick(cars: CarSample[], sessionTimeSec: number, sessionState = 4, s
     lapBestSec: -1,
     onTrack: true,
     garageVisible: false,
+    airTempC: null,
+    trackTempC: null,
+    windVelMps: null,
+    windDirRad: null,
     cars,
   };
 }
