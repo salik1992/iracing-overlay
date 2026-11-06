@@ -55,7 +55,7 @@ export function decodeFlags(flags: number): string[] {
 }
 
 /**
- * Flag names for the digiflag lamp. iRacing can set the green bit on the
+ * Flag names for the header lamps. iRacing can set the green bit on the
  * pace lap, before the flag waves. Those names stay out until start go.
  */
 export function lampFlags(sessionState: number, flags: number): string[] {

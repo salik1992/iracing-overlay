@@ -102,6 +102,7 @@ test("the page reads the session and the weather", () => {
         trackTempC: 41,
         windVelMps: 4,
         windDirRad: direction,
+        flags: ["green", "blue"],
       },
     }),
   );
@@ -115,6 +116,7 @@ test("the page reads the session and the weather", () => {
       trackTempC: 41,
       windVelMps: 4,
       windDirRad: direction,
+      flags: ["green", "blue"],
     },
   });
   const missing = parseMessage(JSON.stringify({ type: "header", frame: {} }));
@@ -124,7 +126,9 @@ test("the page reads the session and the weather", () => {
     assert.equal(missing.frame.sessionState, "");
     assert.equal(missing.frame.airTempC, null);
     assert.equal(missing.frame.windDirRad, null);
+    assert.deepEqual(missing.frame.flags, []);
   }
+  assert.equal(parseMessage(JSON.stringify({ type: "header", frame: { flags: [1] } })), null);
 });
 
 function session(patch: Partial<HeaderSession>): HeaderSession {
@@ -152,5 +156,6 @@ function frame(patch: {
     trackTempC: patch.trackTempC ?? null,
     windVelMps: patch.windVelMps ?? null,
     windDirRad: patch.windDirRad ?? null,
+    flags: [],
   };
 }

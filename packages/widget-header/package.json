@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "author": "Vit Salomon (salik1992)",
-  "description": "Session type, time or laps, and session name for iRacing.",
+  "description": "Session type, time or laps, weather, and the session flag for iRacing.",
   "type": "module",
   "engines": {
     "node": ">=22"

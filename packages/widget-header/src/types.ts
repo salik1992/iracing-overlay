@@ -17,4 +17,6 @@ export interface HeaderWire {
   windVelMps: number | null;
   /** Wind direction. Radians. */
   windDirRad: number | null;
+  /** SessionFlags names for the two lamps beside the counter. */
+  flags: string[];
 }

@@ -180,6 +180,8 @@ export interface HeaderFrame {
   windVelMps: number | null;
   /** WindDir. Radians. */
   windDirRad: number | null;
+  /** Lamp names. Pace-lap green stays off until start go. */
+  flags: string[];
 }
 
 export interface FlagsFrame {
@@ -196,7 +198,6 @@ export type ServerMessage =
   | { type: "telemetry"; tick: number; frame: TelemetryFrame }
   | { type: "standings"; tick: number; frame: StandingsFrame }
   | { type: "header"; tick: number; frame: HeaderFrame }
-  | { type: "flags"; tick: number; frame: FlagsFrame }
   | { type: "garage"; tick: number; frame: GarageFrame }
   | { type: "error"; message: string };
 
@@ -206,7 +207,7 @@ export interface ClientHello {
 }
 
 export interface WidgetServe {
-  id: "telemetry" | "standings" | "digiflag" | "garage" | "header";
+  id: "telemetry" | "standings" | "garage" | "header";
   route: string;
   hz: number;
   session: boolean;

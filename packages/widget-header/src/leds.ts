@@ -1,6 +1,6 @@
 /**
  * Signal colors for the lamps. A yellow flag has to read as yellow, so these
- * stay off the Tokyo Night theme tokens. Class color is treated the same way.
+ * stay off the Tokyo Night theme tokens.
  */
 export const LED = {
   green: "#3DDC6A",

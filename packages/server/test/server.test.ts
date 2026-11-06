@@ -68,15 +68,8 @@ test("fixture publishes a joined standings frame", async () => {
       if (typeof wind === "number") {
         assert.ok(Math.abs((wind * 180) / Math.PI - 241) < 1e-6);
       }
+      assert.deepEqual(header[2].frame.flags, ["green"]);
     }
-
-    const flags = await hello(port, "digiflag", 2);
-    assert.equal(flags[0]?.type, "status");
-    assert.equal(flags[1]?.type, "flags");
-    if (flags[1]?.type !== "flags") {
-      return;
-    }
-    assert.deepEqual(flags[1].frame.flags, ["green"]);
 
     const garage = await hello(port, "garage", 2);
     assert.equal(garage[0]?.type, "status");

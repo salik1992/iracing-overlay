@@ -45,6 +45,10 @@ function parseHeader(frame: unknown): Incoming | null {
   if (!record) {
     return null;
   }
+  const flags = asFlagList(record.flags);
+  if (!flags) {
+    return null;
+  }
   return {
     type: "header",
     frame: {
@@ -55,6 +59,17 @@ function parseHeader(frame: unknown): Incoming | null {
       trackTempC: asFinite(record.trackTempC),
       windVelMps: asFinite(record.windVelMps),
       windDirRad: asFinite(record.windDirRad),
+      flags,
     },
   };
+}
+
+function asFlagList(value: unknown): string[] | null {
+  if (value === undefined || value === null) {
+    return [];
+  }
+  if (!Array.isArray(value) || value.some((item) => typeof item !== "string")) {
+    return null;
+  }
+  return value;
 }

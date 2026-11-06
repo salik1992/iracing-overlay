@@ -150,7 +150,7 @@ test("decodes combined session flags, including the high start-light bit", () =>
   assert.deepEqual(decodeFlags(0), []);
 });
 
-test("pace lap keeps the green bit off the digiflag lamp until the lights go", () => {
+test("pace lap keeps the green bit off the header lamps until the lights go", () => {
   const paceGreen = 0x10040004;
   assert.deepEqual(lampFlags(3, paceGreen), ["serviceable", "startHidden"]);
   assert.deepEqual(decodeFlags(paceGreen), ["green", "serviceable", "startHidden"]);

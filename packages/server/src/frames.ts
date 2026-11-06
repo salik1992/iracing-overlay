@@ -161,6 +161,7 @@ export function buildHeader(
     trackTempC: finiteOrNull(tick.trackTempC),
     windVelMps: finiteOrNull(tick.windVelMps),
     windDirRad: finiteOrNull(tick.windDirRad),
+    flags: buildFlags(tick).flags,
   };
 }
 

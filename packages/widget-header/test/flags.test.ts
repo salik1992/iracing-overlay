@@ -4,29 +4,20 @@ import { test } from "node:test";
 
 import {
   BLINK_HALF_MS,
+  CELL_PX,
   FADE_MS,
+  FLAG_GAP,
+  FLAG_H,
   FLAG_NAMES,
+  FLAG_W,
+  flagPaint,
+  MEATBALL_PX,
   motionOf,
-  paintDot,
   shownFlag,
   SWAP_HOLD_MS,
   SWAP_TRANSITION_MS,
 } from "../src/flags.js";
-import { coveCells, dotScale, MATRIX_N } from "../src/geometry.js";
 import { LED } from "../src/leds.js";
-import { parseMessage } from "../src/parse.js";
-
-test("cove 16 keeps the corner cap", () => {
-  const cells = coveCells();
-  assert.equal(MATRIX_N, 16);
-  assert.equal(cells.length, 53);
-  assert.equal(Math.round(dotScale(0) * 100), 62);
-  assert.equal(Math.round(dotScale(1) * 100), 34);
-  const corner = cells.find((cell) => cell.row === 0 && cell.col === 15);
-  assert.ok(corner);
-  assert.ok(corner.dist < 0.1);
-  assert.equal(cells.some((cell) => cell.row === 8 && cell.col === 8), false);
-});
 
 test("flag names match the server decoder", () => {
   const source = readFileSync(new URL("../../server/src/flags.ts", import.meta.url), "utf8");
@@ -65,26 +56,30 @@ test("waving and warning lamps blink, debris and checkered swap", () => {
   assert.equal(motionOf("white"), "static");
 });
 
-test("checkered and debris trade colors, repair keeps an orange ball on black", () => {
-  const even = { row: 0, col: 14, dist: 0 };
-  const odd = { row: 0, col: 15, dist: 0 };
-  assert.deepEqual(paintDot("checkered", even), { a: LED.white, b: LED.black, dark: true });
-  assert.deepEqual(paintDot("checkered", odd), { a: LED.black, b: LED.white, dark: true });
-  assert.deepEqual(paintDot("debris", even), { a: LED.yellow, b: LED.red, dark: false });
-  assert.deepEqual(paintDot("debris", odd), { a: LED.red, b: LED.yellow, dark: false });
-
-  const ball = paintDot("repair", { row: 3, col: 12, dist: 0 });
-  const field = paintDot("repair", { row: 0, col: 15, dist: 0 });
-  assert.equal(ball.a, LED.orange);
-  assert.equal(ball.dark, false);
-  assert.equal(field.a, LED.black);
-  assert.equal(field.dark, true);
-
-  const slash = paintDot("crossed", { row: 0, col: 15, dist: 0 });
-  const fieldWhite = paintDot("crossed", { row: 0, col: 13, dist: 0 });
-  assert.equal(slash.a, LED.black);
-  assert.equal(fieldWhite.a, LED.white);
-  assert.equal(paintDot("green", even).a, LED.green);
+test("checkers and stripes are 4px, and the lamps flank the counter", () => {
+  assert.equal(CELL_PX, 4);
+  assert.equal(FLAG_W, 48);
+  assert.equal(FLAG_H, 16);
+  assert.equal(FLAG_GAP, 32);
+  const checkered = flagPaint("checkered");
+  assert.equal(checkered.image, `repeating-conic-gradient(${LED.black} 0% 25%, ${LED.white} 0% 50%)`);
+  assert.equal(checkered.size, `${CELL_PX * 2}px ${CELL_PX * 2}px`);
+  assert.equal(checkered.swapImage, `repeating-conic-gradient(${LED.white} 0% 25%, ${LED.black} 0% 50%)`);
+  assert.equal(checkered.dark, false);
+  const debris = flagPaint("debris");
+  assert.equal(debris.image, `repeating-linear-gradient(90deg, ${LED.yellow} 0 ${CELL_PX}px, ${LED.red} 0 ${CELL_PX * 2}px)`);
+  assert.equal(debris.swapImage, `repeating-linear-gradient(90deg, ${LED.red} 0 ${CELL_PX}px, ${LED.yellow} 0 ${CELL_PX * 2}px)`);
+  const repair = flagPaint("repair");
+  assert.equal(repair.color, LED.black);
+  assert.equal(repair.dark, true);
+  assert.match(repair.image, new RegExp(`circle ${MEATBALL_PX / 2}px at center, ${LED.orange}`));
+  const crossed = flagPaint("crossed");
+  assert.equal(crossed.color, LED.white);
+  assert.equal(crossed.slash, true);
+  assert.equal(crossed.slashColor, LED.black);
+  assert.equal(flagPaint("green").color, LED.green);
+  assert.equal(flagPaint("black").dark, true);
+  assert.equal(flagPaint("furled").dark, true);
 });
 
 test("fade, hold, and blink timings are the ones on the stylesheet", () => {
@@ -99,18 +94,8 @@ test("fade, hold, and blink timings are the ones on the stylesheet", () => {
   assert.match(css, new RegExp(`flag-blink ${BLINK_HALF_MS * 2}ms linear infinite`));
   assert.match(css, /0%,\s*40%/);
   assert.match(css, /50%,\s*90%/);
-});
-
-test("parses a flags frame and ignores other widget messages", () => {
-  assert.deepEqual(parseMessage(JSON.stringify({ type: "flags", tick: 4, frame: { flags: ["green", "blue"] } })), {
-    type: "flags",
-    flags: ["green", "blue"],
-  });
-  assert.deepEqual(parseMessage(JSON.stringify({ type: "status", phase: "idle" })), {
-    type: "status",
-    phase: "idle",
-  });
-  assert.equal(parseMessage(JSON.stringify({ type: "telemetry", frame: { speedMps: 1 } })), null);
-  assert.equal(parseMessage(JSON.stringify({ type: "flags", frame: { flags: [1] } })), null);
-  assert.equal(parseMessage("nope"), null);
+  assert.match(css, new RegExp(`\\.mid\\s*\\{[^}]*grid-template-columns:\\s*${FLAG_W}px auto ${FLAG_W}px`));
+  assert.match(css, new RegExp(`\\.mid\\s*\\{[^}]*column-gap:\\s*${FLAG_GAP}px`));
+  assert.match(css, new RegExp(`\\.flag\\s*\\{[^}]*width:\\s*${FLAG_W}px`));
+  assert.match(css, new RegExp(`\\.flag\\s*\\{[^}]*height:\\s*${FLAG_H}px`));
 });

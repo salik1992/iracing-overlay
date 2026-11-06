@@ -1,4 +1,3 @@
-import type { Cell } from "./geometry.js";
 import { LED, type LedColor } from "./leds.js";
 
 /** Names produced by the server from the SessionFlags bitfield, in bit order. */
@@ -38,18 +37,36 @@ export const SWAP_HOLD_MS = 800;
 export const SWAP_TRANSITION_MS = 200;
 export const BLINK_HALF_MS = 500;
 
+/** One checker square, and the width of one debris stripe. */
+export const CELL_PX = 4;
+export const FLAG_W = 48;
+export const FLAG_H = 16;
+/** Space between each flag and the counter. */
+export const FLAG_GAP = 32;
+/** Orange ball on the repair flag. Fits the 16px bar with a black margin. */
+export const MEATBALL_PX = 10;
+
 export type Motion = "static" | "blink" | "swap";
 
-export interface DotPaint {
-  a: LedColor;
-  b: LedColor;
+export interface FlagPaint {
+  image: string;
+  size: string;
+  position: string;
+  repeat: string;
+  color: string;
+  swapImage: string;
+  swapSize: string;
+  /** Hairline on a solid black field, so the lamp stays visible on the panel. */
   dark: boolean;
+  slash: boolean;
+  slashColor: LedColor;
+  motion: Motion;
 }
 
 /**
- * One matrix, so the first match wins. Driver warnings come before the
+ * One pair of lamps, so the first match wins. Driver warnings come before the
  * race-state lamps. serviceable, dqScoringInvalid, startHidden, startReady,
- * startSet, fiveToGo, tenToGo, and oneLapToGreen stay off the matrix.
+ * startSet, fiveToGo, tenToGo, and oneLapToGreen stay off.
  * Green and green held also stay off while the start lights are at ready
  * or set. Green held alone is the starter holding the flag, not the wave.
  */
@@ -117,22 +134,76 @@ export function motionOf(flag: FlagName): Motion {
   return "static";
 }
 
-export function paintDot(flag: FlagName, cell: Cell): DotPaint {
+export function flagPaint(flag: FlagName): FlagPaint {
+  const motion = motionOf(flag);
   if (flag === "checkered") {
-    return (cell.row + cell.col) % 2 === 0
-      ? pair(LED.white, LED.black)
-      : pair(LED.black, LED.white);
+    return paint({
+      image: checkerboard(LED.white, LED.black),
+      size: tileSize(),
+      repeat: "repeat",
+      color: LED.black,
+      swapImage: checkerboard(LED.black, LED.white),
+      swapSize: tileSize(),
+      motion,
+    });
   }
   if (flag === "debris") {
-    return cell.col % 2 === 0 ? pair(LED.yellow, LED.red) : pair(LED.red, LED.yellow);
+    return paint({
+      image: stripes(LED.yellow, LED.red),
+      repeat: "repeat",
+      color: LED.yellow,
+      swapImage: stripes(LED.red, LED.yellow),
+      motion,
+    });
   }
   if (flag === "repair") {
-    return inMeatball(cell) ? solid(LED.orange) : solid(LED.black);
+    return paint({
+      image: `radial-gradient(circle ${MEATBALL_PX / 2}px at center, ${LED.orange} 100%, transparent 0)`,
+      position: "center",
+      color: LED.black,
+      dark: true,
+      motion,
+    });
   }
   if (flag === "crossed") {
-    return onSlash(cell) ? solid(LED.black) : solid(LED.white);
+    return paint({
+      color: LED.white,
+      slash: true,
+      motion,
+    });
   }
-  return solid(lamp(flag));
+  const color = lamp(flag);
+  return paint({ color, dark: color === LED.black, motion });
+}
+
+/** Even 4px cells, including the top-left, use `even`. */
+function checkerboard(even: string, odd: string): string {
+  return `repeating-conic-gradient(${odd} 0% 25%, ${even} 0% 50%)`;
+}
+
+/** Even 4px columns use `evenCol`. */
+function stripes(evenCol: string, oddCol: string): string {
+  return `repeating-linear-gradient(90deg, ${evenCol} 0 ${CELL_PX}px, ${oddCol} 0 ${CELL_PX * 2}px)`;
+}
+
+function tileSize(): string {
+  return `${CELL_PX * 2}px ${CELL_PX * 2}px`;
+}
+
+function paint(patch: Partial<FlagPaint> & Pick<FlagPaint, "color" | "motion">): FlagPaint {
+  return {
+    image: patch.image ?? "none",
+    size: patch.size ?? "auto",
+    position: patch.position ?? "0 0",
+    repeat: patch.repeat ?? "no-repeat",
+    color: patch.color,
+    swapImage: patch.swapImage ?? "none",
+    swapSize: patch.swapSize ?? "auto",
+    dark: patch.dark ?? false,
+    slash: patch.slash ?? false,
+    slashColor: LED.black,
+    motion: patch.motion,
+  };
 }
 
 function lamp(flag: FlagName): LedColor {
@@ -171,26 +242,4 @@ function lamp(flag: FlagName): LedColor {
     case "oneLapToGreen":
       return LED.white;
   }
-}
-
-function solid(color: LedColor): DotPaint {
-  return { a: color, b: color, dark: color === LED.black };
-}
-
-function pair(a: LedColor, b: LedColor): DotPaint {
-  return { a, b, dark: a === LED.black || b === LED.black };
-}
-
-/** Orange ball on the black field, in the thick part of the cove. */
-function inMeatball(cell: Cell): boolean {
-  const x = (cell.col + 0.5) / 16;
-  const y = (cell.row + 0.5) / 16;
-  return Math.hypot(x - 0.78, y - 0.22) < 0.14;
-}
-
-/** The diagonal that passes through the top-right corner. */
-function onSlash(cell: Cell): boolean {
-  const x = (cell.col + 0.5) / 16;
-  const y = (cell.row + 0.5) / 16;
-  return Math.abs(1 - x - y) <= 0.5 / 16;
 }
