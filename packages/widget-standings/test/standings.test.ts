@@ -177,7 +177,7 @@ test("standings type is 14px and the row is 20px tall", () => {
   const css = readFileSync(new URL("../style.css", import.meta.url), "utf8");
   assert.match(css, /\.panel\s*\{[^}]*font-size:\s*14px/);
   assert.match(css, /\.row\s*\{[^}]*height:\s*20px/);
-  assert.match(css, /\.row \+ \.row\s*\{[^}]*border-top:\s*1px solid var\(--rule\)/);
+  assert.doesNotMatch(css, /\.row \+ \.row\s*\{[^}]*border-top/);
   assert.match(css, /\.num\s*\{[^}]*height:\s*16px/);
   assert.match(css, /\.tire\s*\{[^}]*font-size:\s*11px/);
   assert.match(css, /\.omit\s*\{[^}]*font-size:\s*12px/);
