@@ -196,6 +196,7 @@ test("standings column colors follow the text roles", () => {
 
 test("standings type is 14px and the row is 20px tall", () => {
   const css = readFileSync(new URL("../style.css", import.meta.url), "utf8");
+  assert.match(css, /\.panel\s*\{[^}]*--panel-alpha:\s*0\.88/);
   assert.match(css, /\.panel\s*\{[^}]*font-size:\s*14px/);
   assert.match(css, /\.row\s*\{[^}]*height:\s*20px/);
   assert.doesNotMatch(css, /\.row \+ \.row\s*\{[^}]*border-top/);

@@ -7,6 +7,7 @@ body {
 }
 
 .panel {
+  --panel-alpha: 0.88;
   width: 100%;
   max-height: 100%;
   overflow: hidden;
