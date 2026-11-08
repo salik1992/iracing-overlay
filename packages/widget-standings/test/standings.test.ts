@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
 import { tokyo } from "../src/color.js";
+import { advanceSlot, DETAIL_MS, GAP_MS, MAX_ROWS } from "../src/constants.js";
 import { formatLap, gainedPlaces, inPitLane, isRace } from "../src/format.js";
 import { buildBoard, type Board, type BoardItem } from "../src/model.js";
 import { shortName } from "../src/names.js";
@@ -21,13 +22,13 @@ test("short names follow the trigram rule", () => {
 });
 
 test("the player class splits the spare rows around the driver", () => {
-  assert.equal(labels(playerClassWindow(60, 9, 1)), `${span(1, 30)},g30`);
-  assert.equal(labels(playerClassWindow(60, 53, 1)), `${span(1, 5)},g30,${span(36, 60)}`);
-  assert.equal(labels(playerClassWindow(60, 1, 1)), `${span(1, 30)},g30`);
+  assert.equal(labels(playerClassWindow(60, 9, 1)), `${span(1, 31)},g29`);
+  assert.equal(labels(playerClassWindow(60, 53, 1)), `${span(1, 5)},g29,${span(35, 60)}`);
+  assert.equal(labels(playerClassWindow(60, 1, 1)), `${span(1, 31)},g29`);
   assert.equal(labels(playerClassWindow(28, 1, 1)), span(1, 28));
   assert.equal(labels(playerClassWindow(29, 1, 1)), span(1, 29));
   assert.equal(labels(playerClassWindow(30, 14, 1)), span(1, 30));
-  assert.equal(labels(playerClassWindow(60, 9, 3)), `${span(1, 29)},g31`);
+  assert.equal(labels(playerClassWindow(60, 9, 3)), `${span(1, 30)},g30`);
   assert.equal(labels(playerClassWindow(18, 8, 1)), span(1, 18));
 });
 
@@ -150,27 +151,31 @@ test("standings column colors follow the text roles", () => {
   assert.match(css, /\.gap\s*\{[^}]*color:\s*var\(--accent\)/);
 });
 
-test("standings type is 14px and the row is 20px tall", () => {
+test("standings type is 13px and the row is 19px tall", () => {
   const css = readFileSync(new URL("../style.css", import.meta.url), "utf8");
   assert.match(css, /\.panel\s*\{[^}]*--panel-alpha:\s*0\.88/);
   assert.match(css, /\.panel\s*\{[^}]*--panel:\s*rgb\(26 27 38 \/ var\(--panel-alpha\)\)/);
-  assert.match(css, /\.panel\s*\{[^}]*font-size:\s*14px/);
+  assert.match(css, /\.panel\s*\{[^}]*--row:\s*19px/);
+  assert.match(css, /\.panel\s*\{[^}]*font-size:\s*13px/);
   assert.match(css, /\.panel\s*\{[^}]*height:\s*640px/);
   assert.match(css, /\.panel\s*\{[^}]*border:\s*none/);
   assert.match(css, /\.panel\s*\{[^}]*background:\s*transparent/);
-  assert.match(css, /\.column\s*\{[^}]*width:\s*290px/);
+  assert.match(css, /\.column\s*\{[^}]*width:\s*max-content/);
+  assert.match(css, /\.column\s*\{[^}]*display:\s*grid/);
+  assert.doesNotMatch(css, /width:\s*290px/);
   assert.match(css, /\.column\s*\{[^}]*background:\s*var\(--panel\)/);
   assert.match(css, /\.column\s*\{[^}]*border-right:\s*1px solid var\(--border\)/);
   assert.match(css, /\.column\s*\{[^}]*border-bottom:\s*1px solid var\(--border\)/);
   assert.match(css, /\.column \+ \.column\s*\{[^}]*border-left:\s*1px solid var\(--border\)/);
   assert.match(css, /\.column \+ \.column\s*\{[^}]*margin-left:\s*-1px/);
   assert.match(css, /\.column > \.classhead\s*\{[^}]*margin-top:\s*0/);
-  assert.match(css, /\.row\s*\{[^}]*height:\s*20px/);
+  assert.match(css, /\.row\s*\{[^}]*grid-template-columns:\s*subgrid/);
+  assert.match(css, /\.row\s*\{[^}]*height:\s*var\(--row\)/);
   assert.doesNotMatch(css, /\.row \+ \.row\s*\{[^}]*border-top/);
   assert.match(css, /\.num\s*\{[^}]*height:\s*16px/);
   assert.match(css, /\.tire\s*\{[^}]*font-size:\s*11px/);
   assert.match(css, /\.omit\s*\{[^}]*font-size:\s*12px/);
-  assert.match(css, /\.classhead\s*\{[^}]*font-size:\s*14px/);
+  assert.match(css, /\.classhead\s*\{[^}]*font-size:\s*13px/);
   assert.match(css, /\.classname\s*\{[^}]*font-size:\s*12px/);
 });
 
@@ -289,9 +294,9 @@ test("multiclass keeps the top 5 of other classes and the player's window", () =
   const board = buildBoard(session({ type: "Race", laps: "30" }), frame(rows));
   const grouped = carsByClass(board);
   assert.deepEqual(grouped.get("GTP"), { cars: 5, gaps: [15] });
-  assert.deepEqual(grouped.get("LMP2"), { cars: 29, gaps: [31] });
+  assert.deepEqual(grouped.get("LMP2"), { cars: 30, gaps: [30] });
   assert.deepEqual(grouped.get("GTD"), { cars: 4, gaps: [] });
-  assert.equal(carItems(board).length, 38);
+  assert.equal(carItems(board).length, 39);
   const player = carItems(board).filter((item) => item.car.player);
   assert.equal(player.length, 1);
   assert.equal(player[0]?.car.position, 9);
@@ -318,8 +323,8 @@ test("other classes stay at the top 5 and do not shrink the player class", () =>
   for (const name of ["A", "B", "C", "D", "F"]) {
     assert.deepEqual(grouped.get(name), { cars: 5, gaps: [15] }, name);
   }
-  assert.deepEqual(grouped.get("E"), { cars: 29, gaps: [5, 6] });
-  assert.equal(carItems(board).length, 54);
+  assert.deepEqual(grouped.get("E"), { cars: 30, gaps: [5, 5] });
+  assert.equal(carItems(board).length, 55);
   assert.equal(board.columns[0]?.name, "E");
 });
 
@@ -336,8 +341,8 @@ test("a short class stays whole while the other classes stay at 5", () => {
   const grouped = carsByClass(board);
   assert.deepEqual(grouped.get("D"), { cars: 4, gaps: [] });
   assert.deepEqual(grouped.get("G"), { cars: 5, gaps: [15] });
-  assert.deepEqual(grouped.get("E"), { cars: 29, gaps: [5, 6] });
-  assert.equal(carItems(board).length, 53);
+  assert.deepEqual(grouped.get("E"), { cars: 30, gaps: [5, 5] });
+  assert.equal(carItems(board).length, 54);
   assert.equal(board.columns[0]?.name, "E");
 });
 
@@ -360,12 +365,28 @@ test("the preview is a multiclass race through the same board", () => {
   assert.equal(player?.car.pits, false);
 });
 
-test("the team frame hides the gap and the player tick stays on the row", () => {
+test("race columns alternate and the team name stays within the driver and the gap", () => {
+  assert.equal(MAX_ROWS, 31);
+  assert.equal(GAP_MS, 20_000);
+  assert.equal(DETAIL_MS, 7_000);
+  assert.deepEqual(advanceSlot("gap"), { slot: "detail", afterMs: GAP_MS });
+  assert.deepEqual(advanceSlot("detail"), { slot: "gap", afterMs: DETAIL_MS });
+
   const css = readFileSync(new URL("../style.css", import.meta.url), "utf8");
-  assert.match(css, /\.panel\.is-team \.gap\s*\{[^}]*display:\s*none/);
-  assert.match(css, /\.row\.is-player\s*\{[^}]*box-shadow:\s*inset 2px 0 0 var\(--accent\)/);
+  assert.match(
+    css,
+    /\.panel\[data-mode="race"\]\[data-slot="gap"\] \.delta,[\s\S]*?\.panel\[data-mode="race"\]\[data-slot="detail"\] \.gap,[\s\S]*?\{[^}]*display:\s*none/,
+  );
+  assert.match(css, /\.panel\.is-team\[data-slot\] \.gap\s*\{[^}]*visibility:\s*hidden/);
+  assert.match(css, /\.panel\.is-team \.driver\s*\{[^}]*grid-column:\s*3/);
+  assert.match(css, /\.panel\.is-team \.driver\s*\{[^}]*grid-row:\s*1/);
+  assert.match(css, /\.panel\.is-team \.gap\s*\{[^}]*grid-column:\s*4/);
+  assert.match(css, /\.panel\.is-team \.gap\s*\{[^}]*grid-row:\s*1/);
+  assert.match(css, /\.panel\.is-team \.team\s*\{[^}]*grid-column:\s*3\s*\/\s*5/);
+  assert.match(css, /\.panel\.is-team \.team\s*\{[^}]*grid-row:\s*1/);
+  assert.match(css, /\.team-name\s*\{[^}]*text-overflow:\s*ellipsis/);
+  assert.doesNotMatch(css, /\.is-player/);
   assert.match(css, /\.row\.is-pits\s*\{[^}]*opacity:\s*0\.7/);
-  assert.doesNotMatch(css, /is-player[^{]*\.num/);
 });
 
 test("the page parses session and standings and ignores other frames", () => {

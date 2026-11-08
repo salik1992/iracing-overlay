@@ -10,6 +10,8 @@ body {
   --panel-alpha: 0.88;
   /* The root token resolves --panel-alpha on :root, so the override has to be declared here. */
   --panel: rgb(26 27 38 / var(--panel-alpha));
+  --row: 19px;
+  --cols: max-content max-content max-content max-content;
   box-sizing: border-box;
   width: max-content;
   height: 640px;
@@ -19,13 +21,17 @@ body {
   padding: 0;
   border: none;
   background: transparent;
-  font-size: 14px;
+  font-size: 13px;
   font-variant-numeric: tabular-nums;
 }
 
 .column {
   box-sizing: border-box;
-  width: 290px;
+  display: grid;
+  grid-template-columns: var(--cols);
+  column-gap: 8px;
+  align-content: start;
+  width: max-content;
   flex: none;
   max-height: 100%;
   padding: 6px 8px 4px;
@@ -47,38 +53,57 @@ body {
 
 .row {
   display: grid;
+  grid-template-columns: subgrid;
+  grid-column: 1 / -1;
   align-items: center;
-  column-gap: 8px;
-  height: 20px;
+  height: var(--row);
 }
 
-.panel[data-mode="race"] .row {
-  grid-template-columns: 2.4ch 4ch minmax(5.5ch, 1fr) 2ch 16px 4.6ch 6.2ch;
+.panel[data-mode="race"][data-slot="gap"] {
+  --cols: max-content max-content max-content max-content;
 }
 
-.panel[data-mode="other"] .row {
-  grid-template-columns: 2.4ch 4ch minmax(5.5ch, 1fr) 16px 8.6ch;
+.panel[data-mode="race"][data-slot="detail"] {
+  --cols: max-content max-content max-content max-content max-content max-content;
 }
 
-.panel.is-team .row {
-  grid-template-columns: 2.4ch 4ch minmax(8ch, 1fr);
+.panel[data-mode="other"] {
+  --cols: max-content max-content max-content max-content max-content;
+}
+
+/* The team name uses the driver and gap tracks, so a long name cannot widen the class. */
+.panel.is-team[data-mode] {
+  --cols: max-content max-content max-content max-content;
 }
 
 .panel[data-mode="other"] .stops,
-.panel[data-mode="other"] .delta {
-  display: none;
-}
-
-.panel.is-team .driver,
+.panel[data-mode="other"] .delta,
+.panel[data-mode="race"][data-slot="gap"] .stops,
+.panel[data-mode="race"][data-slot="gap"] .tire,
+.panel[data-mode="race"][data-slot="gap"] .delta,
+.panel[data-mode="race"][data-slot="detail"] .gap,
 .panel.is-team .stops,
 .panel.is-team .tire,
-.panel.is-team .delta,
-.panel.is-team .gap {
+.panel.is-team .delta {
   display: none;
 }
 
-.row.is-player {
-  box-shadow: inset 2px 0 0 var(--accent);
+.panel.is-team[data-slot] .driver,
+.panel.is-team[data-slot] .gap {
+  display: block;
+  visibility: hidden;
+}
+
+/* The team is placed before auto-placement and occupies these cells.
+   Pin the hidden driver and gap here so they keep sizing the tracks. */
+.panel.is-team .driver {
+  grid-column: 3;
+  grid-row: 1;
+}
+
+.panel.is-team .gap {
+  grid-column: 4;
+  grid-row: 1;
 }
 
 .row.is-pits {
@@ -109,10 +134,9 @@ body {
 }
 
 .driver,
-.team {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.gap,
+.pos,
+.stops {
   white-space: nowrap;
 }
 
@@ -122,6 +146,22 @@ body {
 
 .panel.is-team .team {
   display: block;
+  grid-column: 3 / 5;
+  grid-row: 1;
+  align-self: start;
+  position: relative;
+  min-width: 0;
+  height: var(--row);
+  overflow: hidden;
+}
+
+.team-name {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: var(--row);
 }
 
 .num {
@@ -130,6 +170,7 @@ body {
   display: grid;
   place-items: center;
   height: 16px;
+  padding-inline: 0.5ch;
   background: var(--plate, var(--rule));
   text-align: center;
   line-height: 1;
@@ -222,6 +263,7 @@ body {
 
 .omit {
   display: flex;
+  grid-column: 1 / -1;
   align-items: center;
   gap: 8px;
   height: 18px;
@@ -241,18 +283,23 @@ body {
 
 .classhead {
   display: grid;
-  grid-template-columns: 2.4ch minmax(0, 1fr);
-  column-gap: 8px;
+  grid-template-columns: subgrid;
+  grid-column: 1 / -1;
   align-items: center;
   height: 18px;
   margin-top: 8px;
-  font-size: 14px;
+  font-size: 13px;
   letter-spacing: 0;
   color: var(--class);
 }
 
+.classhead > .classline {
+  grid-column: 1;
+}
+
 .classrest {
   display: flex;
+  grid-column: 2 / -1;
   align-items: center;
   gap: 8px;
   min-width: 0;

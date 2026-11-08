@@ -3,43 +3,44 @@
 Composite timing tower for the OBS browser source at `/standings`.
 
 * The panel sits at the top left.
-* The preferred source is 291×617.
-* The height is the 720p frame with the 103px telemetry above it.
-* The 23px below a full board is spare room for class headings.
-* The width is the narrowest race row: a two-digit position, a three-digit car number, the short driver name, two-digit stops, a two-digit place change, and a gap of `12:34.567`.
-* The panel uses the full width, and its height follows the rows.
-* Rows past the source edge are clipped.
+* The clipping frame is 640px tall.
+* Rows past that edge are clipped.
 * The page background stays transparent.
-* The panel is the shared terminal panel at 14px and 88% fill, with 6px 8px of padding.
-* Adjacent car rows are separated by the same 1px rule that sits under the session header.
+* The type is 13px, on the shared panel at 88% fill, with 6px 8px of padding.
+* Each class is only as wide as the columns on screen.
+* An empty column is dropped, and that class gets narrower.
+* Classes do not share one width.
 
 ## Columns
 
-A race session uses:
+Position, the car number, and the driver stay on every row.
 
-* position, in the number color
-* car number
-* driver
-* stops, in the normal text color
-* tyre
-* position change
-* gap
+A race alternates the rest:
 
-The best lap, its delta, and the race gap are the number color.
-
+* The gap shows for 20 seconds.
+* Stops, the tyre, and the place change then show for 7 seconds.
+* The gap shows first.
+* The timer keeps running across frames.
 * The session type is `Race`, or any type whose text ends with ` race`.
-* Parade laps of a race keep the race columns.
-* Practice, qualify, warmup, and lone qualify drop the stops and the position change.
-* In those sessions the last column becomes the best lap.
+* Parade laps of a race keep that alternation.
 
-In a team event:
+Practice, qualify, warmup, and lone qualify do not alternate.
 
-* The team name replaces every column except position and car number, including the gap.
-* The two layouts swap every 10 seconds.
+* They drop the stops and the place change.
+* The tyre stays up.
+* The last column is the best lap.
+
+The best lap, its delta, and the race gap are the number color. Stops are the normal text color. Position is the number color.
+
+In a team event the driver frame and the team frame still swap every 10 seconds.
+
 * The normal columns show first.
 * The timer keeps running across frames.
+* On the team frame, the team name takes the driver column and the gap column.
+* It does not grow past those two.
+* A longer name ends in an ellipsis.
+* Stops, the tyre, and the place change stay hidden on that frame.
 * An empty team name stays empty.
-* The player tick stays on the player row during the team frame.
 
 ## Driver
 
@@ -64,9 +65,9 @@ The name is the first initial, a space, and a three-letter stem, in capitals.
 
 The rows left for the cars around the player are
 
-`(27 - (classes - 1) × 5 - 5 - 1) / 2`
+`(31 - heading - 5 - 1) / 2`
 
-when the player is outside the top 5.
+when the player is outside the top 5. The heading is 1 when more than one class is on the board, and 0 for a single class. Other classes do not reduce this window.
 
 * Half of that, rounded up, is the number of cars directly above the player.
 * Half, rounded down, is the number directly below.
@@ -75,11 +76,11 @@ when the player is outside the top 5.
 * Cars that would sit past the last car in the class move above the player.
 * A hole of one car is still drawn as that car.
 * A larger hole is a line with the omitted count.
-* A 60-car class with the player in P9 draws P1–P27 and a gap of 33.
-* The same class with the player in P53 draws P1–P5, a gap of 33, and P39–P60.
+* A 60-car class with the player in P9 draws P1–P31 and a gap of 29.
+* The same class with the player in P53 draws P1–P5, a gap of 29, and P35–P60.
 * A 28-car class with the player in P1 draws all 28, because the one car past the window is drawn as a car.
-* Headings and omit lines do not count toward the 27.
-* With enough classes that five cars from each other class already pass 27, those classes still show their top 5, and the player class keeps its top 5 and the player.
+* The class heading counts as one of the 31 rows. Omit lines do not.
+* Other classes still show their top 5, and that does not shrink the player class.
 * Multiclass draws one group per class, ordered by the best overall position in the class.
 * Each class position starts at 1.
 
@@ -87,8 +88,11 @@ The sizes live in `src/constants.ts`:
 
 * `TOP_N` 5
 * `OTHER_TOP` 5
-* `MAX_ROWS` 27
+* `MAX_ROWS` 31
+* `HEADING_ROWS` 1
 * `TEAM_MS` 10000
+* `GAP_MS` 20000
+* `DETAIL_MS` 7000
 
 Pit and garage rows:
 
@@ -173,7 +177,6 @@ In every other session:
 * The separator is a class-colored line across the position column.
 * The class name aligns with the left edge of the plate.
 * The line continues to the right edge.
-* The player mark is the accent tick on that row.
 * The plate stays the class or rule color.
 
 ## Position change and stops
@@ -206,6 +209,7 @@ In every other session:
 
 * While the server reports `idle`, the panel is fully hidden and keeps the last rows.
 * `/standings#preview` paints a generated multiclass race through this layout and ignores the live frame.
+* `/standings#detail` is that race on the stops, tyre, and place-change frame.
 * `/standings#team` is that race on the team-name frame.
 * The live page has no hash.
 * A screenshot uses a query as well as the hash, because a hash change on an open page does not reload it.

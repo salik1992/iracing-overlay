@@ -1,3 +1,4 @@
+import type { RaceSlot } from "./constants.js";
 import type { Board, BoardItem, CarView } from "./model.js";
 
 interface ClassParts {
@@ -37,12 +38,14 @@ interface ColumnParts {
 export interface StandingsView {
   setIdle(idle: boolean): void;
   setTeam(team: boolean): void;
+  setSlot(slot: RaceSlot): void;
   show(board: Board): void;
 }
 
 export function createView(root: ParentNode): StandingsView {
   const panel = document.createElement("div");
   panel.className = "panel";
+  panel.dataset.slot = "gap";
   root.append(panel);
 
   const columns = new Map<string, ColumnParts>();
@@ -54,6 +57,9 @@ export function createView(root: ParentNode): StandingsView {
     },
     setTeam(team) {
       panel.classList.toggle("is-team", team);
+    },
+    setSlot(slot) {
+      panel.dataset.slot = slot;
     },
     show(board) {
       panel.dataset.mode = board.race ? "race" : "other";
@@ -170,15 +176,14 @@ function createCar(): CarParts {
   delta.append(mark, deltaNum);
   const gap = span("gap");
   const team = span("team");
+  const teamName = span("team-name");
+  team.append(teamName);
   root.append(pos, num, driver, stops, tire, delta, gap, team);
-  return { kind: "car", root, pos, num, initial, tri, stops, tire, delta, deltaNum, gap, team };
+  return { kind: "car", root, pos, num, initial, tri, stops, tire, delta, deltaNum, gap, team: teamName };
 }
 
 function updateCar(parts: CarParts, car: CarView): void {
   const classes = ["row"];
-  if (car.player) {
-    classes.push("is-player");
-  }
   if (car.pits) {
     classes.push("is-pits");
   }

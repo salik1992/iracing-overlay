@@ -635,16 +635,17 @@ One Browser Source per widget.
 |---|---|---|
 | `http://127.0.0.1:8080/telemetry` | 60 Hz | 440×103 |
 | `http://127.0.0.1:8080/digiflag` | 10 Hz | 288×288 |
-| `http://127.0.0.1:8080/standings` | 10 Hz | 291×617 |
+| `http://127.0.0.1:8080/standings` | 10 Hz | Content width × 617 |
 | `http://127.0.0.1:8080/garage` | 10 Hz | The game view. 1920×1080 is a starting size. |
 
-291×617 is the preferred standings size.
+617px is the preferred standings height. The width follows the tower.
 
 * 617px is a 720p frame with the 103px telemetry source above it.
 * The pedal trace and its bars are 55px.
 * The 23px that leaves the telemetry source is spare room in the standings source for class headings.
-* The row window stays 27.
-* 291px is the narrowest width that fits a two-digit position, a three-digit car number, the short driver name, two-digit stops, a two-digit place change, and a gap of `12:34.567`.
+* The row window is 31 car rows.
+* Each class is only as wide as the columns on screen, so a multiclass board can give each class a different width.
+* A race shows the gap for 20 seconds, then the stops, the tyre, and the place change for 7 seconds.
 
 In the source properties:
 
@@ -665,6 +666,8 @@ On Linux, `npm run dev` starts the fixture source and the pages.
 * An `.ibt` file can later drive the player's own car, because the file uses the same row layout.
 * The demo field is three cars.
 * `/standings#preview` paints a generated multiclass race through the same layout.
+* `/standings#detail` is that race on the stops, tyre, and place-change frame.
+* `/standings#team` is that race on the team-name frame.
 * `/garage#preview` shows the cover and ignores the live frame.
 * The fixture leaves the cover hidden.
 
