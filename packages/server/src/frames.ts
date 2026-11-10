@@ -169,6 +169,7 @@ export function buildHeader(
     sessionState: standings.sessionState,
     sessionTimeRemainSec: standings.sessionTimeRemainSec,
     leaderLap: leader?.lap ?? 0,
+    bestLapSec: fastestLap(standings.rows),
     airTempC: finiteOrNull(tick.airTempC),
     trackTempC: finiteOrNull(tick.trackTempC),
     windVelMps: finiteOrNull(tick.windVelMps),
@@ -179,6 +180,21 @@ export function buildHeader(
 
 function finiteOrNull(value: number | null): number | null {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+/** The race's best lap. Invalid and missing times stay out of the pace estimate. */
+function fastestLap(rows: readonly { bestLapSec: number | null }[]): number | null {
+  let best: number | null = null;
+  for (const row of rows) {
+    const lap = row.bestLapSec;
+    if (lap === null || !Number.isFinite(lap) || lap <= 0) {
+      continue;
+    }
+    if (best === null || lap < best) {
+      best = lap;
+    }
+  }
+  return best;
 }
 
 function toRow(

@@ -192,6 +192,8 @@ export interface HeaderFrame {
   sessionTimeRemainSec: number;
   /** Lap of the standings row at overall position 1. 0 when that row is absent. */
   leaderLap: number;
+  /** Fastest posted lap in the standings, in seconds. Null when nobody has one. */
+  bestLapSec: number | null;
   /** AirTemp. Celsius. Null when the sim did not publish it. */
   airTempC: number | null;
   /** TrackTempCrew, the live track-surface temperature. Celsius. */

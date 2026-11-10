@@ -34,6 +34,44 @@ test("the counter follows the session limit", () => {
     "47:12",
   );
   assert.equal(sessionCounter(session({ laps: "unlimited", time: "unlimited" }), frame({ leaderLap: 23, remain: 99999 })), "");
+  assert.equal(
+    sessionCounter(session({ laps: "32767", time: "1200.000 sec" }), frame({ leaderLap: 3, remain: 600 })),
+    "10:00",
+  );
+});
+
+test("both limits follow the one the best lap says arrives first", () => {
+  const dual = session({ laps: "20", time: "1200.000 sec" });
+  assert.equal(sessionCounter(dual, frame({ leaderLap: 14, remain: 754 })), "14/20 (12:34)");
+  assert.equal(sessionCounter(dual, frame({ leaderLap: 14, remain: 650, bestLapSec: 100 })), "14/20 (10:50)");
+  assert.equal(sessionCounter(dual, frame({ leaderLap: 14, remain: 501, bestLapSec: 100 })), "14/20 (8:21)");
+  assert.equal(sessionCounter(dual, frame({ leaderLap: 14, remain: 500, bestLapSec: 100 })), "8:20");
+  assert.equal(sessionCounter(dual, frame({ leaderLap: 14, remain: 699, bestLapSec: 100 })), "14/20 (11:39)");
+  assert.equal(sessionCounter(dual, frame({ leaderLap: 14, remain: 700, bestLapSec: 100 })), "14/20");
+  assert.equal(
+    sessionCounter(session({ laps: "99", time: "1200.000 sec" }), frame({ leaderLap: 5, remain: 900, bestLapSec: 90 })),
+    "15:00",
+  );
+  assert.equal(
+    sessionCounter(session({ laps: "20", time: "3600.000 sec" }), frame({ leaderLap: 14, remain: 3600, bestLapSec: 80 })),
+    "14/20",
+  );
+  assert.equal(
+    sessionCounter(session({ laps: "99", time: "1200.000 sec" }), frame({ leaderLap: 12, remain: 30, bestLapSec: 90, state: "checkered" })),
+    "0:30",
+  );
+  assert.equal(
+    sessionCounter(session({ laps: "99", time: "1200.000 sec" }), frame({ leaderLap: 12, remain: 400, bestLapSec: 90, state: "checkered" })),
+    "12/99 (6:40)",
+  );
+  assert.equal(
+    sessionCounter(session({ laps: "20", time: "3600.000 sec" }), frame({ leaderLap: -1, remain: 480, bestLapSec: 80, state: "checkered" })),
+    "20/20",
+  );
+  assert.equal(
+    sessionCounter(dual, frame({ leaderLap: -1, remain: 40, bestLapSec: 80, state: "coolDown" })),
+    "20/20 (0:40)",
+  );
 });
 
 test("weather prints air, track, and wind", () => {
@@ -102,6 +140,7 @@ test("the page reads the session and the weather", () => {
         trackTempC: 41,
         windVelMps: 4,
         windDirRad: direction,
+        bestLapSec: 80.5,
         flags: ["green", "blue"],
       },
     }),
@@ -112,6 +151,7 @@ test("the page reads the session and the weather", () => {
       sessionState: "racing",
       sessionTimeRemainSec: 12,
       leaderLap: 23,
+      bestLapSec: 80.5,
       airTempC: 27,
       trackTempC: 41,
       windVelMps: 4,
@@ -123,6 +163,7 @@ test("the page reads the session and the weather", () => {
   assert.equal(missing?.type, "header");
   if (missing?.type === "header") {
     assert.equal(missing.frame.leaderLap, 0);
+    assert.equal(missing.frame.bestLapSec, null);
     assert.equal(missing.frame.sessionState, "");
     assert.equal(missing.frame.airTempC, null);
     assert.equal(missing.frame.windDirRad, null);
@@ -143,6 +184,7 @@ function frame(patch: {
   leaderLap: number;
   remain?: number;
   state?: string;
+  bestLapSec?: number | null;
   airTempC?: number | null;
   trackTempC?: number | null;
   windVelMps?: number | null;
@@ -152,6 +194,7 @@ function frame(patch: {
     ...(patch.state === undefined ? {} : { sessionState: patch.state }),
     sessionTimeRemainSec: patch.remain ?? 0,
     leaderLap: patch.leaderLap,
+    bestLapSec: patch.bestLapSec === undefined ? null : patch.bestLapSec,
     airTempC: patch.airTempC ?? null,
     trackTempC: patch.trackTempC ?? null,
     windVelMps: patch.windVelMps ?? null,
