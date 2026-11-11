@@ -1,76 +1,76 @@
-import { createRequire } from "node:module";
-import { copyFile, mkdir, readFile, readdir, stat } from "node:fs/promises";
-import { join } from "node:path";
-import { pathToFileURL } from "node:url";
+import { createRequire } from 'node:module'
+import { copyFile, mkdir, readFile, readdir, stat } from 'node:fs/promises'
+import { join } from 'node:path'
+import { pathToFileURL } from 'node:url'
 
 // npm runs this with the widget package as the working directory.
-const root = process.cwd();
-const dist = join(root, "dist");
-const require = createRequire(join(root, "package.json"));
-const esbuild = await import(pathToFileURL(require.resolve("esbuild")).href);
+const root = process.cwd()
+const dist = join(root, 'dist')
+const require = createRequire(join(root, 'package.json'))
+const esbuild = await import(pathToFileURL(require.resolve('esbuild')).href)
 
-await mkdir(dist, { recursive: true });
-
-await esbuild.build({
-  entryPoints: [join(root, "src/main.ts")],
-  outfile: join(dist, "index.js"),
-  bundle: true,
-  format: "esm",
-  platform: "browser",
-  target: "es2023",
-  legalComments: "none",
-});
+await mkdir(dist, { recursive: true })
 
 await esbuild.build({
-  entryPoints: [join(root, "style.css")],
-  outfile: join(dist, "style.css"),
-  bundle: true,
-  legalComments: "none",
-  plugins: [
-    {
-      name: "keep-root-urls",
-      setup(build) {
-        build.onResolve({ filter: /^\// }, (args) => {
-          if (args.kind !== "url-token") {
-            return null;
-          }
-          return { path: args.path, external: true };
-        });
-      },
-    },
-  ],
-});
+	entryPoints: [join(root, 'src/main.ts')],
+	outfile: join(dist, 'index.js'),
+	bundle: true,
+	format: 'esm',
+	platform: 'browser',
+	target: 'es2023',
+	legalComments: 'none',
+})
 
-await copyFile(join(root, "index.html"), join(dist, "index.html"));
-await copyAssets(root, dist);
+await esbuild.build({
+	entryPoints: [join(root, 'style.css')],
+	outfile: join(dist, 'style.css'),
+	bundle: true,
+	legalComments: 'none',
+	plugins: [
+		{
+			name: 'keep-root-urls',
+			setup(build) {
+				build.onResolve({ filter: /^\// }, (args) => {
+					if (args.kind !== 'url-token') {
+						return null
+					}
+					return { path: args.path, external: true }
+				})
+			},
+		},
+	],
+})
 
-const css = await readFile(join(dist, "style.css"), "utf8");
-if (!css.includes("/fonts/FiraCode-VF.woff2")) {
-  throw new Error("bundled style.css is missing the font URL");
+await copyFile(join(root, 'index.html'), join(dist, 'index.html'))
+await copyAssets(root, dist)
+
+const css = await readFile(join(dist, 'style.css'), 'utf8')
+if (!css.includes('/fonts/FiraCode-VF.woff2')) {
+	throw new Error('bundled style.css is missing the font URL')
 }
-if (css.includes("@import")) {
-  throw new Error("bundled style.css still has an @import");
+if (css.includes('@import')) {
+	throw new Error('bundled style.css still has an @import')
 }
 
 async function copyAssets(root, dist) {
-  const assets = join(root, "assets");
-  let names;
-  try {
-    names = await readdir(assets);
-  } catch (error) {
-    if (error && typeof error === "object" && "code" in error && error.code === "ENOENT") {
-      return;
-    }
-    throw error;
-  }
-  for (const name of names) {
-    if (name.startsWith(".") || name.includes("/") || name.includes("\\")) {
-      continue;
-    }
-    const from = join(assets, name);
-    if (!(await stat(from)).isFile()) {
-      continue;
-    }
-    await copyFile(from, join(dist, name));
-  }
+	const assets = join(root, 'assets')
+	let names
+	try {
+		names = await readdir(assets)
+	} catch (error) {
+		if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
+			return
+		}
+		throw error
+	}
+	for (const name of names) {
+		if (name.startsWith('.') || name.includes('/') || name.includes('\\')) {
+			continue
+		}
+		const from = join(assets, name)
+		if (!(await stat(from)).isFile()) {
+			continue
+		}
+		await copyFile(from, join(dist, name))
+	}
 }

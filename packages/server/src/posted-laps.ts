@@ -1,12 +1,12 @@
-import { beginSession, emptyStamp, type SessionStamp } from "./session-stamp.js";
-import type { CarSample, Tick } from "./tick.js";
+import { beginSession, emptyStamp, type SessionStamp } from './session-stamp.js'
+import type { CarSample, Tick } from './tick.js'
 
-const NOT_IN_WORLD = -1;
+const NOT_IN_WORLD = -1
 
 export interface PostedLap {
-  bestLapSec: number;
-  /** Overall position while the car was still in the world. 0 when iRacing had none. */
-  position: number;
+	bestLapSec: number
+	/** Overall position while the car was still in the world. 0 when iRacing had none. */
+	position: number
 }
 
 /**
@@ -15,30 +15,30 @@ export interface PostedLap {
  * A lap cleared on track is forgotten, so an invalidated lap does not return on exit.
  */
 export class PostedLaps {
-  private stamp: SessionStamp = emptyStamp();
-  private laps = new Map<number, PostedLap>();
+	private stamp: SessionStamp = emptyStamp()
+	private laps = new Map<number, PostedLap>()
 
-  note(tick: Tick): ReadonlyMap<number, PostedLap> {
-    if (beginSession(this.stamp, tick)) {
-      this.laps = new Map();
-    }
-    for (const car of tick.cars) {
-      if (hasLeftCar(car)) {
-        continue;
-      }
-      if (car.bestLapSec > 0 && Number.isFinite(car.bestLapSec)) {
-        const previous = this.laps.get(car.carIdx);
-        const position = car.position > 0 ? car.position : (previous?.position ?? 0);
-        this.laps.set(car.carIdx, { bestLapSec: car.bestLapSec, position });
-      } else {
-        this.laps.delete(car.carIdx);
-      }
-    }
-    return this.laps;
-  }
+	note(tick: Tick): ReadonlyMap<number, PostedLap> {
+		if (beginSession(this.stamp, tick)) {
+			this.laps = new Map()
+		}
+		for (const car of tick.cars) {
+			if (hasLeftCar(car)) {
+				continue
+			}
+			if (car.bestLapSec > 0 && Number.isFinite(car.bestLapSec)) {
+				const previous = this.laps.get(car.carIdx)
+				const position = car.position > 0 ? car.position : (previous?.position ?? 0)
+				this.laps.set(car.carIdx, { bestLapSec: car.bestLapSec, position })
+			} else {
+				this.laps.delete(car.carIdx)
+			}
+		}
+		return this.laps
+	}
 }
 
 /** NotInWorld, or a lap-distance of -1, which iRacing sends for a driver out of the car. */
-export function hasLeftCar(car: Pick<CarSample, "trackSurface" | "lapDistPct">): boolean {
-  return car.trackSurface === NOT_IN_WORLD || car.lapDistPct < 0;
+export function hasLeftCar(car: Pick<CarSample, 'trackSurface' | 'lapDistPct'>): boolean {
+	return car.trackSurface === NOT_IN_WORLD || car.lapDistPct < 0
 }

@@ -4,19 +4,19 @@
  * 0 is dry and 1 is wet.
  */
 export function tireLetter(index: number, names: readonly string[]): string {
-  if (!Number.isFinite(index) || index < 0) {
-    return "";
-  }
-  const slot = Math.trunc(index);
-  const named = names[slot];
-  if (named && named.trim()) {
-    return named.trim().charAt(0).toUpperCase();
-  }
-  if (slot === 0) {
-    return "D";
-  }
-  if (slot === 1) {
-    return "W";
-  }
-  return "";
+	if (!Number.isFinite(index) || index < 0) {
+		return ''
+	}
+	const slot = Math.trunc(index)
+	const named = names[slot]
+	if (named && named.trim()) {
+		return named.trim().charAt(0).toUpperCase()
+	}
+	if (slot === 0) {
+		return 'D'
+	}
+	if (slot === 1) {
+		return 'W'
+	}
+	return ''
 }

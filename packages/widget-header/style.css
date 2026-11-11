@@ -1,138 +1,138 @@
-@import "@salik1992/iracing-overlay-shared/theme/base.css";
+@import '@salik1992/iracing-overlay-shared/theme/base.css';
 
 html,
 body {
-  height: 100%;
-  overflow: hidden;
+	height: 100%;
+	overflow: hidden;
 }
 
 .panel {
-  box-sizing: border-box;
-  width: 1280px;
-  height: 28px;
-  padding: 0 8px;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-  align-items: center;
-  column-gap: 16px;
-  overflow: hidden;
-  border: none;
-  border-bottom: 1px solid var(--border);
-  font-size: 14px;
-  font-variant-numeric: tabular-nums;
+	box-sizing: border-box;
+	width: 1280px;
+	height: 28px;
+	padding: 0 8px;
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+	align-items: center;
+	column-gap: 16px;
+	overflow: hidden;
+	border: none;
+	border-bottom: 1px solid var(--border);
+	font-size: 14px;
+	font-variant-numeric: tabular-nums;
 }
 
 .type,
 .weather {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }
 
 .counter {
-  white-space: nowrap;
+	white-space: nowrap;
 }
 
 .type {
-  text-align: start;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--fg);
+	text-align: start;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: var(--fg);
 }
 
 .counter {
-  text-align: center;
-  color: var(--number);
-  font-weight: 400;
+	text-align: center;
+	color: var(--number);
+	font-weight: 400;
 }
 
 .weather {
-  text-align: end;
-  color: var(--fg);
+	text-align: end;
+	color: var(--fg);
 }
 
 /* Matching flags on both sides keep the counter at the panel center. */
 .mid {
-  display: grid;
-  grid-template-columns: 48px auto 48px;
-  column-gap: 32px;
-  align-items: center;
+	display: grid;
+	grid-template-columns: 48px auto 48px;
+	column-gap: 32px;
+	align-items: center;
 }
 
 .flag {
-  position: relative;
-  width: 48px;
-  height: 16px;
-  opacity: 0;
-  overflow: hidden;
-  transition: opacity 200ms linear;
+	position: relative;
+	width: 48px;
+	height: 16px;
+	opacity: 0;
+	overflow: hidden;
+	transition: opacity 200ms linear;
 }
 
 .flag.is-shown {
-  opacity: 1;
+	opacity: 1;
 }
 
 .flag-motion,
 .flag-face,
 .flag-swap {
-  position: absolute;
-  inset: 0;
+	position: absolute;
+	inset: 0;
 }
 
 .flag-swap {
-  opacity: 0;
+	opacity: 0;
 }
 
 .flag-swap.is-swap {
-  /* 800ms hold, 200ms crossfade, then the same back. 2000ms. */
-  animation: flag-swap 2000ms linear infinite;
+	/* 800ms hold, 200ms crossfade, then the same back. 2000ms. */
+	animation: flag-swap 2000ms linear infinite;
 }
 
 .flag.is-blink .flag-motion {
-  /* 500ms lit, 500ms dark. */
-  animation: flag-blink 1000ms linear infinite;
+	/* 500ms lit, 500ms dark. */
+	animation: flag-blink 1000ms linear infinite;
 }
 
 .flag.is-dark .flag-face {
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.28);
+	box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.28);
 }
 
 .flag-slash {
-  display: none;
-  position: absolute;
-  left: -20%;
-  width: 140%;
-  top: 50%;
-  /* Corner to corner on the 48×16 flag. */
-  transform: translateY(-50%) rotate(-18.43deg);
+	display: none;
+	position: absolute;
+	left: -20%;
+	width: 140%;
+	top: 50%;
+	/* Corner to corner on the 48×16 flag. */
+	transform: translateY(-50%) rotate(-18.43deg);
 }
 
 .flag.is-crossed .flag-slash {
-  display: block;
+	display: block;
 }
 
 @keyframes flag-swap {
-  0%,
-  40% {
-    opacity: 0;
-  }
-  50%,
-  90% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-  }
+	0%,
+	40% {
+		opacity: 0;
+	}
+	50%,
+	90% {
+		opacity: 1;
+	}
+	100% {
+		opacity: 0;
+	}
 }
 
 @keyframes flag-blink {
-  0%,
-  49% {
-    opacity: 1;
-  }
-  50%,
-  100% {
-    opacity: 0;
-  }
+	0%,
+	49% {
+		opacity: 1;
+	}
+	50%,
+	100% {
+		opacity: 0;
+	}
 }

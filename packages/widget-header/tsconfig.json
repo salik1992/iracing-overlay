@@ -1,7 +1,7 @@
 {
-  "extends": "../../tsconfig.widget.json",
-  "compilerOptions": {
-    "rootDir": "."
-  },
-  "include": ["src", "test"]
+	"extends": "../../tsconfig.widget.json",
+	"compilerOptions": {
+		"rootDir": "."
+	},
+	"include": ["src", "test"]
 }

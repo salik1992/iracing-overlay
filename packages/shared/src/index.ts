@@ -1,1 +1,1 @@
-export type { WidgetManifest } from "./widget.js";
+export type { WidgetManifest } from './widget.js'

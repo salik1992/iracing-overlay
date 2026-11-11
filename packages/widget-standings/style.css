@@ -1,322 +1,322 @@
-@import "@salik1992/iracing-overlay-shared/theme/base.css";
+@import '@salik1992/iracing-overlay-shared/theme/base.css';
 
 html,
 body {
-  height: 100%;
-  overflow: hidden;
+	height: 100%;
+	overflow: hidden;
 }
 
 .panel {
-  --panel-alpha: 0.88;
-  /* The root token resolves --panel-alpha on :root, so the override has to be declared here. */
-  --panel: rgb(26 27 38 / var(--panel-alpha));
-  --row: 19px;
-  --cols: max-content max-content max-content max-content;
-  box-sizing: border-box;
-  width: max-content;
-  height: 640px;
-  display: flex;
-  align-items: flex-start;
-  overflow: hidden;
-  padding: 0;
-  border: none;
-  background: transparent;
-  font-size: 13px;
-  font-variant-numeric: tabular-nums;
+	--panel-alpha: 0.88;
+	/* The root token resolves --panel-alpha on :root, so the override has to be declared here. */
+	--panel: rgb(26 27 38 / var(--panel-alpha));
+	--row: 19px;
+	--cols: max-content max-content max-content max-content;
+	box-sizing: border-box;
+	width: max-content;
+	height: 640px;
+	display: flex;
+	align-items: flex-start;
+	overflow: hidden;
+	padding: 0;
+	border: none;
+	background: transparent;
+	font-size: 13px;
+	font-variant-numeric: tabular-nums;
 }
 
 .column {
-  box-sizing: border-box;
-  display: grid;
-  grid-template-columns: var(--cols);
-  column-gap: 8px;
-  align-content: start;
-  width: max-content;
-  flex: none;
-  max-height: 100%;
-  padding: 6px 8px 4px;
-  min-width: 0;
-  overflow: hidden;
-  background: var(--panel);
-  border-right: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
+	box-sizing: border-box;
+	display: grid;
+	grid-template-columns: var(--cols);
+	column-gap: 8px;
+	align-content: start;
+	width: max-content;
+	flex: none;
+	max-height: 100%;
+	padding: 6px 8px 4px;
+	min-width: 0;
+	overflow: hidden;
+	background: var(--panel);
+	border-right: 1px solid var(--border);
+	border-bottom: 1px solid var(--border);
 }
 
 .column + .column {
-  border-left: 1px solid var(--border);
-  margin-left: -1px;
+	border-left: 1px solid var(--border);
+	margin-left: -1px;
 }
 
 .column > .classhead {
-  margin-top: 0;
+	margin-top: 0;
 }
 
 .row {
-  display: grid;
-  grid-template-columns: subgrid;
-  grid-column: 1 / -1;
-  align-items: center;
-  height: var(--row);
+	display: grid;
+	grid-template-columns: subgrid;
+	grid-column: 1 / -1;
+	align-items: center;
+	height: var(--row);
 }
 
-.panel[data-mode="race"][data-slot="gap"] {
-  --cols: max-content max-content max-content max-content;
+.panel[data-mode='race'][data-slot='gap'] {
+	--cols: max-content max-content max-content max-content;
 }
 
-.panel[data-mode="race"][data-slot="detail"] {
-  --cols: max-content max-content max-content max-content max-content max-content;
+.panel[data-mode='race'][data-slot='detail'] {
+	--cols: max-content max-content max-content max-content max-content max-content;
 }
 
-.panel[data-mode="other"] {
-  --cols: max-content max-content max-content max-content max-content;
+.panel[data-mode='other'] {
+	--cols: max-content max-content max-content max-content max-content;
 }
 
 /* The team name uses the driver and gap tracks, so a long name cannot widen the class. */
 .panel.is-team[data-mode] {
-  --cols: max-content max-content max-content max-content;
+	--cols: max-content max-content max-content max-content;
 }
 
-.panel[data-mode="other"] .stops,
-.panel[data-mode="other"] .delta,
-.panel[data-mode="race"][data-slot="gap"] .stops,
-.panel[data-mode="race"][data-slot="gap"] .tire,
-.panel[data-mode="race"][data-slot="gap"] .delta,
-.panel[data-mode="race"][data-slot="detail"] .gap,
+.panel[data-mode='other'] .stops,
+.panel[data-mode='other'] .delta,
+.panel[data-mode='race'][data-slot='gap'] .stops,
+.panel[data-mode='race'][data-slot='gap'] .tire,
+.panel[data-mode='race'][data-slot='gap'] .delta,
+.panel[data-mode='race'][data-slot='detail'] .gap,
 .panel.is-team .stops,
 .panel.is-team .tire,
 .panel.is-team .delta {
-  display: none;
+	display: none;
 }
 
 .panel.is-team[data-slot] .driver,
 .panel.is-team[data-slot] .gap {
-  display: block;
-  visibility: hidden;
+	display: block;
+	visibility: hidden;
 }
 
 /* The team is placed before auto-placement and occupies these cells.
    Pin the hidden driver and gap here so they keep sizing the tracks. */
 .panel.is-team .driver {
-  grid-column: 3;
-  grid-row: 1;
+	grid-column: 3;
+	grid-row: 1;
 }
 
 .panel.is-team .gap {
-  grid-column: 4;
-  grid-row: 1;
+	grid-column: 4;
+	grid-row: 1;
 }
 
 .row.is-pits {
-  opacity: 0.7;
+	opacity: 0.7;
 }
 
 .pos,
 .stops,
 .gap {
-  text-align: right;
+	text-align: right;
 }
 
 .pos {
-  font-weight: 600;
-  color: var(--number);
+	font-weight: 600;
+	color: var(--number);
 }
 
 .initial {
-  font-weight: 400;
+	font-weight: 400;
 }
 
 .tri {
-  font-weight: 600;
+	font-weight: 600;
 }
 
 .stops {
-  color: var(--fg);
+	color: var(--fg);
 }
 
 .driver,
 .gap,
 .pos,
 .stops {
-  white-space: nowrap;
+	white-space: nowrap;
 }
 
 .team {
-  display: none;
+	display: none;
 }
 
 .panel.is-team .team {
-  display: block;
-  grid-column: 3 / 5;
-  grid-row: 1;
-  align-self: start;
-  position: relative;
-  min-width: 0;
-  height: var(--row);
-  overflow: hidden;
+	display: block;
+	grid-column: 3 / 5;
+	grid-row: 1;
+	align-self: start;
+	position: relative;
+	min-width: 0;
+	height: var(--row);
+	overflow: hidden;
 }
 
 .team-name {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  line-height: var(--row);
+	position: absolute;
+	inset: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	line-height: var(--row);
 }
 
 .num {
-  justify-self: stretch;
-  align-self: center;
-  display: grid;
-  place-items: center;
-  height: 16px;
-  padding-inline: 0.5ch;
-  background: var(--plate, var(--rule));
-  text-align: center;
-  line-height: 1;
+	justify-self: stretch;
+	align-self: center;
+	display: grid;
+	place-items: center;
+	height: 16px;
+	padding-inline: 0.5ch;
+	background: var(--plate, var(--rule));
+	text-align: center;
+	line-height: 1;
 }
 
 .row.is-class .num {
-  color: #1a1b26;
+	color: #1a1b26;
 }
 
 .gap {
-  font-weight: 600;
-  color: var(--accent);
+	font-weight: 600;
+	color: var(--accent);
 }
 
 .delta {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  gap: 4px;
+	display: flex;
+	justify-content: flex-end;
+	align-items: center;
+	gap: 4px;
 }
 
 .delta i {
-  width: 0;
-  height: 0;
-  border-left: 3.5px solid transparent;
-  border-right: 3.5px solid transparent;
+	width: 0;
+	height: 0;
+	border-left: 3.5px solid transparent;
+	border-right: 3.5px solid transparent;
 }
 
 .delta.is-up {
-  color: var(--good);
+	color: var(--good);
 }
 
 .delta.is-up i {
-  border-bottom: 5px solid var(--good);
+	border-bottom: 5px solid var(--good);
 }
 
 .delta.is-down {
-  color: var(--bad);
+	color: var(--bad);
 }
 
 .delta.is-down i {
-  border-top: 5px solid var(--bad);
+	border-top: 5px solid var(--bad);
 }
 
 .delta.is-flat {
-  color: var(--muted);
+	color: var(--muted);
 }
 
 .delta.is-flat i {
-  display: none;
+	display: none;
 }
 
 .tire {
-  justify-self: center;
-  display: grid;
-  place-items: center;
-  width: 16px;
-  height: 16px;
-  background: var(--rule);
-  color: var(--fg);
-  font-size: 11px;
-  font-weight: 600;
-  line-height: 1;
+	justify-self: center;
+	display: grid;
+	place-items: center;
+	width: 16px;
+	height: 16px;
+	background: var(--rule);
+	color: var(--fg);
+	font-size: 11px;
+	font-weight: 600;
+	line-height: 1;
 }
 
-.tire[data-role="h"] {
-  background: #f4f4f4;
-  color: #1a1b26;
+.tire[data-role='h'] {
+	background: #f4f4f4;
+	color: #1a1b26;
 }
 
-.tire[data-role="m"] {
-  background: #ffd200;
-  color: #1a1b26;
+.tire[data-role='m'] {
+	background: #ffd200;
+	color: #1a1b26;
 }
 
-.tire[data-role="s"] {
-  background: #e10600;
-  color: #f4f4f4;
+.tire[data-role='s'] {
+	background: #e10600;
+	color: #f4f4f4;
 }
 
-.tire[data-role="i"] {
-  background: #3dcc4a;
-  color: #1a1b26;
+.tire[data-role='i'] {
+	background: #3dcc4a;
+	color: #1a1b26;
 }
 
-.tire[data-role="w"] {
-  background: #2f6bff;
-  color: #f4f4f4;
+.tire[data-role='w'] {
+	background: #2f6bff;
+	color: #f4f4f4;
 }
 
 .omit {
-  display: flex;
-  grid-column: 1 / -1;
-  align-items: center;
-  gap: 8px;
-  height: 18px;
-  color: var(--muted);
-  font-size: 12px;
+	display: flex;
+	grid-column: 1 / -1;
+	align-items: center;
+	gap: 8px;
+	height: 18px;
+	color: var(--muted);
+	font-size: 12px;
 }
 
 .omit-line {
-  flex: 1;
-  height: 1px;
-  background: var(--rule);
+	flex: 1;
+	height: 1px;
+	background: var(--rule);
 }
 
 .omit-count {
-  font-weight: 400;
+	font-weight: 400;
 }
 
 .classhead {
-  display: grid;
-  grid-template-columns: subgrid;
-  grid-column: 1 / -1;
-  align-items: center;
-  height: 18px;
-  margin-top: 8px;
-  font-size: 13px;
-  letter-spacing: 0;
-  color: var(--class);
+	display: grid;
+	grid-template-columns: subgrid;
+	grid-column: 1 / -1;
+	align-items: center;
+	height: 18px;
+	margin-top: 8px;
+	font-size: 13px;
+	letter-spacing: 0;
+	color: var(--class);
 }
 
 .classhead > .classline {
-  grid-column: 1;
+	grid-column: 1;
 }
 
 .classrest {
-  display: flex;
-  grid-column: 2 / -1;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
+	display: flex;
+	grid-column: 2 / -1;
+	align-items: center;
+	gap: 8px;
+	min-width: 0;
 }
 
 .classline {
-  height: 1px;
-  background: var(--class);
+	height: 1px;
+	background: var(--class);
 }
 
 .classrest .classline {
-  flex: 1;
+	flex: 1;
 }
 
 .classname {
-  flex: none;
-  font-size: 12px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+	flex: none;
+	font-size: 12px;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
 }

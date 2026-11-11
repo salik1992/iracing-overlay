@@ -1,482 +1,543 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <title>Digiflag studies</title>
-  <style>
-    @font-face {
-      font-family: "Fira Code";
-      src: url("../../packages/shared/fonts/FiraCode-VF.woff2") format("woff2");
-      font-weight: 300 700;
-      font-style: normal;
-      font-display: block;
-    }
+	<head>
+		<meta charset="utf-8" />
+		<title>Digiflag studies</title>
+		<style>
+			@font-face {
+				font-family: 'Fira Code';
+				src: url('../../packages/shared/fonts/FiraCode-VF.woff2') format('woff2');
+				font-weight: 300 700;
+				font-style: normal;
+				font-display: block;
+			}
 
-    :root {
-      --fg: #c0caf5;
-      --muted: #565f89;
-      --dim: #737aa2;
-      --font-size: 14px;
-    }
+			:root {
+				--fg: #c0caf5;
+				--muted: #565f89;
+				--dim: #737aa2;
+				--font-size: 14px;
+			}
 
-    * { box-sizing: border-box; }
+			* {
+				box-sizing: border-box;
+			}
 
-    html, body {
-      margin: 0;
-      background: #101118;
-      color: var(--fg);
-      font-family: "Fira Code", monospace;
-      font-size: var(--font-size);
-      line-height: 1.25;
-      font-weight: 400;
-      font-variant-ligatures: none;
-      font-feature-settings: "zero";
-    }
+			html,
+			body {
+				margin: 0;
+				background: #101118;
+				color: var(--fg);
+				font-family: 'Fira Code', monospace;
+				font-size: var(--font-size);
+				line-height: 1.25;
+				font-weight: 400;
+				font-variant-ligatures: none;
+				font-feature-settings: 'zero';
+			}
 
-    html:not([data-shot="all"]) .shot { display: none; }
-    html[data-shot="field8"] #field8,
-    html[data-shot="field12"] #field12,
-    html[data-shot="field16"] #field16,
-    html[data-shot="crescent"] #crescent,
-    html[data-shot="bloom"] #bloom,
-    html[data-shot="ebb"] #ebb,
-    html[data-shot="cove"] #cove,
-    html[data-shot="cove16"] #cove16,
-    html[data-shot="cove20"] #cove20,
-    html[data-shot="cove24"] #cove24,
-    html[data-shot="cove32"] #cove32,
-    html[data-shot="twin"] #twin,
-    html[data-shot="steps"] #steps { display: block; }
+			html:not([data-shot='all']) .shot {
+				display: none;
+			}
+			html[data-shot='field8'] #field8,
+			html[data-shot='field12'] #field12,
+			html[data-shot='field16'] #field16,
+			html[data-shot='crescent'] #crescent,
+			html[data-shot='bloom'] #bloom,
+			html[data-shot='ebb'] #ebb,
+			html[data-shot='cove'] #cove,
+			html[data-shot='cove16'] #cove16,
+			html[data-shot='cove20'] #cove20,
+			html[data-shot='cove24'] #cove24,
+			html[data-shot='cove32'] #cove32,
+			html[data-shot='twin'] #twin,
+			html[data-shot='steps'] #steps {
+				display: block;
+			}
 
-    .shot { width: 1280px; height: 720px; }
+			.shot {
+				width: 1280px;
+				height: 720px;
+			}
 
-    .stage {
-      position: relative;
-      width: 1280px;
-      height: 720px;
-      overflow: hidden;
-      background:
-        radial-gradient(90% 70% at 78% 18%, rgb(61 89 161 / 0.28), transparent 46%),
-        linear-gradient(180deg, #161821 0%, #12141b 58%, #0e1016 100%);
-    }
+			.stage {
+				position: relative;
+				width: 1280px;
+				height: 720px;
+				overflow: hidden;
+				background:
+					radial-gradient(90% 70% at 78% 18%, rgb(61 89 161 / 0.28), transparent 46%),
+					linear-gradient(180deg, #161821 0%, #12141b 58%, #0e1016 100%);
+			}
 
-    .stage::before {
-      content: "";
-      position: absolute;
-      left: -20%;
-      right: -10%;
-      bottom: -30%;
-      height: 62%;
-      background:
-        linear-gradient(90deg, #e10600 0 14px, #f4f4f4 14px 28px, transparent 28px),
-        repeating-linear-gradient(90deg, rgb(255 255 255 / 0.045) 0 1px, transparent 1px 72px),
-        linear-gradient(#2c303a, #171920);
-      transform: perspective(520px) rotateX(52deg);
-      transform-origin: center bottom;
-    }
+			.stage::before {
+				content: '';
+				position: absolute;
+				left: -20%;
+				right: -10%;
+				bottom: -30%;
+				height: 62%;
+				background:
+					linear-gradient(90deg, #e10600 0 14px, #f4f4f4 14px 28px, transparent 28px),
+					repeating-linear-gradient(
+						90deg,
+						rgb(255 255 255 / 0.045) 0 1px,
+						transparent 1px 72px
+					),
+					linear-gradient(#2c303a, #171920);
+				transform: perspective(520px) rotateX(52deg);
+				transform-origin: center bottom;
+			}
 
-    .copy {
-      position: absolute;
-      top: 36px;
-      left: 40px;
-      width: 560px;
-      z-index: 2;
-    }
+			.copy {
+				position: absolute;
+				top: 36px;
+				left: 40px;
+				width: 560px;
+				z-index: 2;
+			}
 
-    .kicker {
-      color: var(--dim);
-      font-size: 12px;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
+			.kicker {
+				color: var(--dim);
+				font-size: 12px;
+				letter-spacing: 0.08em;
+				text-transform: uppercase;
+			}
 
-    h1 {
-      margin: 8px 0 0;
-      font-size: 28px;
-      font-weight: 600;
-      letter-spacing: -0.03em;
-    }
+			h1 {
+				margin: 8px 0 0;
+				font-size: 28px;
+				font-weight: 600;
+				letter-spacing: -0.03em;
+			}
 
-    .count {
-      margin: 8px 0 0;
-      color: var(--muted);
-      font-size: 13px;
-    }
+			.count {
+				margin: 8px 0 0;
+				color: var(--muted);
+				font-size: 13px;
+			}
 
-    p {
-      margin: 12px 0 0;
-      max-width: 48ch;
-      color: var(--fg);
-    }
+			p {
+				margin: 12px 0 0;
+				max-width: 48ch;
+				color: var(--fg);
+			}
 
-    .hero {
-      position: absolute;
-      top: 28px;
-      right: 28px;
-      width: 288px;
-      height: 288px;
-      z-index: 2;
-    }
+			.hero {
+				position: absolute;
+				top: 28px;
+				right: 28px;
+				width: 288px;
+				height: 288px;
+				z-index: 2;
+			}
 
-    .states {
-      position: absolute;
-      left: 40px;
-      bottom: 32px;
-      display: flex;
-      gap: 22px;
-      z-index: 2;
-    }
+			.states {
+				position: absolute;
+				left: 40px;
+				bottom: 32px;
+				display: flex;
+				gap: 22px;
+				z-index: 2;
+			}
 
-    .mini-clip {
-      width: 112px;
-      height: 112px;
-      overflow: hidden;
-    }
+			.mini-clip {
+				width: 112px;
+				height: 112px;
+				overflow: hidden;
+			}
 
-    .mini .label {
-      margin-top: 8px;
-      color: var(--dim);
-      font-size: 12px;
-      letter-spacing: 0.04em;
-    }
+			.mini .label {
+				margin-top: 8px;
+				color: var(--dim);
+				font-size: 12px;
+				letter-spacing: 0.04em;
+			}
 
-    .matrix { position: relative; width: 288px; height: 288px; }
+			.matrix {
+				position: relative;
+				width: 288px;
+				height: 288px;
+			}
 
-    .dot {
-      position: absolute;
-      background: var(--led);
-    }
+			.dot {
+				position: absolute;
+				background: var(--led);
+			}
 
-    .dot.dark { box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.28); }
-  </style>
-</head>
-<body>
-  <section class="shot" id="field8">
-    <div class="stage">
-      <div class="copy">
-        <div class="kicker">Inspired · 8×8 flag box</div>
-        <h1>Field 8</h1>
-        <div class="count" data-count="field8"></div>
-        <p>The small digiflag. A quarter of an 8×8 matrix, the same pitch as the hardware iFlag boards. Each dot is a chunky lamp. Patterns stay coarse.</p>
-      </div>
-      <div class="hero" data-mount="field8" data-flag="yellow"></div>
-      <div class="states" data-states="field8"></div>
-    </div>
-  </section>
+			.dot.dark {
+				box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.28);
+			}
+		</style>
+	</head>
+	<body>
+		<section class="shot" id="field8">
+			<div class="stage">
+				<div class="copy">
+					<div class="kicker">Inspired · 8×8 flag box</div>
+					<h1>Field 8</h1>
+					<div class="count" data-count="field8"></div>
+					<p>
+						The small digiflag. A quarter of an 8×8 matrix, the same pitch as the
+						hardware iFlag boards. Each dot is a chunky lamp. Patterns stay coarse.
+					</p>
+				</div>
+				<div class="hero" data-mount="field8" data-flag="yellow"></div>
+				<div class="states" data-states="field8"></div>
+			</div>
+		</section>
 
-  <section class="shot" id="field12">
-    <div class="stage">
-      <div class="copy">
-        <div class="kicker">Inspired · mid digiflag</div>
-        <h1>Field 12</h1>
-        <div class="count" data-count="field12"></div>
-        <p>Same quarter, 12 dots on a side. Checker and debris stripes separate into a pattern instead of a couple of blocks.</p>
-      </div>
-      <div class="hero" data-mount="field12" data-flag="checker"></div>
-      <div class="states" data-states="field12"></div>
-    </div>
-  </section>
+		<section class="shot" id="field12">
+			<div class="stage">
+				<div class="copy">
+					<div class="kicker">Inspired · mid digiflag</div>
+					<h1>Field 12</h1>
+					<div class="count" data-count="field12"></div>
+					<p>
+						Same quarter, 12 dots on a side. Checker and debris stripes separate into a
+						pattern instead of a couple of blocks.
+					</p>
+				</div>
+				<div class="hero" data-mount="field12" data-flag="checker"></div>
+				<div class="states" data-states="field12"></div>
+			</div>
+		</section>
 
-  <section class="shot" id="field16">
-    <div class="stage">
-      <div class="copy">
-        <div class="kicker">Inspired · big digiflag</div>
-        <h1>Field 16</h1>
-        <div class="count" data-count="field16"></div>
-        <p>The large block. Fine enough for a meatball and a real checker, still only the top-right quarter of the matrix.</p>
-      </div>
-      <div class="hero" data-mount="field16" data-flag="meatball"></div>
-      <div class="states" data-states="field16"></div>
-    </div>
-  </section>
+		<section class="shot" id="field16">
+			<div class="stage">
+				<div class="copy">
+					<div class="kicker">Inspired · big digiflag</div>
+					<h1>Field 16</h1>
+					<div class="count" data-count="field16"></div>
+					<p>
+						The large block. Fine enough for a meatball and a real checker, still only
+						the top-right quarter of the matrix.
+					</p>
+				</div>
+				<div class="hero" data-mount="field16" data-flag="meatball"></div>
+				<div class="states" data-states="field16"></div>
+			</div>
+		</section>
 
-  <section class="shot" id="crescent">
-    <div class="stage">
-      <div class="copy">
-        <div class="kicker">Inspired · double strip</div>
-        <h1>Crescent</h1>
-        <div class="count" data-count="crescent"></div>
-        <p>Only the outer arc of a 16×16 grid. This is the thin strip from the split digiflag, bent into the corner. The middle of the quarter stays empty.</p>
-      </div>
-      <div class="hero" data-mount="crescent" data-flag="debris"></div>
-      <div class="states" data-states="crescent"></div>
-    </div>
-  </section>
+		<section class="shot" id="crescent">
+			<div class="stage">
+				<div class="copy">
+					<div class="kicker">Inspired · double strip</div>
+					<h1>Crescent</h1>
+					<div class="count" data-count="crescent"></div>
+					<p>
+						Only the outer arc of a 16×16 grid. This is the thin strip from the split
+						digiflag, bent into the corner. The middle of the quarter stays empty.
+					</p>
+				</div>
+				<div class="hero" data-mount="crescent" data-flag="debris"></div>
+				<div class="states" data-states="crescent"></div>
+			</div>
+		</section>
 
-  <section class="shot" id="bloom">
-    <div class="stage">
-      <div class="copy">
-        <div class="kicker">Original · size</div>
-        <h1>Bloom</h1>
-        <div class="count" data-count="bloom"></div>
-        <p>A 12×12 quarter where the dots grow as they leave the corner. The flag reads largest toward the middle of the screen.</p>
-      </div>
-      <div class="hero" data-mount="bloom" data-flag="green"></div>
-      <div class="states" data-states="bloom"></div>
-    </div>
-  </section>
+		<section class="shot" id="bloom">
+			<div class="stage">
+				<div class="copy">
+					<div class="kicker">Original · size</div>
+					<h1>Bloom</h1>
+					<div class="count" data-count="bloom"></div>
+					<p>
+						A 12×12 quarter where the dots grow as they leave the corner. The flag reads
+						largest toward the middle of the screen.
+					</p>
+				</div>
+				<div class="hero" data-mount="bloom" data-flag="green"></div>
+				<div class="states" data-states="bloom"></div>
+			</div>
+		</section>
 
-  <section class="shot" id="ebb">
-    <div class="stage">
-      <div class="copy">
-        <div class="kicker">Original · Bloom, sizes reversed</div>
-        <h1>Ebb</h1>
-        <div class="count" data-count="ebb"></div>
-        <p>The same 12×12 quarter as Bloom. The dots that were smallest are now largest, so the corner carries the flag and the outer arc thins out.</p>
-      </div>
-      <div class="hero" data-mount="ebb" data-flag="green"></div>
-      <div class="states" data-states="ebb"></div>
-    </div>
-  </section>
+		<section class="shot" id="ebb">
+			<div class="stage">
+				<div class="copy">
+					<div class="kicker">Original · Bloom, sizes reversed</div>
+					<h1>Ebb</h1>
+					<div class="count" data-count="ebb"></div>
+					<p>
+						The same 12×12 quarter as Bloom. The dots that were smallest are now
+						largest, so the corner carries the flag and the outer arc thins out.
+					</p>
+				</div>
+				<div class="hero" data-mount="ebb" data-flag="green"></div>
+				<div class="states" data-states="ebb"></div>
+			</div>
+		</section>
 
-  <section class="shot" id="cove">
-    <div class="stage">
-      <div class="copy">
-        <div class="kicker">Original · Bloom, concave arc</div>
-        <h1>Cove</h1>
-        <div class="count" data-count="cove"></div>
-        <p>Reversed sizes again, and the arc bowed the other way. The curve scoops in toward the corner instead of bulging out into the screen.</p>
-      </div>
-      <div class="hero" data-mount="cove" data-flag="green"></div>
-      <div class="states" data-states="cove"></div>
-    </div>
-  </section>
+		<section class="shot" id="cove">
+			<div class="stage">
+				<div class="copy">
+					<div class="kicker">Original · Bloom, concave arc</div>
+					<h1>Cove</h1>
+					<div class="count" data-count="cove"></div>
+					<p>
+						Reversed sizes again, and the arc bowed the other way. The curve scoops in
+						toward the corner instead of bulging out into the screen.
+					</p>
+				</div>
+				<div class="hero" data-mount="cove" data-flag="green"></div>
+				<div class="states" data-states="cove"></div>
+			</div>
+		</section>
 
-  <section class="shot" id="cove16">
-    <div class="stage">
-      <div class="copy">
-        <div class="kicker">Cove · finer pitch</div>
-        <h1>Cove 16</h1>
-        <div class="count" data-count="cove16"></div>
-        <p>The same concave cove and reversed sizes, on a 16×16 pitch inside the same corner.</p>
-      </div>
-      <div class="hero" data-mount="cove16" data-flag="green"></div>
-      <div class="states" data-states="cove16"></div>
-    </div>
-  </section>
+		<section class="shot" id="cove16">
+			<div class="stage">
+				<div class="copy">
+					<div class="kicker">Cove · finer pitch</div>
+					<h1>Cove 16</h1>
+					<div class="count" data-count="cove16"></div>
+					<p>
+						The same concave cove and reversed sizes, on a 16×16 pitch inside the same
+						corner.
+					</p>
+				</div>
+				<div class="hero" data-mount="cove16" data-flag="green"></div>
+				<div class="states" data-states="cove16"></div>
+			</div>
+		</section>
 
-  <section class="shot" id="cove20">
-    <div class="stage">
-      <div class="copy">
-        <div class="kicker">Cove · finer pitch</div>
-        <h1>Cove 20</h1>
-        <div class="count" data-count="cove20"></div>
-        <p>The same concave cove and reversed sizes, on a 20×20 pitch inside the same corner.</p>
-      </div>
-      <div class="hero" data-mount="cove20" data-flag="green"></div>
-      <div class="states" data-states="cove20"></div>
-    </div>
-  </section>
+		<section class="shot" id="cove20">
+			<div class="stage">
+				<div class="copy">
+					<div class="kicker">Cove · finer pitch</div>
+					<h1>Cove 20</h1>
+					<div class="count" data-count="cove20"></div>
+					<p>
+						The same concave cove and reversed sizes, on a 20×20 pitch inside the same
+						corner.
+					</p>
+				</div>
+				<div class="hero" data-mount="cove20" data-flag="green"></div>
+				<div class="states" data-states="cove20"></div>
+			</div>
+		</section>
 
-  <section class="shot" id="cove24">
-    <div class="stage">
-      <div class="copy">
-        <div class="kicker">Cove · finer pitch</div>
-        <h1>Cove 24</h1>
-        <div class="count" data-count="cove24"></div>
-        <p>The same concave cove and reversed sizes, on a 24×24 pitch inside the same corner.</p>
-      </div>
-      <div class="hero" data-mount="cove24" data-flag="green"></div>
-      <div class="states" data-states="cove24"></div>
-    </div>
-  </section>
+		<section class="shot" id="cove24">
+			<div class="stage">
+				<div class="copy">
+					<div class="kicker">Cove · finer pitch</div>
+					<h1>Cove 24</h1>
+					<div class="count" data-count="cove24"></div>
+					<p>
+						The same concave cove and reversed sizes, on a 24×24 pitch inside the same
+						corner.
+					</p>
+				</div>
+				<div class="hero" data-mount="cove24" data-flag="green"></div>
+				<div class="states" data-states="cove24"></div>
+			</div>
+		</section>
 
-  <section class="shot" id="cove32">
-    <div class="stage">
-      <div class="copy">
-        <div class="kicker">Cove · finer pitch</div>
-        <h1>Cove 32</h1>
-        <div class="count" data-count="cove32"></div>
-        <p>The same concave cove and reversed sizes, on a 32×32 pitch inside the same corner.</p>
-      </div>
-      <div class="hero" data-mount="cove32" data-flag="green"></div>
-      <div class="states" data-states="cove32"></div>
-    </div>
-  </section>
+		<section class="shot" id="cove32">
+			<div class="stage">
+				<div class="copy">
+					<div class="kicker">Cove · finer pitch</div>
+					<h1>Cove 32</h1>
+					<div class="count" data-count="cove32"></div>
+					<p>
+						The same concave cove and reversed sizes, on a 32×32 pitch inside the same
+						corner.
+					</p>
+				</div>
+				<div class="hero" data-mount="cove32" data-flag="green"></div>
+				<div class="states" data-states="cove32"></div>
+			</div>
+		</section>
 
-  <section class="shot" id="twin">
-    <div class="stage">
-      <div class="copy">
-        <div class="kicker">Original · two arcs</div>
-        <h1>Twin</h1>
-        <div class="count" data-count="twin"></div>
-        <p>Two arcs with a gap. The outer arc is the flag. The inner arc adds a second cue: white inside blue, red inside yellow and debris, black inside red and the checker.</p>
-      </div>
-      <div class="hero" data-mount="twin" data-flag="blue"></div>
-      <div class="states" data-states="twin"></div>
-    </div>
-  </section>
+		<section class="shot" id="twin">
+			<div class="stage">
+				<div class="copy">
+					<div class="kicker">Original · two arcs</div>
+					<h1>Twin</h1>
+					<div class="count" data-count="twin"></div>
+					<p>
+						Two arcs with a gap. The outer arc is the flag. The inner arc adds a second
+						cue: white inside blue, red inside yellow and debris, black inside red and
+						the checker.
+					</p>
+				</div>
+				<div class="hero" data-mount="twin" data-flag="blue"></div>
+				<div class="states" data-states="twin"></div>
+			</div>
+		</section>
 
-  <section class="shot" id="steps">
-    <div class="stage">
-      <div class="copy">
-        <div class="kicker">Original · 9×9 stair</div>
-        <h1>Steps</h1>
-        <div class="count" data-count="steps"></div>
-        <p>A 9×9 matrix cut on the diagonal instead of a circle. The arc is a staircase, and every dot is the same size.</p>
-      </div>
-      <div class="hero" data-mount="steps" data-flag="white"></div>
-      <div class="states" data-states="steps"></div>
-    </div>
-  </section>
+		<section class="shot" id="steps">
+			<div class="stage">
+				<div class="copy">
+					<div class="kicker">Original · 9×9 stair</div>
+					<h1>Steps</h1>
+					<div class="count" data-count="steps"></div>
+					<p>
+						A 9×9 matrix cut on the diagonal instead of a circle. The arc is a
+						staircase, and every dot is the same size.
+					</p>
+				</div>
+				<div class="hero" data-mount="steps" data-flag="white"></div>
+				<div class="states" data-states="steps"></div>
+			</div>
+		</section>
 
-  <script>
-    const BOX = 288;
-    const LED = {
-      green: "#3DDC6A",
-      yellow: "#FFE14A",
-      blue: "#3D7BFF",
-      white: "#F4F4F4",
-      red: "#FF3B3B",
-      black: "#12121A",
-      orange: "#FF8A1E",
-      dim: "rgb(244 244 244 / 0.2)",
-    };
-    const FLAGS = [
-      ["green", "Green"],
-      ["yellow", "Yellow"],
-      ["blue", "Blue"],
-      ["white", "White"],
-      ["checker", "Checkered"],
-      ["debris", "Debris"],
-      ["red", "Red"],
-    ];
-    const STYLES = {
-      field8: { n: 8, kind: "sector" },
-      field12: { n: 12, kind: "sector" },
-      field16: { n: 16, kind: "sector" },
-      crescent: { n: 16, kind: "arc" },
-      bloom: { n: 12, kind: "bloom" },
-      ebb: { n: 12, kind: "ebb" },
-      cove: { n: 12, kind: "cove" },
-      cove16: { n: 16, kind: "cove" },
-      cove20: { n: 20, kind: "cove" },
-      cove24: { n: 24, kind: "cove" },
-      cove32: { n: 32, kind: "cove" },
-      twin: { n: 16, kind: "twin" },
-      steps: { n: 9, kind: "steps" },
-    };
+		<script>
+			const BOX = 288
+			const LED = {
+				green: '#3DDC6A',
+				yellow: '#FFE14A',
+				blue: '#3D7BFF',
+				white: '#F4F4F4',
+				red: '#FF3B3B',
+				black: '#12121A',
+				orange: '#FF8A1E',
+				dim: 'rgb(244 244 244 / 0.2)',
+			}
+			const FLAGS = [
+				['green', 'Green'],
+				['yellow', 'Yellow'],
+				['blue', 'Blue'],
+				['white', 'White'],
+				['checker', 'Checkered'],
+				['debris', 'Debris'],
+				['red', 'Red'],
+			]
+			const STYLES = {
+				field8: { n: 8, kind: 'sector' },
+				field12: { n: 12, kind: 'sector' },
+				field16: { n: 16, kind: 'sector' },
+				crescent: { n: 16, kind: 'arc' },
+				bloom: { n: 12, kind: 'bloom' },
+				ebb: { n: 12, kind: 'ebb' },
+				cove: { n: 12, kind: 'cove' },
+				cove16: { n: 16, kind: 'cove' },
+				cove20: { n: 20, kind: 'cove' },
+				cove24: { n: 24, kind: 'cove' },
+				cove32: { n: 32, kind: 'cove' },
+				twin: { n: 16, kind: 'twin' },
+				steps: { n: 9, kind: 'steps' },
+			}
 
-    const shot = location.hash.replace("#", "") || "all";
-    document.documentElement.dataset.shot = shot;
+			const shot = location.hash.replace('#', '') || 'all'
+			document.documentElement.dataset.shot = shot
 
-    for (const [id, style] of Object.entries(STYLES)) {
-      const count = cells(style).length;
-      const node = document.querySelector(`[data-count="${id}"]`);
-      if (node) node.textContent = `${style.n}×${style.n} · ${count} dots · no panel`;
-      const hero = document.querySelector(`[data-mount="${id}"]`);
-      if (hero) hero.append(matrix(style, hero.dataset.flag, 1));
-      const states = document.querySelector(`[data-states="${id}"]`);
-      if (!states) continue;
-      for (const [flag, label] of FLAGS) {
-        const mini = document.createElement("div");
-        mini.className = "mini";
-        const clip = document.createElement("div");
-        clip.className = "mini-clip";
-        clip.append(matrix(style, flag, 112 / BOX));
-        const caption = document.createElement("div");
-        caption.className = "label";
-        caption.textContent = label;
-        mini.append(clip, caption);
-        states.append(mini);
-      }
-    }
+			for (const [id, style] of Object.entries(STYLES)) {
+				const count = cells(style).length
+				const node = document.querySelector(`[data-count="${id}"]`)
+				if (node) node.textContent = `${style.n}×${style.n} · ${count} dots · no panel`
+				const hero = document.querySelector(`[data-mount="${id}"]`)
+				if (hero) hero.append(matrix(style, hero.dataset.flag, 1))
+				const states = document.querySelector(`[data-states="${id}"]`)
+				if (!states) continue
+				for (const [flag, label] of FLAGS) {
+					const mini = document.createElement('div')
+					mini.className = 'mini'
+					const clip = document.createElement('div')
+					clip.className = 'mini-clip'
+					clip.append(matrix(style, flag, 112 / BOX))
+					const caption = document.createElement('div')
+					caption.className = 'label'
+					caption.textContent = label
+					mini.append(clip, caption)
+					states.append(mini)
+				}
+			}
 
-    function cells(style) {
-      const { n, kind } = style;
-      const cell = BOX / n;
-      const out = [];
-      for (let row = 0; row < n; row += 1) {
-        for (let col = 0; col < n; col += 1) {
-          const cx = (col + 0.5) * cell;
-          const cy = (row + 0.5) * cell;
-          const dist = Math.hypot(BOX - cx, cy) / BOX;
-          const distFar = Math.hypot(cx, BOX - cy) / BOX;
-          const stair = (n - 1 - col) + row;
-          if (!keep(kind, dist, distFar, stair, n)) continue;
-          out.push({ row, col, dist });
-        }
-      }
-      return out;
-    }
+			function cells(style) {
+				const { n, kind } = style
+				const cell = BOX / n
+				const out = []
+				for (let row = 0; row < n; row += 1) {
+					for (let col = 0; col < n; col += 1) {
+						const cx = (col + 0.5) * cell
+						const cy = (row + 0.5) * cell
+						const dist = Math.hypot(BOX - cx, cy) / BOX
+						const distFar = Math.hypot(cx, BOX - cy) / BOX
+						const stair = n - 1 - col + row
+						if (!keep(kind, dist, distFar, stair, n)) continue
+						out.push({ row, col, dist })
+					}
+				}
+				return out
+			}
 
-    function keep(kind, dist, distFar, stair, n) {
-      if (kind === "sector" || kind === "bloom" || kind === "ebb") return dist <= 1.02;
-      if (kind === "cove") return distFar >= 1;
-      if (kind === "arc") return dist <= 1.02 && dist >= 0.7;
-      if (kind === "twin") return (dist <= 1.02 && dist >= 0.74) || dist <= 0.46;
-      if (kind === "steps") return stair <= n - 2;
-      return false;
-    }
+			function keep(kind, dist, distFar, stair, n) {
+				if (kind === 'sector' || kind === 'bloom' || kind === 'ebb') return dist <= 1.02
+				if (kind === 'cove') return distFar >= 1
+				if (kind === 'arc') return dist <= 1.02 && dist >= 0.7
+				if (kind === 'twin') return (dist <= 1.02 && dist >= 0.74) || dist <= 0.46
+				if (kind === 'steps') return stair <= n - 2
+				return false
+			}
 
-    function metrics(n) {
-      const cell = BOX / n;
-      const gap = n === 9 ? 10 : Math.round(cell * 0.34);
-      return { cell, gap, dot: cell - gap };
-    }
+			function metrics(n) {
+				const cell = BOX / n
+				const gap = n === 9 ? 10 : Math.round(cell * 0.34)
+				return { cell, gap, dot: cell - gap }
+			}
 
-    function dotSize(kind, cell, dot, dist) {
-      const t = Math.min(dist, 1);
-      if (kind === "bloom") return Math.round(cell * (0.34 + 0.28 * t));
-      if (kind === "ebb" || kind === "cove") return Math.round(cell * (0.62 - 0.28 * t));
-      return dot;
-    }
+			function dotSize(kind, cell, dot, dist) {
+				const t = Math.min(dist, 1)
+				if (kind === 'bloom') return Math.round(cell * (0.34 + 0.28 * t))
+				if (kind === 'ebb' || kind === 'cove') return Math.round(cell * (0.62 - 0.28 * t))
+				return dot
+			}
 
-    function matrix(style, flag, scale) {
-      const root = document.createElement("div");
-      root.className = "matrix";
-      if (scale !== 1) {
-        root.style.transform = `scale(${scale})`;
-        root.style.transformOrigin = "top left";
-      }
-      const { n, kind } = style;
-      const { cell, dot } = metrics(n);
-      for (const item of cells(style)) {
-        const led = paint(kind, flag, item, n);
-        const size = dotSize(kind, cell, dot, item.dist);
-        const node = document.createElement("div");
-        node.className = led === LED.black ? "dot dark" : "dot";
-        node.style.left = `${item.col * cell + (cell - size) / 2}px`;
-        node.style.top = `${item.row * cell + (cell - size) / 2}px`;
-        node.style.width = `${size}px`;
-        node.style.height = `${size}px`;
-        node.style.setProperty("--led", led);
-        root.append(node);
-      }
-      return root;
-    }
+			function matrix(style, flag, scale) {
+				const root = document.createElement('div')
+				root.className = 'matrix'
+				if (scale !== 1) {
+					root.style.transform = `scale(${scale})`
+					root.style.transformOrigin = 'top left'
+				}
+				const { n, kind } = style
+				const { cell, dot } = metrics(n)
+				for (const item of cells(style)) {
+					const led = paint(kind, flag, item, n)
+					const size = dotSize(kind, cell, dot, item.dist)
+					const node = document.createElement('div')
+					node.className = led === LED.black ? 'dot dark' : 'dot'
+					node.style.left = `${item.col * cell + (cell - size) / 2}px`
+					node.style.top = `${item.row * cell + (cell - size) / 2}px`
+					node.style.width = `${size}px`
+					node.style.height = `${size}px`
+					node.style.setProperty('--led', led)
+					root.append(node)
+				}
+				return root
+			}
 
-    function paint(kind, flag, item, n) {
-      if (kind === "twin") {
-        if (item.dist <= 0.46) return innerCue(flag);
-        if (flag === "debris") return LED.yellow;
-        if (flag === "checker") return LED.white;
-        return solid(flag);
-      }
-      if (flag === "checker") return (item.row + item.col) % 2 === 0 ? LED.white : LED.black;
-      if (flag === "debris") return item.col % 2 === 0 ? LED.yellow : LED.red;
-      if (flag === "meatball") return meatball(item, n);
-      return solid(flag);
-    }
+			function paint(kind, flag, item, n) {
+				if (kind === 'twin') {
+					if (item.dist <= 0.46) return innerCue(flag)
+					if (flag === 'debris') return LED.yellow
+					if (flag === 'checker') return LED.white
+					return solid(flag)
+				}
+				if (flag === 'checker')
+					return (item.row + item.col) % 2 === 0 ? LED.white : LED.black
+				if (flag === 'debris') return item.col % 2 === 0 ? LED.yellow : LED.red
+				if (flag === 'meatball') return meatball(item, n)
+				return solid(flag)
+			}
 
-    function solid(flag) {
-      return LED[flag] ?? LED.white;
-    }
+			function solid(flag) {
+				return LED[flag] ?? LED.white
+			}
 
-    function innerCue(flag) {
-      if (flag === "blue") return LED.white;
-      if (flag === "yellow" || flag === "debris") return LED.red;
-      if (flag === "red" || flag === "checker") return LED.black;
-      return LED.dim;
-    }
+			function innerCue(flag) {
+				if (flag === 'blue') return LED.white
+				if (flag === 'yellow' || flag === 'debris') return LED.red
+				if (flag === 'red' || flag === 'checker') return LED.black
+				return LED.dim
+			}
 
-    function meatball(item, n) {
-      const cell = BOX / n;
-      const x = (item.col + 0.5) * cell;
-      const y = (item.row + 0.5) * cell;
-      const radius = Math.hypot(x - BOX * 0.78, y - BOX * 0.22);
-      return radius < BOX * 0.14 ? LED.black : LED.orange;
-    }
-  </script>
-</body>
+			function meatball(item, n) {
+				const cell = BOX / n
+				const x = (item.col + 0.5) * cell
+				const y = (item.row + 0.5) * cell
+				const radius = Math.hypot(x - BOX * 0.78, y - BOX * 0.22)
+				return radius < BOX * 0.14 ? LED.black : LED.orange
+			}
+		</script>
+	</body>
 </html>

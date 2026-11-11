@@ -1,69 +1,69 @@
-@import "./tokens.css";
+@import './tokens.css';
 
 @font-face {
-  font-family: "Fira Code";
-  src: url("/fonts/FiraCode-VF.woff2") format("woff2");
-  font-weight: 300 700;
-  font-style: normal;
-  font-display: block;
+	font-family: 'Fira Code';
+	src: url('/fonts/FiraCode-VF.woff2') format('woff2');
+	font-weight: 300 700;
+	font-style: normal;
+	font-display: block;
 }
 
 html,
 body {
-  margin: 0;
-  background: transparent;
-  color: var(--fg);
-  font-family: var(--font-family);
-  font-size: var(--font-size);
-  line-height: var(--line-height);
-  font-weight: var(--font-weight);
-  font-variant-ligatures: none;
-  font-feature-settings: "zero";
-  user-select: none;
-  cursor: default;
+	margin: 0;
+	background: transparent;
+	color: var(--fg);
+	font-family: var(--font-family);
+	font-size: var(--font-size);
+	line-height: var(--line-height);
+	font-weight: var(--font-weight);
+	font-variant-ligatures: none;
+	font-feature-settings: 'zero';
+	user-select: none;
+	cursor: default;
 }
 
 *,
 *::before,
 *::after {
-  box-sizing: border-box;
+	box-sizing: border-box;
 }
 
 .panel {
-  background: var(--panel);
-  color: var(--fg);
-  border: 1px solid var(--border);
-  padding: 0.5ch 1ch;
-  font-family: var(--font-family);
-  font-size: var(--font-size);
-  line-height: var(--line-height);
-  font-weight: var(--font-weight);
-  font-variant-ligatures: none;
-  font-feature-settings: "zero";
-  user-select: none;
+	background: var(--panel);
+	color: var(--fg);
+	border: 1px solid var(--border);
+	padding: 0.5ch 1ch;
+	font-family: var(--font-family);
+	font-size: var(--font-size);
+	line-height: var(--line-height);
+	font-weight: var(--font-weight);
+	font-variant-ligatures: none;
+	font-feature-settings: 'zero';
+	user-select: none;
 }
 
 .panel.is-idle {
-  opacity: var(--idle-opacity);
+	opacity: var(--idle-opacity);
 }
 
 .panel-title {
-  color: var(--muted);
-  font-weight: var(--font-weight);
-  border-bottom: 1px solid var(--rule);
-  padding-bottom: 0.25ch;
-  margin-bottom: 0.5ch;
+	color: var(--muted);
+	font-weight: var(--font-weight);
+	border-bottom: 1px solid var(--rule);
+	padding-bottom: 0.25ch;
+	margin-bottom: 0.5ch;
 }
 
 .label {
-  color: var(--muted);
+	color: var(--muted);
 }
 
 .unit {
-  color: var(--dim);
+	color: var(--dim);
 }
 
 .figure {
-  color: var(--number);
-  font-weight: var(--font-weight-strong);
+	color: var(--number);
+	font-weight: var(--font-weight-strong);
 }

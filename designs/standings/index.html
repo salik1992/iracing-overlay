@@ -1,1034 +1,1364 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <title>Standings widget studies</title>
-  <style>
-    @font-face {
-      font-family: "Fira Code";
-      src: url("../../packages/shared/fonts/FiraCode-VF.woff2") format("woff2");
-      font-weight: 300 700;
-      font-style: normal;
-      font-display: block;
-    }
-
-    :root {
-      --bg: #1a1b26;
-      --fg: #c0caf5;
-      --muted: #565f89;
-      --dim: #737aa2;
-      --border: #414868;
-      --rule: #3b4261;
-      --accent: #7aa2f7;
-      --good: #9ece6a;
-      --bad: #f7768e;
-      --number: #ff9e64;
-      --panel: rgb(26 27 38 / 0.82);
-      --font-size: 13px;
-      --row: 20px;
-    }
-
-    * { box-sizing: border-box; }
-
-    html, body {
-      margin: 0;
-      background: #101118;
-      color: var(--fg);
-      font-family: "Fira Code", monospace;
-      font-size: var(--font-size);
-      line-height: 1.25;
-      font-weight: 400;
-      font-variant-ligatures: none;
-      font-feature-settings: "zero";
-      font-variant-numeric: tabular-nums;
-    }
-
-    html:not([data-shot="all"]) .shot { display: none; }
-    html[data-shot="broadcast"] #broadcast,
-    html[data-shot="blackbox"] #blackbox,
-    html[data-shot="plate"] #plate,
-    html[data-shot="ledger"] #ledger,
-    html[data-shot="signal"] #signal,
-    html[data-shot="docket"] #docket,
-    html[data-shot="composite"] #composite { display: block; }
-
-    .shot { width: 1280px; height: 720px; }
-
-    .stage {
-      position: relative;
-      width: 1280px;
-      height: 720px;
-      overflow: hidden;
-      background:
-        radial-gradient(90% 70% at 78% 18%, rgb(61 89 161 / 0.28), transparent 46%),
-        linear-gradient(180deg, #161821 0%, #12141b 58%, #0e1016 100%);
-    }
-
-    .stage::before {
-      content: "";
-      position: absolute;
-      left: -20%;
-      right: -10%;
-      bottom: -30%;
-      height: 62%;
-      background:
-        linear-gradient(90deg, #e10600 0 14px, #f4f4f4 14px 28px, transparent 28px),
-        repeating-linear-gradient(90deg, rgb(255 255 255 / 0.045) 0 1px, transparent 1px 72px),
-        linear-gradient(#2c303a, #171920);
-      transform: perspective(520px) rotateX(52deg);
-      transform-origin: center bottom;
-    }
-
-    .copy {
-      position: absolute;
-      top: 28px;
-      left: 488px;
-      width: 760px;
-      z-index: 2;
-    }
-
-    .kicker {
-      color: var(--dim);
-      font-size: 12px;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-
-    h1 {
-      margin: 6px 0 0;
-      font-size: 28px;
-      font-weight: 600;
-      letter-spacing: -0.03em;
-    }
-
-    p {
-      margin: 10px 0 0;
-      max-width: 62ch;
-      color: var(--fg);
-    }
-
-    .rules {
-      margin-top: 8px;
-      color: var(--muted);
-      font-size: 12px;
-      letter-spacing: 0.04em;
-    }
-
-    .samples {
-      display: flex;
-      gap: 16px;
-      align-items: flex-start;
-      margin-top: 18px;
-    }
-
-    .sample-label {
-      margin-bottom: 6px;
-      color: var(--dim);
-      font-size: 11px;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-
-    .hero {
-      position: absolute;
-      top: 28px;
-      left: 28px;
-      z-index: 2;
-    }
-
-    .panel {
-      background: var(--panel);
-      color: var(--fg);
-      border: 1px solid var(--border);
-      padding: 6px 8px 4px;
-      font-variant-ligatures: none;
-      font-feature-settings: "zero";
-      font-variant-numeric: tabular-nums;
-    }
-
-    .head {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      gap: 16px;
-      padding-bottom: 4px;
-      margin-bottom: 2px;
-      border-bottom: 1px solid var(--rule);
-    }
-
-    .session {
-      font-weight: 600;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-    }
-
-    .meta { color: var(--dim); }
-
-    .grid, .cols {
-      display: grid;
-      align-items: center;
-      column-gap: 8px;
-    }
-
-    .mode-race { grid-template-columns: 2.4ch 3.2ch minmax(5.5ch, 1fr) 2ch 16px 4.6ch 6.2ch; }
-    .mode-other { grid-template-columns: 2.4ch 3.2ch minmax(5.5ch, 1fr) 16px 8.6ch; }
-    .mode-team { grid-template-columns: 2.4ch 3.2ch minmax(8ch, 1fr) 8.6ch; }
-
-    .cols {
-      height: 16px;
-      color: var(--muted);
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-    }
-    .cols span { font-size: 10px; }
-    .cols .pos, .cols .num, .cols .stops, .cols .delta, .cols .gap { text-align: right; }
-    .cols .tireh { text-align: center; }
-
-    .panel:not(.design-ledger) .cols { display: none; }
-
-    .row {
-      display: grid;
-      align-items: center;
-      column-gap: 8px;
-      height: var(--row);
-      white-space: nowrap;
-    }
-
-    .pos, .num, .stops, .delta, .gap { text-align: right; }
-    .driver, .team { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-    .gap { font-weight: 600; }
-    .delta { display: flex; justify-content: flex-end; align-items: center; gap: 4px; }
-    .delta i {
-      width: 0;
-      height: 0;
-      border-left: 3.5px solid transparent;
-      border-right: 3.5px solid transparent;
-    }
-    .delta.up { color: var(--good); }
-    .delta.up i { border-bottom: 5px solid var(--good); }
-    .delta.down { color: var(--bad); }
-    .delta.down i { border-top: 5px solid var(--bad); }
-    .delta.flat { color: var(--muted); }
-
-    .tire {
-      display: grid;
-      place-items: center;
-      width: 14px;
-      height: 14px;
-      font-size: 10px;
-      font-weight: 600;
-      line-height: 1;
-    }
-    .tire[data-role="s"] { background: #e10600; color: #f4f4f4; }
-    .tire[data-role="m"] { background: #ffd200; color: #1a1b26; }
-    .tire[data-role="h"] { background: #f4f4f4; color: #1a1b26; }
-    .tire[data-role="i"] { background: #3dcc4a; color: #1a1b26; }
-    .tire[data-role="w"] { background: #2f6bff; color: #f4f4f4; }
-    .tire[data-role="other"] { background: var(--rule); color: var(--fg); }
-
-    .omit {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      height: 16px;
-      color: var(--muted);
-      font-size: 11px;
-    }
-    .omit span { flex: 1; height: 1px; background: var(--rule); }
-    .omit b { font-weight: 400; }
-
-    .classhead {
-      margin-top: 6px;
-      color: var(--class);
-      font-size: 11px;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-
-    .hero .panel { width: 432px; }
-    .samples .panel { width: 100%; }
-    .sample-practice { width: 236px; }
-    .sample-multi { width: 276px; }
-    .sample-team { width: 216px; }
-
-    /* Broadcast: television tower. Player gets an accent tick. */
-    .design-broadcast .row.is-player { box-shadow: inset 2px 0 0 var(--accent); }
-    .design-broadcast .row[data-class] { box-shadow: inset 2px 0 0 var(--class); }
-    .design-broadcast .row.is-player[data-class] { box-shadow: inset 2px 0 0 var(--accent); }
-
-    /* Black box: dense, and the player row is the only fill. */
-    .design-blackbox { --row: 18px; padding: 4px 6px 2px; }
-    .design-blackbox .row.is-player { background: rgb(122 162 247 / 0.16); }
-    .design-blackbox .tire { width: 12px; height: 12px; font-size: 9px; }
-    .design-blackbox .mode-race { grid-template-columns: 2.2ch 3ch minmax(5.5ch, 1fr) 1.6ch 14px 4.2ch 5.8ch; }
-
-    /* Plate: the car number is a plate. Multiclass plates take the class color. */
-    .design-plate .num {
-      justify-self: end;
-      min-width: 2.6ch;
-      padding: 0 3px;
-      background: var(--rule);
-      text-align: center;
-    }
-    .design-plate .row[data-class] .num { background: var(--class); color: #1a1b26; }
-    .design-plate .row.is-player .num { background: var(--accent); color: #1a1b26; }
-
-    /* Ledger: column labels, a gutter mark, dotted omit lines. */
-    .design-ledger .row.is-player .pos { color: var(--accent); }
-    .design-ledger .omit span {
-      height: auto;
-      align-self: center;
-      background: none;
-      border-bottom: 1px dotted var(--rule);
-    }
-
-    /* Signal: position and gap are the figures. The middle stays quiet. */
-    .design-signal .pos,
-    .design-signal .gap { font-weight: 600; }
-    .design-signal .driver,
-    .design-signal .stops,
-    .design-signal .team { color: var(--dim); }
-    .design-signal .gap { color: var(--number); }
-    .design-signal .row.is-player {
-      box-shadow: inset 0 1px 0 var(--accent), inset 0 -1px 0 var(--accent);
-    }
-
-    /* Docket: the clock is the title, and the gap sits past a rule. */
-    .design-docket .head {
-      display: block;
-      border-bottom: 0;
-      padding-bottom: 0;
-      margin-bottom: 4px;
-    }
-    .design-docket .session { display: block; font-size: 16px; letter-spacing: 0.04em; }
-    .design-docket .meta { display: block; margin-top: 1px; }
-    .design-docket .gap { box-shadow: inset 1px 0 0 var(--rule); padding-left: 8px; }
-    .design-docket .classhead {
-      margin: 6px -8px 0;
-      padding: 3px 8px;
-      background: color-mix(in srgb, var(--class) 22%, transparent);
-    }
-    .design-docket .row.is-player .driver,
-    .design-docket .row.is-player .team { color: var(--fg); font-weight: 600; }
-
-    /* Composite: the mix. Session type recedes, the clock stays normal. */
-    #composite .sample-practice { width: 228px; }
-    #composite .sample-multi { width: 292px; }
-    #composite .sample-team { width: 208px; }
-
-    .design-composite .session { font-weight: 400; color: var(--muted); }
-    .design-composite .meta { color: var(--fg); }
-    .design-composite .row.is-player { box-shadow: inset 2px 0 0 var(--accent); }
-    .design-composite .pos { font-weight: 600; }
-    .design-composite .tri { font-weight: 600; }
-    .design-composite .stops { color: var(--dim); }
-    .design-composite .num {
-      justify-self: stretch;
-      align-self: center;
-      display: grid;
-      place-items: center;
-      height: 14px;
-      background: var(--rule);
-      text-align: center;
-      line-height: 1;
-    }
-    .design-composite .row[data-class] .num { background: var(--class); color: #1a1b26; }
-    .design-composite .mode-race { grid-template-columns: 2.4ch 4ch minmax(5.5ch, 1fr) 2ch 16px 4.6ch 6.2ch; }
-    .design-composite .mode-other { grid-template-columns: 2.4ch 4ch minmax(5.5ch, 1fr) 16px 8.6ch; }
-    .design-composite .mode-team { grid-template-columns: 2.4ch 4ch minmax(8ch, 1fr); }
-    .design-composite .classhead {
-      display: grid;
-      grid-template-columns: 2.4ch minmax(0, 1fr);
-      column-gap: 8px;
-      align-items: center;
-      height: 16px;
-      margin-top: 8px;
-      font-size: 13px;
-      letter-spacing: 0;
-    }
-    .design-composite .classrest {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      min-width: 0;
-    }
-    .design-composite .classline { height: 1px; background: var(--class); }
-    .design-composite .classrest .classline { flex: 1; }
-    .design-composite .classname {
-      flex: none;
-      font-size: 11px;
-      letter-spacing: 0.08em;
-    }
-  </style>
-</head>
-<body>
-  <section class="shot" id="broadcast">
-    <div class="stage">
-      <div class="copy">
-        <div class="kicker">Existing · F1 and IMSA tower</div>
-        <h1>Broadcast</h1>
-        <p>A timing tower. The tire is a Pirelli chip, the gap is the strong figure, and the player row carries an accent tick. Multiclass rows take a class-colored tick instead.</p>
-        <div class="rules" data-rules></div>
-        <div class="samples" data-samples="broadcast"></div>
-      </div>
-      <div class="hero" data-mount="broadcast" data-scene="race"></div>
-    </div>
-  </section>
-
-  <section class="shot" id="blackbox">
-    <div class="stage">
-      <div class="copy">
-        <div class="kicker">Existing · iRacing relative box</div>
-        <h1>Black box</h1>
-        <p>The in-sim box, tightened. Rows sit on the character grid, and the player is the only row with a fill. The tire is the compound letter on its Pirelli color.</p>
-        <div class="rules" data-rules></div>
-        <div class="samples" data-samples="blackbox"></div>
-      </div>
-      <div class="hero" data-mount="blackbox" data-scene="race"></div>
-    </div>
-  </section>
-
-  <section class="shot" id="plate">
-    <div class="stage">
-      <div class="copy">
-        <div class="kicker">Existing · Kapps and Racelab</div>
-        <h1>Plate</h1>
-        <p>The car number sits in a plate. A single class uses the rule color. A multiclass plate, and the player plate, take their own color with dark type on top.</p>
-        <div class="rules" data-rules></div>
-        <div class="samples" data-samples="plate"></div>
-      </div>
-      <div class="hero" data-mount="plate" data-scene="race"></div>
-    </div>
-  </section>
-
-  <section class="shot" id="ledger">
-    <div class="stage">
-      <div class="copy">
-        <div class="kicker">Original · character grid</div>
-        <h1>Ledger</h1>
-        <p>Column labels and a dotted omit line. The player position is the accent color. Nothing else in the row changes weight.</p>
-        <div class="rules" data-rules></div>
-        <div class="samples" data-samples="ledger"></div>
-      </div>
-      <div class="hero" data-mount="ledger" data-scene="race"></div>
-    </div>
-  </section>
-
-  <section class="shot" id="signal">
-    <div class="stage">
-      <div class="copy">
-        <div class="kicker">Original · strong ends</div>
-        <h1>Signal</h1>
-        <p>Position and gap are the figures. The name, the stop count, and the team name stay dim. The player row is bracketed by accent rules.</p>
-        <div class="rules" data-rules></div>
-        <div class="samples" data-samples="signal"></div>
-      </div>
-      <div class="hero" data-mount="signal" data-scene="race"></div>
-    </div>
-  </section>
-
-  <section class="shot" id="docket">
-    <div class="stage">
-      <div class="copy">
-        <div class="kicker">Original · session title</div>
-        <h1>Docket</h1>
-        <p>The session name is the title and the clock sits under it. A rule separates the gap. Class headings are a band of the Tokyo Night class color.</p>
-        <div class="rules" data-rules></div>
-        <div class="samples" data-samples="docket"></div>
-      </div>
-      <div class="hero" data-mount="docket" data-scene="race"></div>
-    </div>
-  </section>
-
-  <section class="shot" id="composite">
-    <div class="stage">
-      <div class="copy">
-        <div class="kicker">Combined · tower, plate, signal</div>
-        <h1>Composite</h1>
-        <p>The session type stays muted and the clock is normal text. Position, the surname trigram, and the gap are the strong figures. The car number sits in a three-digit plate. Stops stay dim, and your row carries an accent tick. Class plates carry the class color, and the class name sits in a full separator lined up with the plate. In the team frame the name replaces the gap as well.</p>
-        <div class="rules" data-rules></div>
-        <div class="samples" data-samples="composite"></div>
-      </div>
-      <div class="hero" data-mount="composite" data-scene="race"></div>
-    </div>
-  </section>
-
-  <script>
-    const shot = location.hash.replace("#", "") || "all";
-    document.documentElement.dataset.shot = shot;
-
-    const TOP_N = 5;
-    const MAX_ROWS = 30;
-    const PLAYER_RADIUS = 10;
-    const MULTI_RADIUS = 3;
-
-    const TIRE_ROLE = { S: "s", M: "m", H: "h", I: "i", W: "w" };
-
-    function shortName(full) {
-      const words = full.trim().split(/\s+/);
-      const first = words[0][0];
-      const rest = words.slice(1);
-      if (rest.length === 0) return words[0].slice(0, 3).toUpperCase();
-      if (rest.length <= 3) {
-        const stem = rest.slice(0, -1).map((word) => word[0]).join("") + rest[rest.length - 1];
-        return `${first} ${stem.slice(0, 3)}`.toUpperCase();
-      }
-      const tri = rest.slice(-3).map((word) => word[0]).join("");
-      return `${first} ${tri}`.toUpperCase();
-    }
-
-    function tokyo(hex) {
-      const value = parseInt(hex.slice(1), 16);
-      let r = ((value >> 16) & 255) / 255;
-      let g = ((value >> 8) & 255) / 255;
-      let b = (value & 255) / 255;
-      const max = Math.max(r, g, b);
-      const min = Math.min(r, g, b);
-      let h = 0;
-      if (max !== min) {
-        const d = max - min;
-        if (max === r) h = ((g - b) / d) % 6;
-        else if (max === g) h = (b - r) / d + 2;
-        else h = (r - g) / d + 4;
-        h *= 60;
-        if (h < 0) h += 360;
-      }
-      return hsl(h, 0.62, 0.72);
-    }
-
-    function hsl(h, s, l) {
-      const a = s * Math.min(l, 1 - l);
-      const f = (n) => {
-        const k = (n + h / 30) % 12;
-        return l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
-      };
-      const channel = (n) => Math.round(f(n) * 255).toString(16).padStart(2, "0");
-      return `#${channel(0)}${channel(8)}${channel(4)}`;
-    }
-
-    function range(from, to) {
-      const out = [];
-      for (let i = from; i <= to; i += 1) out.push(i);
-      return out;
-    }
-
-    /**
-     * Top 5, plus a window of `radius` around the player.
-     * Overlap or a touching window fills from P1 up to MAX_ROWS.
-     * A 1-car hole is drawn as that car. A larger hole is an omit line.
-     */
-    function windowPositions(count, playerPos, radius, fillOnOverlap) {
-      if (count <= MAX_ROWS && radius >= count) return range(1, count).map((position) => ({ kind: "car", position }));
-      if (count <= TOP_N) return range(1, count).map((position) => ({ kind: "car", position }));
-
-      let start = Math.max(1, playerPos - radius);
-      const end = Math.min(count, playerPos + radius);
-      const mid = start - TOP_N - 1;
-      if (fillOnOverlap && mid <= 0) {
-        let shown = Math.min(count, MAX_ROWS);
-        if (count - shown === 1) shown = count;
-        const items = range(1, shown).map((position) => ({ kind: "car", position }));
-        if (count > shown) items.push({ kind: "gap", count: count - shown });
-        return items;
-      }
-
-      const items = range(1, Math.min(TOP_N, count)).map((position) => ({ kind: "car", position }));
-      if (radius === 0) {
-        pushTail(items, TOP_N, count);
-        return items;
-      }
-      if (mid === 1) items.push({ kind: "car", position: TOP_N + 1 });
-      else if (mid > 1) items.push({ kind: "gap", count: mid });
-      if (end >= start) {
-        for (const position of range(Math.max(start, TOP_N + 1), end)) {
-          if (!items.some((item) => item.kind === "car" && item.position === position)) {
-            items.push({ kind: "car", position });
-          }
-        }
-      }
-      pushTail(items, end, count);
-      return items;
-    }
-
-    function pushTail(items, shownEnd, count) {
-      const tail = count - shownEnd;
-      if (tail === 1) items.push({ kind: "car", position: count });
-      else if (tail > 1) items.push({ kind: "gap", count: tail });
-    }
-
-    function labels(items) {
-      return items.map((item) => (item.kind === "gap" ? `g${item.count}` : String(item.position))).join(",");
-    }
-
-    const expected = {
-      front: labels(windowPositions(40, 1, PLAYER_RADIUS, true)),
-      seventh: labels(windowPositions(40, 7, PLAYER_RADIUS, true)),
-      hole: labels(windowPositions(40, 17, PLAYER_RADIUS, true)),
-      cove: labels(windowPositions(40, 23, PLAYER_RADIUS, true)),
-      short: labels(windowPositions(18, 8, PLAYER_RADIUS, true)),
-    };
-    const want = {
-      front: [...range(1, 30), "g10"].join(","),
-      seventh: [...range(1, 30), "g10"].join(","),
-      hole: [...range(1, 27), "g13"].join(","),
-      cove: [...range(1, 5), "g7", ...range(13, 33), "g7"].join(","),
-      short: range(1, 18).join(","),
-    };
-    for (const key of Object.keys(want)) {
-      if (expected[key] !== want[key]) {
-        throw new Error(`${key}: ${expected[key]} != ${want[key]}`);
-      }
-    }
-    for (const [full, tag] of [
-      ["Vit Salomon", "V SAL"],
-      ["Nyck de Vries", "N DVR"],
-      ["Pete van der Kirk", "P VDK"],
-      ["Charles Emmerson Winchester the third", "C WTT"],
-    ]) {
-      if (shortName(full) !== tag) throw new Error(`${full} -> ${shortName(full)}`);
-    }
-
-    const NAMES = [
-      "Charles Emmerson Winchester the third",
-      "Nyck de Vries",
-      "Pete van der Kirk",
-      "Lewis Hamilton",
-      "Max Verstappen",
-      "Oscar Piastri",
-      "Charles Leclerc",
-      "Lando Norris",
-      "George Russell",
-      "Carlos Sainz",
-      "Fernando Alonso",
-      "Sergio Perez",
-      "Pierre Gasly",
-      "Kevin Magnussen",
-      "Nico Hulkenberg",
-      "Alex Albon",
-      "Yuki Tsunoda",
-      "Lance Stroll",
-      "Esteban Ocon",
-      "Zhou Guanyu",
-      "Valtteri Bottas",
-      "Daniel Ricciardo",
-      "Vit Salomon",
-      "Logan Sargeant",
-      "Liam Lawson",
-      "Jack Doohan",
-      "Franco Colapinto",
-      "Oliver Bearman",
-      "Kimi Antonelli",
-      "Isack Hadjar",
-      "Gabriel Bortoleto",
-      "Felipe Drugovich",
-      "Robert Shwartzman",
-      "Theo Pourchaire",
-      "Ayumu Iwasa",
-      "Dennis Hauger",
-      "Caio Collet",
-      "Zane Maloney",
-      "Jak Crawford",
-      "Enzo Fittipaldi",
-    ];
-
-    const NUMBERS = [7, 4, 11, 44, 1, 81, 16, 6, 63, 55, 14, 12, 10, 20, 27, 23, 22, 18, 31, 24, 77, 3, 22, 2, 30, 5, 43, 87, 12, 41, 19, 8, 9, 98, 15, 28, 47, 53, 36, 21];
-    const TIRES = ["S", "M", "H", "I", "D", "W", "S", "M", "H", "S", "M", "H", "I", "W", "S", "M", "H", "S", "W", "M", "H", "S", "S", "M", "H", "I", "W", "S", "M", "H", "S", "M", "W", "H", "S", "I", "M", "H", "S", "W"];
-    const TEAMS = [
-      "Cadillac Racing",
-      "Porsche Penske Motorsport",
-      "United Autosports",
-      "Wayne Taylor Racing",
-      "Action Express Racing",
-      "JDC Miller Motorsports",
-      "Proton Competition",
-      "AF Corse",
-    ];
-
-    function raceField() {
-      return NAMES.map((name, index) => {
-        const position = index + 1;
-        const gained = [3, -1, 0, 4, 2, -2, 1, 0, 5, -3, 2, 1, -1, 0, 6, 2, -4, 1, 0, 3, -2, 1, 6, -1, 2, 0, 4, -3, 1, 2, 0, -2, 1, 3, -1, 0, 2, 1, -4, 5][index];
-        let interval = (0.4 + (position % 5) * 0.37 + position * 0.02).toFixed(3);
-        let lapsDown = 0;
-        if (position === 31) lapsDown = 1;
-        if (position === 33) lapsDown = 2;
-        if (position > 33) lapsDown = 2;
-        return {
-          position,
-          number: String(NUMBERS[index]),
-          name: shortName(name),
-          team: TEAMS[index % TEAMS.length],
-          stops: position % 3,
-          tire: TIRES[index],
-          gained,
-          interval: lapsDown ? "" : interval,
-          lapsDown,
-          best: position === 1 ? "1:22.481" : "",
-          delta: `+${(position * 0.148).toFixed(3)}`,
-          player: name === "Vit Salomon",
-        };
-      });
-    }
-
-    const RACE = raceField();
-
-    const PRACTICE = [
-      ["Charles Emmerson Winchester the third", "7", "S", true],
-      ["Nyck de Vries", "4", "M", false],
-      ["Pete van der Kirk", "11", "H", false],
-      ["Lewis Hamilton", "44", "I", false],
-      ["Vit Salomon", "22", "W", false],
-      ["Max Verstappen", "1", "D", false],
-      ["Oscar Piastri", "81", "S", false],
-      ["Lando Norris", "4", "M", false],
-    ].map(([name, number, tire], index) => ({
-      position: index + 1,
-      number,
-      name: shortName(name),
-      team: TEAMS[index],
-      stops: 0,
-      tire,
-      gained: 0,
-      interval: "",
-      lapsDown: 0,
-      best: index === 0 ? "1:22.481" : "",
-      delta: index === 0 ? "" : `+${(0.214 + index * 0.18).toFixed(3)}`,
-      player: name === "Vit Salomon",
-    }));
-
-    function classCars(rows, color) {
-      return rows.map((row, index) => ({ ...row, position: index + 1, classColor: color }));
-    }
-
-    const GTP = classCars([
-      car("7", "Nick Tandy", "S", 2, 1, "", 0, false),
-      car("31", "Earl Bamber", "M", 1, -2, "0.612", 0, false),
-      car("01", "Sebastien Bourdais", "H", 2, 0, "1.440", 0, false),
-      car("5", "Filipe Albuquerque", "S", 1, 3, "3.208", 0, false),
-      car("10", "Renger van der Zande", "I", 2, -1, "8.114", 0, false),
-      car("24", "Tom Blomqvist", "W", 1, 0, "", 1, false),
-      car("59", "Alex Lynn", "M", 0, 2, "", 1, false),
-      car("85", "Richard Westbrook", "H", 1, -3, "", 2, false),
-      car("93", "Sheldon van der Linde", "S", 2, 1, "", 2, false),
-    ], "#ff2d2d");
-
-    const LMP2 = classCars([
-      car("22", "Job van Uitert", "M", 1, 2, "", 0, false),
-      car("11", "Nyck de Vries", "S", 1, 0, "0.388", 0, false),
-      car("43", "Pete van der Kirk", "H", 2, -1, "1.102", 0, false),
-      car("8", "Vit Salomon", "S", 1, 4, "1.640", 0, true),
-      car("52", "Charles Leclerc", "I", 0, 1, "2.915", 0, false),
-      car("74", "Oliver Jarvis", "W", 1, -2, "6.330", 0, false),
-      car("18", "Ben Hanley", "M", 2, 0, "", 1, false),
-      car("47", "Louis Deletraz", "H", 1, 3, "", 1, false),
-      car("65", "Antonio Felix da Costa", "S", 1, -1, "", 1, false),
-      car("99", "Ferdinand Habsburg", "M", 0, 2, "", 2, false),
-    ], "#1c6bff");
-
-    const GTD = classCars([
-      car("27", "Ross Gunn", "S", 1, 1, "", 0, false),
-      car("32", "Daniel Juncadella", "M", 0, -1, "0.274", 0, false),
-      car("70", "Klaus Bachler", "H", 1, 0, "1.055", 0, false),
-      car("4", "Alessandro Pier Guidi", "I", 1, 2, "1.883", 0, false),
-      car("63", "Jules Gounon", "W", 2, -3, "4.420", 0, false),
-      car("14", "Mikkel Pedersen", "D", 1, 1, "9.006", 0, false),
-    ], "#14c96a");
-
-    function car(number, name, tire, stops, gained, interval, lapsDown, player) {
-      return {
-        number,
-        name: shortName(name),
-        team: TEAMS[Number(number) % TEAMS.length],
-        tire,
-        stops,
-        gained,
-        interval,
-        lapsDown,
-        best: "",
-        delta: "",
-        player,
-      };
-    }
-
-    function sceneRows(scene) {
-      if (scene === "race") {
-        return {
-          mode: "race",
-          session: "Race",
-          meta: "23/48",
-          rows: materialize(RACE, windowPositions(RACE.length, 23, PLAYER_RADIUS, true)),
-        };
-      }
-      if (scene === "practice") {
-        return {
-          mode: "other",
-          session: "Practice",
-          meta: "47:12",
-          rows: materialize(PRACTICE, range(1, PRACTICE.length).map((position) => ({ kind: "car", position }))),
-        };
-      }
-      if (scene === "team") {
-        return {
-          mode: "team",
-          session: "Practice",
-          meta: "47:12",
-          rows: materialize(PRACTICE.slice(0, 5), range(1, 5).map((position) => ({ kind: "car", position }))),
-        };
-      }
-      return { mode: "race", session: "Race", meta: "23/48", rows: multiclassRows() };
-    }
-
-    function materialize(cars, items) {
-      return items.map((item) => {
-        if (item.kind === "gap") return item;
-        const found = cars.find((entry) => entry.position === item.position);
-        return { kind: "car", car: found };
-      });
-    }
-
-    function multiclassRows() {
-      const groups = [
-        { name: "GTP", color: tokyo("#ff2d2d"), cars: GTP, player: false },
-        { name: "LMP2", color: tokyo("#1c6bff"), cars: LMP2, player: true },
-        { name: "GTD", color: tokyo("#14c96a"), cars: GTD, player: false },
-      ];
-      const built = groups.map((group) => {
-        const player = group.cars.find((entry) => entry.player);
-        const items = group.player
-          ? windowPositions(group.cars.length, player.position, MULTI_RADIUS, false)
-          : windowPositions(group.cars.length, 1, 0, false);
-        return { ...group, items };
-      });
-      trimOthers(built);
-      const rows = [];
-      for (const group of built) {
-        const cars = group.items.filter((item) => item.kind === "car");
-        if (cars.length === 0) continue;
-        rows.push({ kind: "class", name: group.name, color: group.color });
-        for (const item of group.items) {
-          if (item.kind === "gap") {
-            rows.push(item);
-            continue;
-          }
-          const found = group.cars.find((entry) => entry.position === item.position);
-          rows.push({ kind: "car", car: { ...found, classColor: group.color } });
-        }
-      }
-      return rows;
-    }
-
-    function trimOthers(groups) {
-      const carsOf = (group) => group.items.filter((item) => item.kind === "car").length;
-      let total = groups.reduce((sum, group) => sum + carsOf(group), 0);
-      const order = groups.map((group, index) => index).filter((index) => !groups[index].player).reverse();
-      while (total > MAX_ROWS) {
-        let cut = false;
-        for (const index of order) {
-          if (total <= MAX_ROWS) return;
-          const group = groups[index];
-          const next = group.items.filter((item) => item.kind === "car");
-          if (next.length === 0) continue;
-          const keep = next.length - 1;
-          group.items = keep === 0
-            ? []
-            : windowPositions(group.cars.length, 1, 0, false).filter((item) => item.kind === "gap" || item.position <= keep);
-          if (keep > 0 && group.cars.length - keep === 1) {
-            group.items = range(1, keep + 1).map((position) => ({ kind: "car", position }));
-          } else if (keep > 0 && group.cars.length - keep > 1) {
-            group.items = [
-              ...range(1, keep).map((position) => ({ kind: "car", position })),
-              { kind: "gap", count: group.cars.length - keep },
-            ];
-          }
-          total -= 1;
-          cut = true;
-        }
-        if (!cut) return;
-      }
-    }
-
-    function mount(design, scene, compact) {
-      const view = sceneRows(scene);
-      if (design === "composite") stampTriple(view.rows);
-      const panel = document.createElement("div");
-      panel.className = `panel design-${design}`;
-      const head = document.createElement("div");
-      head.className = "head";
-      const session = document.createElement("div");
-      session.className = "session";
-      session.textContent = view.session;
-      const meta = document.createElement("div");
-      meta.className = "meta";
-      meta.textContent = view.meta;
-      head.append(session, meta);
-      panel.append(head);
-      panel.append(columnHead(view.mode, design));
-      for (const row of view.rows) panel.append(renderRow(row, view.mode, design));
-      if (compact) panel.style.setProperty("--row", "16px");
-      return panel;
-    }
-
-    function stampTriple(rows) {
-      for (const row of rows) {
-        if (row.kind === "car" && row.car.position === 4 && !row.car.player) {
-          row.car = { ...row.car, number: "888" };
-          return;
-        }
-      }
-    }
-
-    function columnHead(mode, design) {
-      const row = document.createElement("div");
-      row.className = `cols mode-${mode}`;
-      const labels = design === "composite" && mode === "team"
-        ? [["pos", "Pos"], ["num", "No"], ["team", "Team"]]
-        : {
-          race: [["pos", "Pos"], ["num", "No"], ["driver", "Driver"], ["stops", "St"], ["tireh", "Ty"], ["delta", "+/−"], ["gap", "Gap"]],
-          other: [["pos", "Pos"], ["num", "No"], ["driver", "Driver"], ["tireh", "Ty"], ["gap", "Best"]],
-          team: [["pos", "Pos"], ["num", "No"], ["team", "Team"], ["gap", "Gap"]],
-        }[mode];
-      for (const [className, label] of labels) {
-        const cell = document.createElement("span");
-        cell.className = className;
-        cell.textContent = label;
-        row.append(cell);
-      }
-      return row;
-    }
-
-    function renderRow(row, mode, design) {
-      if (row.kind === "class") {
-        const head = document.createElement("div");
-        head.className = "classhead";
-        head.style.setProperty("--class", row.color);
-        if (design === "composite") {
-          const line = document.createElement("span");
-          line.className = "classline";
-          const rest = document.createElement("span");
-          rest.className = "classrest";
-          const name = document.createElement("span");
-          name.className = "classname";
-          name.textContent = row.name;
-          const tail = document.createElement("span");
-          tail.className = "classline";
-          rest.append(name, tail);
-          head.append(line, rest);
-        } else {
-          head.textContent = row.name;
-        }
-        return head;
-      }
-      if (row.kind === "gap") {
-        const line = document.createElement("div");
-        line.className = "omit";
-        const left = document.createElement("span");
-        const count = document.createElement("b");
-        count.textContent = String(row.count);
-        const right = document.createElement("span");
-        line.append(left, count, right);
-        return line;
-      }
-      const car = row.car;
-      const line = document.createElement("div");
-      line.className = `row mode-${mode}${car.player ? " is-player" : ""}`;
-      if (car.classColor) {
-        line.dataset.class = "1";
-        line.style.setProperty("--class", car.classColor);
-      }
-      line.append(cell("pos", String(car.position)));
-      line.append(cell("num", car.number));
-      if (mode === "team") {
-        line.append(cell("team", car.team));
-      } else if (design === "composite") {
-        line.append(driverName(car.name));
-        if (mode === "race") line.append(cell("stops", String(car.stops)));
-        line.append(tire(car.tire));
-        if (mode === "race") line.append(delta(car.gained));
-      } else {
-        line.append(cell("driver", car.name));
-        if (mode === "race") line.append(cell("stops", String(car.stops)));
-        line.append(tire(car.tire));
-        if (mode === "race") line.append(delta(car.gained));
-      }
-      if (!(design === "composite" && mode === "team")) line.append(cell("gap", gapText(car, mode)));
-      return line;
-    }
-
-    function driverName(name) {
-      const node = document.createElement("span");
-      node.className = "driver";
-      const space = name.indexOf(" ");
-      if (space < 0) {
-        node.textContent = name;
-        return node;
-      }
-      const initial = document.createElement("span");
-      initial.className = "initial";
-      initial.textContent = name.slice(0, space);
-      const tri = document.createElement("span");
-      tri.className = "tri";
-      tri.textContent = name.slice(space + 1);
-      node.append(initial, document.createTextNode(" "), tri);
-      return node;
-    }
-
-    function cell(className, text) {
-      const node = document.createElement("span");
-      node.className = className;
-      node.textContent = text;
-      return node;
-    }
-
-    function tire(letter) {
-      const node = document.createElement("span");
-      node.className = "tire";
-      node.dataset.role = TIRE_ROLE[letter] ?? "other";
-      node.textContent = letter;
-      return node;
-    }
-
-    function delta(gained) {
-      const node = document.createElement("span");
-      if (gained === 0) {
-        node.className = "delta flat";
-        node.textContent = "–";
-        return node;
-      }
-      node.className = gained > 0 ? "delta up" : "delta down";
-      const mark = document.createElement("i");
-      node.append(mark, document.createTextNode(String(Math.abs(gained))));
-      return node;
-    }
-
-    function gapText(car, mode) {
-      if (mode === "other" || mode === "team") return car.position === 1 ? car.best : car.delta;
-      if (car.position === 1 && !car.lapsDown) return "";
-      if (car.lapsDown) return `+${car.lapsDown}L`;
-      return car.interval;
-    }
-
-    const RULES = `Top ${TOP_N} · max ${MAX_ROWS} · ±${PLAYER_RADIUS} · multiclass ±${MULTI_RADIUS} · hero P23 of 40 · names V SAL, N DVR, P VDK, C WTT`;
-    for (const node of document.querySelectorAll("[data-rules]")) node.textContent = RULES;
-
-    for (const hero of document.querySelectorAll("[data-mount]")) {
-      hero.append(mount(hero.dataset.mount, hero.dataset.scene, false));
-    }
-    for (const slot of document.querySelectorAll("[data-samples]")) {
-      const design = slot.dataset.samples;
-      for (const [scene, title, width] of [
-        ["practice", "Practice", "sample-practice"],
-        ["multi", "Multiclass", "sample-multi"],
-        ["team", "Team · 10s frame", "sample-team"],
-      ]) {
-        const wrap = document.createElement("div");
-        wrap.className = width;
-        const label = document.createElement("div");
-        label.className = "sample-label";
-        label.textContent = title;
-        wrap.append(label, mount(design, scene, true));
-        slot.append(wrap);
-      }
-    }
-  </script>
-</body>
+	<head>
+		<meta charset="utf-8" />
+		<title>Standings widget studies</title>
+		<style>
+			@font-face {
+				font-family: 'Fira Code';
+				src: url('../../packages/shared/fonts/FiraCode-VF.woff2') format('woff2');
+				font-weight: 300 700;
+				font-style: normal;
+				font-display: block;
+			}
+
+			:root {
+				--bg: #1a1b26;
+				--fg: #c0caf5;
+				--muted: #565f89;
+				--dim: #737aa2;
+				--border: #414868;
+				--rule: #3b4261;
+				--accent: #7aa2f7;
+				--good: #9ece6a;
+				--bad: #f7768e;
+				--number: #ff9e64;
+				--panel: rgb(26 27 38 / 0.82);
+				--font-size: 13px;
+				--row: 20px;
+			}
+
+			* {
+				box-sizing: border-box;
+			}
+
+			html,
+			body {
+				margin: 0;
+				background: #101118;
+				color: var(--fg);
+				font-family: 'Fira Code', monospace;
+				font-size: var(--font-size);
+				line-height: 1.25;
+				font-weight: 400;
+				font-variant-ligatures: none;
+				font-feature-settings: 'zero';
+				font-variant-numeric: tabular-nums;
+			}
+
+			html:not([data-shot='all']) .shot {
+				display: none;
+			}
+			html[data-shot='broadcast'] #broadcast,
+			html[data-shot='blackbox'] #blackbox,
+			html[data-shot='plate'] #plate,
+			html[data-shot='ledger'] #ledger,
+			html[data-shot='signal'] #signal,
+			html[data-shot='docket'] #docket,
+			html[data-shot='composite'] #composite {
+				display: block;
+			}
+
+			.shot {
+				width: 1280px;
+				height: 720px;
+			}
+
+			.stage {
+				position: relative;
+				width: 1280px;
+				height: 720px;
+				overflow: hidden;
+				background:
+					radial-gradient(90% 70% at 78% 18%, rgb(61 89 161 / 0.28), transparent 46%),
+					linear-gradient(180deg, #161821 0%, #12141b 58%, #0e1016 100%);
+			}
+
+			.stage::before {
+				content: '';
+				position: absolute;
+				left: -20%;
+				right: -10%;
+				bottom: -30%;
+				height: 62%;
+				background:
+					linear-gradient(90deg, #e10600 0 14px, #f4f4f4 14px 28px, transparent 28px),
+					repeating-linear-gradient(
+						90deg,
+						rgb(255 255 255 / 0.045) 0 1px,
+						transparent 1px 72px
+					),
+					linear-gradient(#2c303a, #171920);
+				transform: perspective(520px) rotateX(52deg);
+				transform-origin: center bottom;
+			}
+
+			.copy {
+				position: absolute;
+				top: 28px;
+				left: 488px;
+				width: 760px;
+				z-index: 2;
+			}
+
+			.kicker {
+				color: var(--dim);
+				font-size: 12px;
+				letter-spacing: 0.08em;
+				text-transform: uppercase;
+			}
+
+			h1 {
+				margin: 6px 0 0;
+				font-size: 28px;
+				font-weight: 600;
+				letter-spacing: -0.03em;
+			}
+
+			p {
+				margin: 10px 0 0;
+				max-width: 62ch;
+				color: var(--fg);
+			}
+
+			.rules {
+				margin-top: 8px;
+				color: var(--muted);
+				font-size: 12px;
+				letter-spacing: 0.04em;
+			}
+
+			.samples {
+				display: flex;
+				gap: 16px;
+				align-items: flex-start;
+				margin-top: 18px;
+			}
+
+			.sample-label {
+				margin-bottom: 6px;
+				color: var(--dim);
+				font-size: 11px;
+				letter-spacing: 0.08em;
+				text-transform: uppercase;
+			}
+
+			.hero {
+				position: absolute;
+				top: 28px;
+				left: 28px;
+				z-index: 2;
+			}
+
+			.panel {
+				background: var(--panel);
+				color: var(--fg);
+				border: 1px solid var(--border);
+				padding: 6px 8px 4px;
+				font-variant-ligatures: none;
+				font-feature-settings: 'zero';
+				font-variant-numeric: tabular-nums;
+			}
+
+			.head {
+				display: flex;
+				justify-content: space-between;
+				align-items: baseline;
+				gap: 16px;
+				padding-bottom: 4px;
+				margin-bottom: 2px;
+				border-bottom: 1px solid var(--rule);
+			}
+
+			.session {
+				font-weight: 600;
+				letter-spacing: 0.06em;
+				text-transform: uppercase;
+			}
+
+			.meta {
+				color: var(--dim);
+			}
+
+			.grid,
+			.cols {
+				display: grid;
+				align-items: center;
+				column-gap: 8px;
+			}
+
+			.mode-race {
+				grid-template-columns: 2.4ch 3.2ch minmax(5.5ch, 1fr) 2ch 16px 4.6ch 6.2ch;
+			}
+			.mode-other {
+				grid-template-columns: 2.4ch 3.2ch minmax(5.5ch, 1fr) 16px 8.6ch;
+			}
+			.mode-team {
+				grid-template-columns: 2.4ch 3.2ch minmax(8ch, 1fr) 8.6ch;
+			}
+
+			.cols {
+				height: 16px;
+				color: var(--muted);
+				letter-spacing: 0.04em;
+				text-transform: uppercase;
+			}
+			.cols span {
+				font-size: 10px;
+			}
+			.cols .pos,
+			.cols .num,
+			.cols .stops,
+			.cols .delta,
+			.cols .gap {
+				text-align: right;
+			}
+			.cols .tireh {
+				text-align: center;
+			}
+
+			.panel:not(.design-ledger) .cols {
+				display: none;
+			}
+
+			.row {
+				display: grid;
+				align-items: center;
+				column-gap: 8px;
+				height: var(--row);
+				white-space: nowrap;
+			}
+
+			.pos,
+			.num,
+			.stops,
+			.delta,
+			.gap {
+				text-align: right;
+			}
+			.driver,
+			.team {
+				min-width: 0;
+				overflow: hidden;
+				text-overflow: ellipsis;
+			}
+			.gap {
+				font-weight: 600;
+			}
+			.delta {
+				display: flex;
+				justify-content: flex-end;
+				align-items: center;
+				gap: 4px;
+			}
+			.delta i {
+				width: 0;
+				height: 0;
+				border-left: 3.5px solid transparent;
+				border-right: 3.5px solid transparent;
+			}
+			.delta.up {
+				color: var(--good);
+			}
+			.delta.up i {
+				border-bottom: 5px solid var(--good);
+			}
+			.delta.down {
+				color: var(--bad);
+			}
+			.delta.down i {
+				border-top: 5px solid var(--bad);
+			}
+			.delta.flat {
+				color: var(--muted);
+			}
+
+			.tire {
+				display: grid;
+				place-items: center;
+				width: 14px;
+				height: 14px;
+				font-size: 10px;
+				font-weight: 600;
+				line-height: 1;
+			}
+			.tire[data-role='s'] {
+				background: #e10600;
+				color: #f4f4f4;
+			}
+			.tire[data-role='m'] {
+				background: #ffd200;
+				color: #1a1b26;
+			}
+			.tire[data-role='h'] {
+				background: #f4f4f4;
+				color: #1a1b26;
+			}
+			.tire[data-role='i'] {
+				background: #3dcc4a;
+				color: #1a1b26;
+			}
+			.tire[data-role='w'] {
+				background: #2f6bff;
+				color: #f4f4f4;
+			}
+			.tire[data-role='other'] {
+				background: var(--rule);
+				color: var(--fg);
+			}
+
+			.omit {
+				display: flex;
+				align-items: center;
+				gap: 8px;
+				height: 16px;
+				color: var(--muted);
+				font-size: 11px;
+			}
+			.omit span {
+				flex: 1;
+				height: 1px;
+				background: var(--rule);
+			}
+			.omit b {
+				font-weight: 400;
+			}
+
+			.classhead {
+				margin-top: 6px;
+				color: var(--class);
+				font-size: 11px;
+				letter-spacing: 0.08em;
+				text-transform: uppercase;
+			}
+
+			.hero .panel {
+				width: 432px;
+			}
+			.samples .panel {
+				width: 100%;
+			}
+			.sample-practice {
+				width: 236px;
+			}
+			.sample-multi {
+				width: 276px;
+			}
+			.sample-team {
+				width: 216px;
+			}
+
+			/* Broadcast: television tower. Player gets an accent tick. */
+			.design-broadcast .row.is-player {
+				box-shadow: inset 2px 0 0 var(--accent);
+			}
+			.design-broadcast .row[data-class] {
+				box-shadow: inset 2px 0 0 var(--class);
+			}
+			.design-broadcast .row.is-player[data-class] {
+				box-shadow: inset 2px 0 0 var(--accent);
+			}
+
+			/* Black box: dense, and the player row is the only fill. */
+			.design-blackbox {
+				--row: 18px;
+				padding: 4px 6px 2px;
+			}
+			.design-blackbox .row.is-player {
+				background: rgb(122 162 247 / 0.16);
+			}
+			.design-blackbox .tire {
+				width: 12px;
+				height: 12px;
+				font-size: 9px;
+			}
+			.design-blackbox .mode-race {
+				grid-template-columns: 2.2ch 3ch minmax(5.5ch, 1fr) 1.6ch 14px 4.2ch 5.8ch;
+			}
+
+			/* Plate: the car number is a plate. Multiclass plates take the class color. */
+			.design-plate .num {
+				justify-self: end;
+				min-width: 2.6ch;
+				padding: 0 3px;
+				background: var(--rule);
+				text-align: center;
+			}
+			.design-plate .row[data-class] .num {
+				background: var(--class);
+				color: #1a1b26;
+			}
+			.design-plate .row.is-player .num {
+				background: var(--accent);
+				color: #1a1b26;
+			}
+
+			/* Ledger: column labels, a gutter mark, dotted omit lines. */
+			.design-ledger .row.is-player .pos {
+				color: var(--accent);
+			}
+			.design-ledger .omit span {
+				height: auto;
+				align-self: center;
+				background: none;
+				border-bottom: 1px dotted var(--rule);
+			}
+
+			/* Signal: position and gap are the figures. The middle stays quiet. */
+			.design-signal .pos,
+			.design-signal .gap {
+				font-weight: 600;
+			}
+			.design-signal .driver,
+			.design-signal .stops,
+			.design-signal .team {
+				color: var(--dim);
+			}
+			.design-signal .gap {
+				color: var(--number);
+			}
+			.design-signal .row.is-player {
+				box-shadow:
+					inset 0 1px 0 var(--accent),
+					inset 0 -1px 0 var(--accent);
+			}
+
+			/* Docket: the clock is the title, and the gap sits past a rule. */
+			.design-docket .head {
+				display: block;
+				border-bottom: 0;
+				padding-bottom: 0;
+				margin-bottom: 4px;
+			}
+			.design-docket .session {
+				display: block;
+				font-size: 16px;
+				letter-spacing: 0.04em;
+			}
+			.design-docket .meta {
+				display: block;
+				margin-top: 1px;
+			}
+			.design-docket .gap {
+				box-shadow: inset 1px 0 0 var(--rule);
+				padding-left: 8px;
+			}
+			.design-docket .classhead {
+				margin: 6px -8px 0;
+				padding: 3px 8px;
+				background: color-mix(in srgb, var(--class) 22%, transparent);
+			}
+			.design-docket .row.is-player .driver,
+			.design-docket .row.is-player .team {
+				color: var(--fg);
+				font-weight: 600;
+			}
+
+			/* Composite: the mix. Session type recedes, the clock stays normal. */
+			#composite .sample-practice {
+				width: 228px;
+			}
+			#composite .sample-multi {
+				width: 292px;
+			}
+			#composite .sample-team {
+				width: 208px;
+			}
+
+			.design-composite .session {
+				font-weight: 400;
+				color: var(--muted);
+			}
+			.design-composite .meta {
+				color: var(--fg);
+			}
+			.design-composite .row.is-player {
+				box-shadow: inset 2px 0 0 var(--accent);
+			}
+			.design-composite .pos {
+				font-weight: 600;
+			}
+			.design-composite .tri {
+				font-weight: 600;
+			}
+			.design-composite .stops {
+				color: var(--dim);
+			}
+			.design-composite .num {
+				justify-self: stretch;
+				align-self: center;
+				display: grid;
+				place-items: center;
+				height: 14px;
+				background: var(--rule);
+				text-align: center;
+				line-height: 1;
+			}
+			.design-composite .row[data-class] .num {
+				background: var(--class);
+				color: #1a1b26;
+			}
+			.design-composite .mode-race {
+				grid-template-columns: 2.4ch 4ch minmax(5.5ch, 1fr) 2ch 16px 4.6ch 6.2ch;
+			}
+			.design-composite .mode-other {
+				grid-template-columns: 2.4ch 4ch minmax(5.5ch, 1fr) 16px 8.6ch;
+			}
+			.design-composite .mode-team {
+				grid-template-columns: 2.4ch 4ch minmax(8ch, 1fr);
+			}
+			.design-composite .classhead {
+				display: grid;
+				grid-template-columns: 2.4ch minmax(0, 1fr);
+				column-gap: 8px;
+				align-items: center;
+				height: 16px;
+				margin-top: 8px;
+				font-size: 13px;
+				letter-spacing: 0;
+			}
+			.design-composite .classrest {
+				display: flex;
+				align-items: center;
+				gap: 8px;
+				min-width: 0;
+			}
+			.design-composite .classline {
+				height: 1px;
+				background: var(--class);
+			}
+			.design-composite .classrest .classline {
+				flex: 1;
+			}
+			.design-composite .classname {
+				flex: none;
+				font-size: 11px;
+				letter-spacing: 0.08em;
+			}
+		</style>
+	</head>
+	<body>
+		<section class="shot" id="broadcast">
+			<div class="stage">
+				<div class="copy">
+					<div class="kicker">Existing · F1 and IMSA tower</div>
+					<h1>Broadcast</h1>
+					<p>
+						A timing tower. The tire is a Pirelli chip, the gap is the strong figure,
+						and the player row carries an accent tick. Multiclass rows take a
+						class-colored tick instead.
+					</p>
+					<div class="rules" data-rules></div>
+					<div class="samples" data-samples="broadcast"></div>
+				</div>
+				<div class="hero" data-mount="broadcast" data-scene="race"></div>
+			</div>
+		</section>
+
+		<section class="shot" id="blackbox">
+			<div class="stage">
+				<div class="copy">
+					<div class="kicker">Existing · iRacing relative box</div>
+					<h1>Black box</h1>
+					<p>
+						The in-sim box, tightened. Rows sit on the character grid, and the player is
+						the only row with a fill. The tire is the compound letter on its Pirelli
+						color.
+					</p>
+					<div class="rules" data-rules></div>
+					<div class="samples" data-samples="blackbox"></div>
+				</div>
+				<div class="hero" data-mount="blackbox" data-scene="race"></div>
+			</div>
+		</section>
+
+		<section class="shot" id="plate">
+			<div class="stage">
+				<div class="copy">
+					<div class="kicker">Existing · Kapps and Racelab</div>
+					<h1>Plate</h1>
+					<p>
+						The car number sits in a plate. A single class uses the rule color. A
+						multiclass plate, and the player plate, take their own color with dark type
+						on top.
+					</p>
+					<div class="rules" data-rules></div>
+					<div class="samples" data-samples="plate"></div>
+				</div>
+				<div class="hero" data-mount="plate" data-scene="race"></div>
+			</div>
+		</section>
+
+		<section class="shot" id="ledger">
+			<div class="stage">
+				<div class="copy">
+					<div class="kicker">Original · character grid</div>
+					<h1>Ledger</h1>
+					<p>
+						Column labels and a dotted omit line. The player position is the accent
+						color. Nothing else in the row changes weight.
+					</p>
+					<div class="rules" data-rules></div>
+					<div class="samples" data-samples="ledger"></div>
+				</div>
+				<div class="hero" data-mount="ledger" data-scene="race"></div>
+			</div>
+		</section>
+
+		<section class="shot" id="signal">
+			<div class="stage">
+				<div class="copy">
+					<div class="kicker">Original · strong ends</div>
+					<h1>Signal</h1>
+					<p>
+						Position and gap are the figures. The name, the stop count, and the team
+						name stay dim. The player row is bracketed by accent rules.
+					</p>
+					<div class="rules" data-rules></div>
+					<div class="samples" data-samples="signal"></div>
+				</div>
+				<div class="hero" data-mount="signal" data-scene="race"></div>
+			</div>
+		</section>
+
+		<section class="shot" id="docket">
+			<div class="stage">
+				<div class="copy">
+					<div class="kicker">Original · session title</div>
+					<h1>Docket</h1>
+					<p>
+						The session name is the title and the clock sits under it. A rule separates
+						the gap. Class headings are a band of the Tokyo Night class color.
+					</p>
+					<div class="rules" data-rules></div>
+					<div class="samples" data-samples="docket"></div>
+				</div>
+				<div class="hero" data-mount="docket" data-scene="race"></div>
+			</div>
+		</section>
+
+		<section class="shot" id="composite">
+			<div class="stage">
+				<div class="copy">
+					<div class="kicker">Combined · tower, plate, signal</div>
+					<h1>Composite</h1>
+					<p>
+						The session type stays muted and the clock is normal text. Position, the
+						surname trigram, and the gap are the strong figures. The car number sits in
+						a three-digit plate. Stops stay dim, and your row carries an accent tick.
+						Class plates carry the class color, and the class name sits in a full
+						separator lined up with the plate. In the team frame the name replaces the
+						gap as well.
+					</p>
+					<div class="rules" data-rules></div>
+					<div class="samples" data-samples="composite"></div>
+				</div>
+				<div class="hero" data-mount="composite" data-scene="race"></div>
+			</div>
+		</section>
+
+		<script>
+			const shot = location.hash.replace('#', '') || 'all'
+			document.documentElement.dataset.shot = shot
+
+			const TOP_N = 5
+			const MAX_ROWS = 30
+			const PLAYER_RADIUS = 10
+			const MULTI_RADIUS = 3
+
+			const TIRE_ROLE = { S: 's', M: 'm', H: 'h', I: 'i', W: 'w' }
+
+			function shortName(full) {
+				const words = full.trim().split(/\s+/)
+				const first = words[0][0]
+				const rest = words.slice(1)
+				if (rest.length === 0) return words[0].slice(0, 3).toUpperCase()
+				if (rest.length <= 3) {
+					const stem =
+						rest
+							.slice(0, -1)
+							.map((word) => word[0])
+							.join('') + rest[rest.length - 1]
+					return `${first} ${stem.slice(0, 3)}`.toUpperCase()
+				}
+				const tri = rest
+					.slice(-3)
+					.map((word) => word[0])
+					.join('')
+				return `${first} ${tri}`.toUpperCase()
+			}
+
+			function tokyo(hex) {
+				const value = parseInt(hex.slice(1), 16)
+				let r = ((value >> 16) & 255) / 255
+				let g = ((value >> 8) & 255) / 255
+				let b = (value & 255) / 255
+				const max = Math.max(r, g, b)
+				const min = Math.min(r, g, b)
+				let h = 0
+				if (max !== min) {
+					const d = max - min
+					if (max === r) h = ((g - b) / d) % 6
+					else if (max === g) h = (b - r) / d + 2
+					else h = (r - g) / d + 4
+					h *= 60
+					if (h < 0) h += 360
+				}
+				return hsl(h, 0.62, 0.72)
+			}
+
+			function hsl(h, s, l) {
+				const a = s * Math.min(l, 1 - l)
+				const f = (n) => {
+					const k = (n + h / 30) % 12
+					return l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1)
+				}
+				const channel = (n) =>
+					Math.round(f(n) * 255)
+						.toString(16)
+						.padStart(2, '0')
+				return `#${channel(0)}${channel(8)}${channel(4)}`
+			}
+
+			function range(from, to) {
+				const out = []
+				for (let i = from; i <= to; i += 1) out.push(i)
+				return out
+			}
+
+			/**
+			 * Top 5, plus a window of `radius` around the player.
+			 * Overlap or a touching window fills from P1 up to MAX_ROWS.
+			 * A 1-car hole is drawn as that car. A larger hole is an omit line.
+			 */
+			function windowPositions(count, playerPos, radius, fillOnOverlap) {
+				if (count <= MAX_ROWS && radius >= count)
+					return range(1, count).map((position) => ({ kind: 'car', position }))
+				if (count <= TOP_N)
+					return range(1, count).map((position) => ({ kind: 'car', position }))
+
+				let start = Math.max(1, playerPos - radius)
+				const end = Math.min(count, playerPos + radius)
+				const mid = start - TOP_N - 1
+				if (fillOnOverlap && mid <= 0) {
+					let shown = Math.min(count, MAX_ROWS)
+					if (count - shown === 1) shown = count
+					const items = range(1, shown).map((position) => ({ kind: 'car', position }))
+					if (count > shown) items.push({ kind: 'gap', count: count - shown })
+					return items
+				}
+
+				const items = range(1, Math.min(TOP_N, count)).map((position) => ({
+					kind: 'car',
+					position,
+				}))
+				if (radius === 0) {
+					pushTail(items, TOP_N, count)
+					return items
+				}
+				if (mid === 1) items.push({ kind: 'car', position: TOP_N + 1 })
+				else if (mid > 1) items.push({ kind: 'gap', count: mid })
+				if (end >= start) {
+					for (const position of range(Math.max(start, TOP_N + 1), end)) {
+						if (
+							!items.some((item) => item.kind === 'car' && item.position === position)
+						) {
+							items.push({ kind: 'car', position })
+						}
+					}
+				}
+				pushTail(items, end, count)
+				return items
+			}
+
+			function pushTail(items, shownEnd, count) {
+				const tail = count - shownEnd
+				if (tail === 1) items.push({ kind: 'car', position: count })
+				else if (tail > 1) items.push({ kind: 'gap', count: tail })
+			}
+
+			function labels(items) {
+				return items
+					.map((item) => (item.kind === 'gap' ? `g${item.count}` : String(item.position)))
+					.join(',')
+			}
+
+			const expected = {
+				front: labels(windowPositions(40, 1, PLAYER_RADIUS, true)),
+				seventh: labels(windowPositions(40, 7, PLAYER_RADIUS, true)),
+				hole: labels(windowPositions(40, 17, PLAYER_RADIUS, true)),
+				cove: labels(windowPositions(40, 23, PLAYER_RADIUS, true)),
+				short: labels(windowPositions(18, 8, PLAYER_RADIUS, true)),
+			}
+			const want = {
+				front: [...range(1, 30), 'g10'].join(','),
+				seventh: [...range(1, 30), 'g10'].join(','),
+				hole: [...range(1, 27), 'g13'].join(','),
+				cove: [...range(1, 5), 'g7', ...range(13, 33), 'g7'].join(','),
+				short: range(1, 18).join(','),
+			}
+			for (const key of Object.keys(want)) {
+				if (expected[key] !== want[key]) {
+					throw new Error(`${key}: ${expected[key]} != ${want[key]}`)
+				}
+			}
+			for (const [full, tag] of [
+				['Vit Salomon', 'V SAL'],
+				['Nyck de Vries', 'N DVR'],
+				['Pete van der Kirk', 'P VDK'],
+				['Charles Emmerson Winchester the third', 'C WTT'],
+			]) {
+				if (shortName(full) !== tag) throw new Error(`${full} -> ${shortName(full)}`)
+			}
+
+			const NAMES = [
+				'Charles Emmerson Winchester the third',
+				'Nyck de Vries',
+				'Pete van der Kirk',
+				'Lewis Hamilton',
+				'Max Verstappen',
+				'Oscar Piastri',
+				'Charles Leclerc',
+				'Lando Norris',
+				'George Russell',
+				'Carlos Sainz',
+				'Fernando Alonso',
+				'Sergio Perez',
+				'Pierre Gasly',
+				'Kevin Magnussen',
+				'Nico Hulkenberg',
+				'Alex Albon',
+				'Yuki Tsunoda',
+				'Lance Stroll',
+				'Esteban Ocon',
+				'Zhou Guanyu',
+				'Valtteri Bottas',
+				'Daniel Ricciardo',
+				'Vit Salomon',
+				'Logan Sargeant',
+				'Liam Lawson',
+				'Jack Doohan',
+				'Franco Colapinto',
+				'Oliver Bearman',
+				'Kimi Antonelli',
+				'Isack Hadjar',
+				'Gabriel Bortoleto',
+				'Felipe Drugovich',
+				'Robert Shwartzman',
+				'Theo Pourchaire',
+				'Ayumu Iwasa',
+				'Dennis Hauger',
+				'Caio Collet',
+				'Zane Maloney',
+				'Jak Crawford',
+				'Enzo Fittipaldi',
+			]
+
+			const NUMBERS = [
+				7, 4, 11, 44, 1, 81, 16, 6, 63, 55, 14, 12, 10, 20, 27, 23, 22, 18, 31, 24, 77, 3,
+				22, 2, 30, 5, 43, 87, 12, 41, 19, 8, 9, 98, 15, 28, 47, 53, 36, 21,
+			]
+			const TIRES = [
+				'S',
+				'M',
+				'H',
+				'I',
+				'D',
+				'W',
+				'S',
+				'M',
+				'H',
+				'S',
+				'M',
+				'H',
+				'I',
+				'W',
+				'S',
+				'M',
+				'H',
+				'S',
+				'W',
+				'M',
+				'H',
+				'S',
+				'S',
+				'M',
+				'H',
+				'I',
+				'W',
+				'S',
+				'M',
+				'H',
+				'S',
+				'M',
+				'W',
+				'H',
+				'S',
+				'I',
+				'M',
+				'H',
+				'S',
+				'W',
+			]
+			const TEAMS = [
+				'Cadillac Racing',
+				'Porsche Penske Motorsport',
+				'United Autosports',
+				'Wayne Taylor Racing',
+				'Action Express Racing',
+				'JDC Miller Motorsports',
+				'Proton Competition',
+				'AF Corse',
+			]
+
+			function raceField() {
+				return NAMES.map((name, index) => {
+					const position = index + 1
+					const gained = [
+						3, -1, 0, 4, 2, -2, 1, 0, 5, -3, 2, 1, -1, 0, 6, 2, -4, 1, 0, 3, -2, 1, 6,
+						-1, 2, 0, 4, -3, 1, 2, 0, -2, 1, 3, -1, 0, 2, 1, -4, 5,
+					][index]
+					let interval = (0.4 + (position % 5) * 0.37 + position * 0.02).toFixed(3)
+					let lapsDown = 0
+					if (position === 31) lapsDown = 1
+					if (position === 33) lapsDown = 2
+					if (position > 33) lapsDown = 2
+					return {
+						position,
+						number: String(NUMBERS[index]),
+						name: shortName(name),
+						team: TEAMS[index % TEAMS.length],
+						stops: position % 3,
+						tire: TIRES[index],
+						gained,
+						interval: lapsDown ? '' : interval,
+						lapsDown,
+						best: position === 1 ? '1:22.481' : '',
+						delta: `+${(position * 0.148).toFixed(3)}`,
+						player: name === 'Vit Salomon',
+					}
+				})
+			}
+
+			const RACE = raceField()
+
+			const PRACTICE = [
+				['Charles Emmerson Winchester the third', '7', 'S', true],
+				['Nyck de Vries', '4', 'M', false],
+				['Pete van der Kirk', '11', 'H', false],
+				['Lewis Hamilton', '44', 'I', false],
+				['Vit Salomon', '22', 'W', false],
+				['Max Verstappen', '1', 'D', false],
+				['Oscar Piastri', '81', 'S', false],
+				['Lando Norris', '4', 'M', false],
+			].map(([name, number, tire], index) => ({
+				position: index + 1,
+				number,
+				name: shortName(name),
+				team: TEAMS[index],
+				stops: 0,
+				tire,
+				gained: 0,
+				interval: '',
+				lapsDown: 0,
+				best: index === 0 ? '1:22.481' : '',
+				delta: index === 0 ? '' : `+${(0.214 + index * 0.18).toFixed(3)}`,
+				player: name === 'Vit Salomon',
+			}))
+
+			function classCars(rows, color) {
+				return rows.map((row, index) => ({
+					...row,
+					position: index + 1,
+					classColor: color,
+				}))
+			}
+
+			const GTP = classCars(
+				[
+					car('7', 'Nick Tandy', 'S', 2, 1, '', 0, false),
+					car('31', 'Earl Bamber', 'M', 1, -2, '0.612', 0, false),
+					car('01', 'Sebastien Bourdais', 'H', 2, 0, '1.440', 0, false),
+					car('5', 'Filipe Albuquerque', 'S', 1, 3, '3.208', 0, false),
+					car('10', 'Renger van der Zande', 'I', 2, -1, '8.114', 0, false),
+					car('24', 'Tom Blomqvist', 'W', 1, 0, '', 1, false),
+					car('59', 'Alex Lynn', 'M', 0, 2, '', 1, false),
+					car('85', 'Richard Westbrook', 'H', 1, -3, '', 2, false),
+					car('93', 'Sheldon van der Linde', 'S', 2, 1, '', 2, false),
+				],
+				'#ff2d2d',
+			)
+
+			const LMP2 = classCars(
+				[
+					car('22', 'Job van Uitert', 'M', 1, 2, '', 0, false),
+					car('11', 'Nyck de Vries', 'S', 1, 0, '0.388', 0, false),
+					car('43', 'Pete van der Kirk', 'H', 2, -1, '1.102', 0, false),
+					car('8', 'Vit Salomon', 'S', 1, 4, '1.640', 0, true),
+					car('52', 'Charles Leclerc', 'I', 0, 1, '2.915', 0, false),
+					car('74', 'Oliver Jarvis', 'W', 1, -2, '6.330', 0, false),
+					car('18', 'Ben Hanley', 'M', 2, 0, '', 1, false),
+					car('47', 'Louis Deletraz', 'H', 1, 3, '', 1, false),
+					car('65', 'Antonio Felix da Costa', 'S', 1, -1, '', 1, false),
+					car('99', 'Ferdinand Habsburg', 'M', 0, 2, '', 2, false),
+				],
+				'#1c6bff',
+			)
+
+			const GTD = classCars(
+				[
+					car('27', 'Ross Gunn', 'S', 1, 1, '', 0, false),
+					car('32', 'Daniel Juncadella', 'M', 0, -1, '0.274', 0, false),
+					car('70', 'Klaus Bachler', 'H', 1, 0, '1.055', 0, false),
+					car('4', 'Alessandro Pier Guidi', 'I', 1, 2, '1.883', 0, false),
+					car('63', 'Jules Gounon', 'W', 2, -3, '4.420', 0, false),
+					car('14', 'Mikkel Pedersen', 'D', 1, 1, '9.006', 0, false),
+				],
+				'#14c96a',
+			)
+
+			function car(number, name, tire, stops, gained, interval, lapsDown, player) {
+				return {
+					number,
+					name: shortName(name),
+					team: TEAMS[Number(number) % TEAMS.length],
+					tire,
+					stops,
+					gained,
+					interval,
+					lapsDown,
+					best: '',
+					delta: '',
+					player,
+				}
+			}
+
+			function sceneRows(scene) {
+				if (scene === 'race') {
+					return {
+						mode: 'race',
+						session: 'Race',
+						meta: '23/48',
+						rows: materialize(
+							RACE,
+							windowPositions(RACE.length, 23, PLAYER_RADIUS, true),
+						),
+					}
+				}
+				if (scene === 'practice') {
+					return {
+						mode: 'other',
+						session: 'Practice',
+						meta: '47:12',
+						rows: materialize(
+							PRACTICE,
+							range(1, PRACTICE.length).map((position) => ({
+								kind: 'car',
+								position,
+							})),
+						),
+					}
+				}
+				if (scene === 'team') {
+					return {
+						mode: 'team',
+						session: 'Practice',
+						meta: '47:12',
+						rows: materialize(
+							PRACTICE.slice(0, 5),
+							range(1, 5).map((position) => ({ kind: 'car', position })),
+						),
+					}
+				}
+				return { mode: 'race', session: 'Race', meta: '23/48', rows: multiclassRows() }
+			}
+
+			function materialize(cars, items) {
+				return items.map((item) => {
+					if (item.kind === 'gap') return item
+					const found = cars.find((entry) => entry.position === item.position)
+					return { kind: 'car', car: found }
+				})
+			}
+
+			function multiclassRows() {
+				const groups = [
+					{ name: 'GTP', color: tokyo('#ff2d2d'), cars: GTP, player: false },
+					{ name: 'LMP2', color: tokyo('#1c6bff'), cars: LMP2, player: true },
+					{ name: 'GTD', color: tokyo('#14c96a'), cars: GTD, player: false },
+				]
+				const built = groups.map((group) => {
+					const player = group.cars.find((entry) => entry.player)
+					const items = group.player
+						? windowPositions(group.cars.length, player.position, MULTI_RADIUS, false)
+						: windowPositions(group.cars.length, 1, 0, false)
+					return { ...group, items }
+				})
+				trimOthers(built)
+				const rows = []
+				for (const group of built) {
+					const cars = group.items.filter((item) => item.kind === 'car')
+					if (cars.length === 0) continue
+					rows.push({ kind: 'class', name: group.name, color: group.color })
+					for (const item of group.items) {
+						if (item.kind === 'gap') {
+							rows.push(item)
+							continue
+						}
+						const found = group.cars.find((entry) => entry.position === item.position)
+						rows.push({ kind: 'car', car: { ...found, classColor: group.color } })
+					}
+				}
+				return rows
+			}
+
+			function trimOthers(groups) {
+				const carsOf = (group) => group.items.filter((item) => item.kind === 'car').length
+				let total = groups.reduce((sum, group) => sum + carsOf(group), 0)
+				const order = groups
+					.map((group, index) => index)
+					.filter((index) => !groups[index].player)
+					.reverse()
+				while (total > MAX_ROWS) {
+					let cut = false
+					for (const index of order) {
+						if (total <= MAX_ROWS) return
+						const group = groups[index]
+						const next = group.items.filter((item) => item.kind === 'car')
+						if (next.length === 0) continue
+						const keep = next.length - 1
+						group.items =
+							keep === 0
+								? []
+								: windowPositions(group.cars.length, 1, 0, false).filter(
+										(item) => item.kind === 'gap' || item.position <= keep,
+									)
+						if (keep > 0 && group.cars.length - keep === 1) {
+							group.items = range(1, keep + 1).map((position) => ({
+								kind: 'car',
+								position,
+							}))
+						} else if (keep > 0 && group.cars.length - keep > 1) {
+							group.items = [
+								...range(1, keep).map((position) => ({ kind: 'car', position })),
+								{ kind: 'gap', count: group.cars.length - keep },
+							]
+						}
+						total -= 1
+						cut = true
+					}
+					if (!cut) return
+				}
+			}
+
+			function mount(design, scene, compact) {
+				const view = sceneRows(scene)
+				if (design === 'composite') stampTriple(view.rows)
+				const panel = document.createElement('div')
+				panel.className = `panel design-${design}`
+				const head = document.createElement('div')
+				head.className = 'head'
+				const session = document.createElement('div')
+				session.className = 'session'
+				session.textContent = view.session
+				const meta = document.createElement('div')
+				meta.className = 'meta'
+				meta.textContent = view.meta
+				head.append(session, meta)
+				panel.append(head)
+				panel.append(columnHead(view.mode, design))
+				for (const row of view.rows) panel.append(renderRow(row, view.mode, design))
+				if (compact) panel.style.setProperty('--row', '16px')
+				return panel
+			}
+
+			function stampTriple(rows) {
+				for (const row of rows) {
+					if (row.kind === 'car' && row.car.position === 4 && !row.car.player) {
+						row.car = { ...row.car, number: '888' }
+						return
+					}
+				}
+			}
+
+			function columnHead(mode, design) {
+				const row = document.createElement('div')
+				row.className = `cols mode-${mode}`
+				const labels =
+					design === 'composite' && mode === 'team'
+						? [
+								['pos', 'Pos'],
+								['num', 'No'],
+								['team', 'Team'],
+							]
+						: {
+								race: [
+									['pos', 'Pos'],
+									['num', 'No'],
+									['driver', 'Driver'],
+									['stops', 'St'],
+									['tireh', 'Ty'],
+									['delta', '+/−'],
+									['gap', 'Gap'],
+								],
+								other: [
+									['pos', 'Pos'],
+									['num', 'No'],
+									['driver', 'Driver'],
+									['tireh', 'Ty'],
+									['gap', 'Best'],
+								],
+								team: [
+									['pos', 'Pos'],
+									['num', 'No'],
+									['team', 'Team'],
+									['gap', 'Gap'],
+								],
+							}[mode]
+				for (const [className, label] of labels) {
+					const cell = document.createElement('span')
+					cell.className = className
+					cell.textContent = label
+					row.append(cell)
+				}
+				return row
+			}
+
+			function renderRow(row, mode, design) {
+				if (row.kind === 'class') {
+					const head = document.createElement('div')
+					head.className = 'classhead'
+					head.style.setProperty('--class', row.color)
+					if (design === 'composite') {
+						const line = document.createElement('span')
+						line.className = 'classline'
+						const rest = document.createElement('span')
+						rest.className = 'classrest'
+						const name = document.createElement('span')
+						name.className = 'classname'
+						name.textContent = row.name
+						const tail = document.createElement('span')
+						tail.className = 'classline'
+						rest.append(name, tail)
+						head.append(line, rest)
+					} else {
+						head.textContent = row.name
+					}
+					return head
+				}
+				if (row.kind === 'gap') {
+					const line = document.createElement('div')
+					line.className = 'omit'
+					const left = document.createElement('span')
+					const count = document.createElement('b')
+					count.textContent = String(row.count)
+					const right = document.createElement('span')
+					line.append(left, count, right)
+					return line
+				}
+				const car = row.car
+				const line = document.createElement('div')
+				line.className = `row mode-${mode}${car.player ? ' is-player' : ''}`
+				if (car.classColor) {
+					line.dataset.class = '1'
+					line.style.setProperty('--class', car.classColor)
+				}
+				line.append(cell('pos', String(car.position)))
+				line.append(cell('num', car.number))
+				if (mode === 'team') {
+					line.append(cell('team', car.team))
+				} else if (design === 'composite') {
+					line.append(driverName(car.name))
+					if (mode === 'race') line.append(cell('stops', String(car.stops)))
+					line.append(tire(car.tire))
+					if (mode === 'race') line.append(delta(car.gained))
+				} else {
+					line.append(cell('driver', car.name))
+					if (mode === 'race') line.append(cell('stops', String(car.stops)))
+					line.append(tire(car.tire))
+					if (mode === 'race') line.append(delta(car.gained))
+				}
+				if (!(design === 'composite' && mode === 'team'))
+					line.append(cell('gap', gapText(car, mode)))
+				return line
+			}
+
+			function driverName(name) {
+				const node = document.createElement('span')
+				node.className = 'driver'
+				const space = name.indexOf(' ')
+				if (space < 0) {
+					node.textContent = name
+					return node
+				}
+				const initial = document.createElement('span')
+				initial.className = 'initial'
+				initial.textContent = name.slice(0, space)
+				const tri = document.createElement('span')
+				tri.className = 'tri'
+				tri.textContent = name.slice(space + 1)
+				node.append(initial, document.createTextNode(' '), tri)
+				return node
+			}
+
+			function cell(className, text) {
+				const node = document.createElement('span')
+				node.className = className
+				node.textContent = text
+				return node
+			}
+
+			function tire(letter) {
+				const node = document.createElement('span')
+				node.className = 'tire'
+				node.dataset.role = TIRE_ROLE[letter] ?? 'other'
+				node.textContent = letter
+				return node
+			}
+
+			function delta(gained) {
+				const node = document.createElement('span')
+				if (gained === 0) {
+					node.className = 'delta flat'
+					node.textContent = '–'
+					return node
+				}
+				node.className = gained > 0 ? 'delta up' : 'delta down'
+				const mark = document.createElement('i')
+				node.append(mark, document.createTextNode(String(Math.abs(gained))))
+				return node
+			}
+
+			function gapText(car, mode) {
+				if (mode === 'other' || mode === 'team')
+					return car.position === 1 ? car.best : car.delta
+				if (car.position === 1 && !car.lapsDown) return ''
+				if (car.lapsDown) return `+${car.lapsDown}L`
+				return car.interval
+			}
+
+			const RULES = `Top ${TOP_N} · max ${MAX_ROWS} · ±${PLAYER_RADIUS} · multiclass ±${MULTI_RADIUS} · hero P23 of 40 · names V SAL, N DVR, P VDK, C WTT`
+			for (const node of document.querySelectorAll('[data-rules]')) node.textContent = RULES
+
+			for (const hero of document.querySelectorAll('[data-mount]')) {
+				hero.append(mount(hero.dataset.mount, hero.dataset.scene, false))
+			}
+			for (const slot of document.querySelectorAll('[data-samples]')) {
+				const design = slot.dataset.samples
+				for (const [scene, title, width] of [
+					['practice', 'Practice', 'sample-practice'],
+					['multi', 'Multiclass', 'sample-multi'],
+					['team', 'Team · 10s frame', 'sample-team'],
+				]) {
+					const wrap = document.createElement('div')
+					wrap.className = width
+					const label = document.createElement('div')
+					label.className = 'sample-label'
+					label.textContent = title
+					wrap.append(label, mount(design, scene, true))
+					slot.append(wrap)
+				}
+			}
+		</script>
+	</body>
 </html>
