@@ -29,7 +29,7 @@ export function raceGap(row: StandingWire, leader: boolean): string {
 	if (leader || row.intervalSec === null) {
 		return ''
 	}
-	return Math.abs(row.intervalSec).toFixed(3)
+	return formatGap(row.intervalSec)
 }
 
 export function otherGap(row: StandingWire, best: { sec: number; carIdx: number } | null): string {
@@ -40,7 +40,23 @@ export function otherGap(row: StandingWire, best: { sec: number; carIdx: number 
 		return formatLap(row.bestLapSec)
 	}
 	const delta = Math.max(0, row.bestLapSec - best.sec)
-	return `+${delta.toFixed(3)}`
+	return `+${formatGap(delta)}`
+}
+
+/** Under a minute keeps three decimals. An hour or more is a whole-hour count. */
+function formatGap(sec: number): string {
+	const gap = Math.abs(sec)
+	if (gap >= 3600) {
+		const hours = Math.floor(gap / 3600)
+		return hours === 1 ? '1 hour' : `${hours} hours`
+	}
+	if (gap >= 60) {
+		const total = Math.round(gap)
+		const minutes = Math.floor(total / 60)
+		const seconds = total % 60
+		return `${minutes}:${String(seconds).padStart(2, '0')}`
+	}
+	return gap.toFixed(3)
 }
 
 export function gainedPlaces(start: number, current: number): number {

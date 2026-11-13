@@ -89,7 +89,60 @@ test('race relatives show the interval to the player', () => {
 	assert.equal(lead.behind?.gap, '+0.432')
 })
 
-function practiceSession(multi = true): SessionSnapshot {
+test('a long relative gap uses minutes or hours and keeps its sign', () => {
+	const session = practiceSession(false, { 1: 80, 2: 170.4, 3: 170.4 + 7200 })
+	const frame = buildTelemetry(
+		makeTick(2, [
+			car(1, 1, 1, 3, 0.4, 80),
+			car(2, 2, 2, 3, 0.3, 170.4),
+			car(3, 3, 3, 3, 0.2, 90),
+		]),
+		session,
+	)
+	assert.equal(frame.ahead?.gap, '-1:30')
+	assert.equal(frame.behind?.gap, '+2 hours')
+
+	const hours = practiceSession(false, { 1: 100, 2: 3700, 3: 3700 + 7199 })
+	const hourFrame = buildTelemetry(
+		makeTick(2, [
+			car(1, 1, 1, 3, 0.4, 100),
+			car(2, 2, 2, 3, 0.3, 3700),
+			car(3, 3, 3, 3, 0.2, 90),
+		]),
+		hours,
+	)
+	assert.equal(hourFrame.ahead?.gap, '-1 hour')
+	assert.equal(hourFrame.behind?.gap, '+1 hour')
+
+	const short = practiceSession(false, { 1: 100, 2: 159.999, 3: 160 })
+	const shortFrame = buildTelemetry(
+		makeTick(2, [
+			car(1, 1, 1, 3, 0.4, 100),
+			car(2, 2, 2, 3, 0.3, 159.999),
+			car(3, 3, 3, 3, 0.2, 160),
+		]),
+		short,
+	)
+	assert.equal(shortFrame.ahead?.gap, '-59.999')
+	assert.equal(shortFrame.behind?.gap, '+0.001')
+
+	const raceGaps = new Map<number, CountedGap>([
+		[2, { aheadCarIdx: 1, sec: 125.6 }],
+		[3, { aheadCarIdx: 2, sec: 3600 }],
+	])
+	const raceFrame = buildTelemetry(
+		makeTick(2, [car(1, 1, 1, 6, 0.5, 80), car(2, 2, 2, 6, 0.4, 81), car(3, 3, 3, 6, 0.2, 82)]),
+		raceSession(),
+		EMPTY_NOTE,
+		null,
+		null,
+		raceGaps,
+	)
+	assert.equal(raceFrame.ahead?.gap, '-2:06')
+	assert.equal(raceFrame.behind?.gap, '+1 hour')
+})
+
+function practiceSession(multi = true, fastest?: Partial<Record<number, number>>): SessionSnapshot {
 	const drivers = [
 		driver(1, 'A. Nielsen', '2', 100, 'GTP', 14747136),
 		driver(2, 'Vit Salomon', '22', 100, 'GTP', 14747136),
@@ -99,9 +152,9 @@ function practiceSession(multi = true): SessionSnapshot {
 		drivers.push(driver(4, 'M. Okada', '45', 200, 'LMP2', 37072))
 	}
 	const results = [
-		{ CarIdx: 1, Position: 1, ClassPosition: 0, FastestTime: 90 },
-		{ CarIdx: 2, Position: 2, ClassPosition: 1, FastestTime: 91.2 },
-		{ CarIdx: 3, Position: 4, ClassPosition: 2, FastestTime: 92.5 },
+		{ CarIdx: 1, Position: 1, ClassPosition: 0, FastestTime: fastest?.[1] ?? 90 },
+		{ CarIdx: 2, Position: 2, ClassPosition: 1, FastestTime: fastest?.[2] ?? 91.2 },
+		{ CarIdx: 3, Position: 4, ClassPosition: 2, FastestTime: fastest?.[3] ?? 92.5 },
 	]
 	if (multi) {
 		results.push({ CarIdx: 4, Position: 3, ClassPosition: 0, FastestTime: 70 })

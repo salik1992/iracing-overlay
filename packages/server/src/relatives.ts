@@ -53,7 +53,7 @@ function raceGap(row: StandingRow, side: 'ahead' | 'behind'): string {
 	if (row.intervalSec === null) {
 		return ''
 	}
-	return `${sign(side)}${Math.abs(row.intervalSec).toFixed(3)}`
+	return signedGap(row.intervalSec, side)
 }
 
 /** Best-lap difference from the player's own lap. */
@@ -61,7 +61,26 @@ function playerLapGap(row: StandingRow, player: StandingRow, side: 'ahead' | 'be
 	if (row.bestLapSec === null || player.bestLapSec === null) {
 		return ''
 	}
-	return `${sign(side)}${Math.abs(row.bestLapSec - player.bestLapSec).toFixed(3)}`
+	return signedGap(row.bestLapSec - player.bestLapSec, side)
+}
+
+/**
+ * Same thresholds as the standings gap. Ahead stays negative and behind stays positive.
+ * Under a minute keeps three decimals. An hour or more is a whole-hour count.
+ */
+function signedGap(sec: number, side: 'ahead' | 'behind'): string {
+	const gap = Math.abs(sec)
+	if (gap >= 3600) {
+		const hours = Math.floor(gap / 3600)
+		return `${sign(side)}${hours === 1 ? '1 hour' : `${hours} hours`}`
+	}
+	if (gap >= 60) {
+		const total = Math.round(gap)
+		const minutes = Math.floor(total / 60)
+		const seconds = total % 60
+		return `${sign(side)}${minutes}:${String(seconds).padStart(2, '0')}`
+	}
+	return `${sign(side)}${gap.toFixed(3)}`
 }
 
 function sign(side: 'ahead' | 'behind'): string {

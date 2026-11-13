@@ -4,7 +4,7 @@ import { test } from 'node:test'
 
 import { tokyo } from '../src/color.js'
 import { advanceSlot, DETAIL_MS, GAP_MS, MAX_ROWS } from '../src/constants.js'
-import { formatLap, gainedPlaces, inPitLane, isRace } from '../src/format.js'
+import { formatLap, gainedPlaces, inPitLane, isRace, otherGap, raceGap } from '../src/format.js'
 import { buildBoard, type Board, type BoardItem } from '../src/model.js'
 import { shortName } from '../src/names.js'
 import { parseMessage } from '../src/parse.js'
@@ -85,6 +85,30 @@ test('clocks format laps and place deltas', () => {
 	assert.equal(gainedPlaces(5, 3), 2)
 	assert.equal(gainedPlaces(3, 5), -2)
 	assert.equal(gainedPlaces(0, 4), 0)
+})
+
+test('a gap of a minute or more drops the decimals, and an hour is a whole hour', () => {
+	const behind = (intervalSec: number, lapsDown = 0) =>
+		raceGap(wire({ intervalSec, lapsDown }), false)
+	assert.equal(behind(12.345), '12.345')
+	assert.equal(behind(59.999), '59.999')
+	assert.equal(behind(60), '1:00')
+	assert.equal(behind(90.4), '1:30')
+	assert.equal(behind(125.6), '2:06')
+	assert.equal(behind(3599.4), '59:59')
+	assert.equal(behind(3600), '1 hour')
+	assert.equal(behind(7199), '1 hour')
+	assert.equal(behind(7200), '2 hours')
+	assert.equal(behind(3 * 3600 + 10), '3 hours')
+	assert.equal(behind(4000, 2), '+2L')
+	assert.equal(raceGap(wire({ intervalSec: 90 }), true), '')
+
+	const best = { sec: 80, carIdx: 1 }
+	assert.equal(otherGap(wire({ carIdx: 1, bestLapSec: 82.267 }), best), '1:22.267')
+	assert.equal(otherGap(wire({ carIdx: 2, bestLapSec: 80.5 }), best), '+0.500')
+	assert.equal(otherGap(wire({ carIdx: 2, bestLapSec: 140.4 }), best), '+1:00')
+	assert.equal(otherGap(wire({ carIdx: 2, bestLapSec: 80 + 3600 }), best), '+1 hour')
+	assert.equal(otherGap(wire({ carIdx: 2, bestLapSec: 80 + 7200 }), best), '+2 hours')
 })
 
 test('other mode shows the class best and its delta', () => {
