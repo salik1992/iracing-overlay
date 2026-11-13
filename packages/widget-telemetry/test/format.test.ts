@@ -57,6 +57,16 @@ test('the strip is 1280 by 52 with a top border and three sections', () => {
 	assert.match(css, /\.rpm-needle\s*\{[^}]*background:\s*var\(--number\)/)
 	assert.match(css, /\.rpm-needle\s*\{[^}]*top:\s*50%/)
 	assert.match(css, /\.center\s*\{[^}]*grid-template-columns:\s*auto minmax\(0, 1fr\) auto/)
+	assert.match(css, /\.relatives\s*\{[^}]*padding-right:\s*8px/)
+	assert.match(
+		css,
+		/\.relative\s*\{[^}]*grid-template-columns:\s*2\.4ch 4ch minmax\(0,\s*1fr\) max-content/,
+	)
+	assert.match(css, /\.name\s*\{[^}]*overflow:\s*hidden/)
+	assert.match(css, /\.name\s*\{[^}]*text-overflow:\s*ellipsis/)
+	assert.match(css, /\.name\s*\{[^}]*white-space:\s*nowrap/)
+	assert.match(css, /\.gap\s*\{[^}]*justify-self:\s*end/)
+	assert.match(css, /\.gap\s*\{[^}]*white-space:\s*nowrap/)
 	assert.doesNotMatch(css, /\.rpm-light/)
 	assert.doesNotMatch(css, /\.rpm-segment/)
 	assert.doesNotMatch(css, /100vh \* 55 \/ 103/)

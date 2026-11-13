@@ -275,11 +275,13 @@ body {
 	display: grid;
 	grid-template-rows: 1fr 1fr;
 	align-items: center;
+	/* Same 8px as the header. It stays inside this 360px column. */
+	padding-right: 8px;
 }
 
 .relative {
 	display: grid;
-	grid-template-columns: 2.4ch 4ch minmax(0, 1fr) auto;
+	grid-template-columns: 2.4ch 4ch minmax(0, 1fr) max-content;
 	column-gap: 8px;
 	align-items: center;
 	min-width: 0;
@@ -316,6 +318,7 @@ body {
 }
 
 .gap {
+	justify-self: end;
 	text-align: right;
 	font-weight: 600;
 	color: var(--accent);
