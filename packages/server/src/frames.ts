@@ -1,7 +1,7 @@
 import { decodeFlags, lampFlags, sessionStateName } from './flags.js'
 import { hasLeftCar, type PostedLap } from './posted-laps.js'
 import { EMPTY_NOTE, type RaceNote } from './race-memory.js'
-import type { CountedGap } from './sector-gaps.js'
+import type { CountedGap, FinishNeighbor } from './sector-gaps.js'
 import { classRelatives } from './relatives.js'
 import { tireLetter } from './tire.js'
 import type { CarSample, Tick } from './tick.js'
@@ -36,11 +36,13 @@ export function buildTelemetry(
 	liveClassPosition: ReadonlyMap<number, number> | null = null,
 	postedLaps: ReadonlyMap<number, PostedLap> | null = null,
 	sectorGaps: ReadonlyMap<number, CountedGap> | null = null,
+	finishNeighbors: ReadonlyMap<number, FinishNeighbor> | null = null,
 ): TelemetryFrame {
 	const standings = buildStandings(tick, session, note, liveClassPosition, postedLaps, sectorGaps)
 	const relatives = classRelatives(
 		standings.rows,
 		session !== null && isRaceSession(session.session.type),
+		finishNeighbors?.get(tick.playerCarIdx) ?? null,
 	)
 	return {
 		speedMps: tick.speedMps,

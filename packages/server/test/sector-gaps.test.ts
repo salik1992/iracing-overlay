@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
-import { buildStandings } from '../src/frames.js'
+import { buildStandings, buildTelemetry } from '../src/frames.js'
+import { LiveOrder } from '../src/live-order.js'
 import { normalizeSession } from '../src/session.js'
 import { SectorGaps } from '../src/sector-gaps.js'
 import type { CarSample, Tick } from '../src/tick.js'
@@ -317,6 +318,165 @@ test('a new session clears sector intervals', () => {
 		null,
 	)
 	assert.equal(reset.get(2), undefined)
+})
+
+test('checkered holds the cars beside the finish line', () => {
+	const session = raceSession(field(3), [0, 0.5])
+	const gaps = new SectorGaps()
+	const live = new LiveOrder()
+	const see = (cars: CarSample[], time: number, state = 4) => {
+		const tick = makeTick(cars, time, state)
+		const ranks = live.note(tick, session)
+		const counted = gaps.note(tick, session, ranks)
+		return { tick, ranks, counted }
+	}
+	// cars[0] is the player. Car 2 runs between car 1 and car 3.
+	const row = (carIdx: number, lap: number, pct: number) => at(carIdx, carIdx, lap, pct)
+
+	see([row(2, 5, 0.4), row(1, 5, 0.4), row(3, 5, 0.4)], 8)
+	see([row(2, 5, 0.42), row(1, 5, 0.51), row(3, 5, 0.4)], 10)
+	see([row(2, 5, 0.51), row(1, 5, 0.6), row(3, 5, 0.42)], 18)
+	see([row(2, 5, 0.6), row(1, 5, 0.7), row(3, 5, 0.51)], 24)
+	assert.equal(gaps.finishNeighbors().size, 0)
+	assert.equal(
+		see([row(2, 5, 0.9), row(1, 5, 0.96), row(3, 5, 0.8)], 30, 5).counted.get(2)?.sec,
+		8,
+	)
+
+	const leader = see([row(2, 5, 0.96), row(1, 6, 0.02), row(3, 5, 0.9)], 40, 5)
+	assert.deepEqual(gaps.finishNeighbors().get(1), { aheadCarIdx: null, behindCarIdx: 2 })
+	assert.equal(gaps.finishNeighbors().has(2), false)
+	const before = buildTelemetry(
+		leader.tick,
+		session,
+		undefined,
+		leader.ranks,
+		null,
+		leader.counted,
+		gaps.finishNeighbors(),
+	)
+	assert.equal(before.ahead?.driverName, 'Driver 1')
+	assert.equal(before.ahead?.gap, '-8.000')
+	assert.equal(before.behind?.driverName, 'Driver 3')
+	assert.equal(before.behind?.gap, '+6.000')
+
+	const finished = see([row(2, 6, 0.02), row(1, 6, 0.2), row(3, 5, 0.96)], 52, 5)
+	assert.deepEqual(gaps.finishNeighbors().get(2), { aheadCarIdx: 1, behindCarIdx: 3 })
+	assert.equal(finished.counted.get(2)?.sec, 12)
+	assert.equal(finished.counted.get(2)?.lapsDown, 0)
+	const atLine = buildTelemetry(
+		finished.tick,
+		session,
+		undefined,
+		finished.ranks,
+		null,
+		finished.counted,
+		gaps.finishNeighbors(),
+	)
+	assert.equal(atLine.ahead?.driverName, 'Driver 1')
+	assert.equal(atLine.ahead?.gap, '-12.000')
+	assert.equal(atLine.behind?.driverName, 'Driver 3')
+	assert.equal(atLine.behind?.gap, '+6.000')
+
+	// The player jumps ahead of the leader. The finish-line cars stay put.
+	const swapped = see([row(2, 6, 0.4), row(1, 6, 0.05), row(3, 6, 0.2)], 60, 5)
+	const held = buildTelemetry(
+		swapped.tick,
+		session,
+		undefined,
+		swapped.ranks,
+		null,
+		swapped.counted,
+		gaps.finishNeighbors(),
+	)
+	assert.equal(held.ahead?.driverName, 'Driver 1')
+	assert.equal(held.ahead?.gap, '-12.000')
+	assert.equal(held.behind?.driverName, 'Driver 3')
+	assert.equal(held.behind?.gap, '+6.000')
+	const shuffled = buildTelemetry(
+		swapped.tick,
+		session,
+		undefined,
+		swapped.ranks,
+		null,
+		swapped.counted,
+		null,
+	)
+	assert.equal(shuffled.ahead, null)
+
+	const coolCars = [row(2, 6, 0.4), row(1, 6, 0.05), row(3, 6, 0.2)]
+	const player = coolCars[0]
+	const leaderCar = coolCars[1]
+	const trailer = coolCars[2]
+	if (!player || !leaderCar || !trailer) {
+		throw new Error('cars')
+	}
+	player.bestLapSec = 80
+	leaderCar.bestLapSec = 90
+	trailer.bestLapSec = 70
+	const cool = see(coolCars, 80, 6)
+	assert.deepEqual(gaps.finishNeighbors().get(2), { aheadCarIdx: 1, behindCarIdx: 3 })
+	const cooled = buildTelemetry(
+		cool.tick,
+		session,
+		undefined,
+		cool.ranks,
+		null,
+		cool.counted,
+		gaps.finishNeighbors(),
+	)
+	assert.equal(cooled.ahead?.driverName, 'Driver 1')
+	assert.equal(cooled.ahead?.gap, '-12.000')
+	assert.equal(cooled.behind?.driverName, 'Driver 3')
+
+	see([row(2, 6, 0.45), row(1, 6, 0.1), row(3, 6, 0.25)], 90, 4)
+	assert.equal(gaps.finishNeighbors().size, 0)
+
+	const reset = gaps.note(makeTick([row(2, 6, 0.45), row(1, 6, 0.1)], 91, 5, 2), session, null)
+	assert.equal(reset.get(2), undefined)
+	assert.equal(gaps.finishNeighbors().size, 0)
+})
+
+test('a follower keeps the interval when the leader takes the flag and the order moves', () => {
+	const session = raceSession(field(2), [0, 0.5])
+	const gaps = new SectorGaps()
+	const live = new LiveOrder()
+	const see = (leader: CarSample, follower: CarSample, time: number, state = 4) => {
+		const tick = makeTick([follower, leader], time, state)
+		const ranks = live.note(tick, session)
+		return gaps.note(tick, session, ranks)
+	}
+
+	see(at(1, 1, 5, 0.4), at(2, 2, 5, 0.4), 8)
+	see(at(1, 1, 5, 0.51), at(2, 2, 5, 0.42), 10)
+	const counted = see(at(1, 1, 5, 0.6), at(2, 2, 5, 0.51), 18)
+	assert.equal(counted.get(2)?.sec, 8)
+	see(at(1, 1, 5, 0.96), at(2, 2, 5, 0.8), 26, 5)
+
+	// The lap counter lags, so the finished leader sorts behind the car still running.
+	const lagged = see(at(1, 1, 5, 0.02), at(2, 2, 5, 0.84), 30, 5)
+	assert.equal(lagged.get(2)?.sec, 8)
+	assert.equal(lagged.get(2)?.aheadCarIdx, 1)
+	assert.deepEqual(gaps.finishNeighbors().get(1), { aheadCarIdx: null, behindCarIdx: 2 })
+	assert.equal(gaps.finishNeighbors().has(2), false)
+
+	see(at(1, 1, 6, 0.1), at(2, 2, 5, 0.96), 34, 5)
+	const restored = see(at(1, 1, 6, 0.16), at(2, 2, 5, 0.97), 36, 5)
+	assert.equal(restored.get(2)?.sec, 8)
+	const frame = buildStandings(
+		makeTick([at(2, 2, 5, 0.97), at(1, 1, 6, 0.16)], 36, 5),
+		session,
+		undefined,
+		live.note(makeTick([at(2, 2, 5, 0.97), at(1, 1, 6, 0.16)], 36, 5), session),
+		null,
+		restored,
+	)
+	assert.equal(frame.rows.find((row) => row.carIdx === 2)?.intervalSec, 8)
+
+	const finished = see(at(1, 1, 6, 0.2), at(2, 2, 6, 0.02), 42, 5)
+	assert.equal(finished.get(2)?.sec, 12)
+	assert.equal(finished.get(2)?.lapsDown, 0)
+	assert.deepEqual(gaps.finishNeighbors().get(2), { aheadCarIdx: 1, behindCarIdx: null })
 })
 
 test('practice does not count a race interval', () => {

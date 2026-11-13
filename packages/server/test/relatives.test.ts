@@ -142,6 +142,57 @@ test('a long relative gap uses minutes or hours and keeps its sign', () => {
 	assert.equal(raceFrame.behind?.gap, '+1 hour')
 })
 
+test('after the finish line, relatives keep those cars when the order changes', () => {
+	const session = raceSession()
+	const gaps = new Map<number, CountedGap>([
+		[2, { aheadCarIdx: 1, sec: 0.432, lapsDown: 0 }],
+		[3, { aheadCarIdx: 2, sec: 1.205, lapsDown: 0 }],
+	])
+	const cars = [
+		car(1, 1, 1, 6, 0.5, 80),
+		car(2, 2, 2, 6, 0.4, 81),
+		car(3, 3, 3, 6, 0.2, 82),
+		car(4, 4, 1, 6, 0.9, 70),
+	]
+	const finish = new Map([[2, { aheadCarIdx: 1, behindCarIdx: 3 }]])
+	const ranks = new Map([
+		[1, 3],
+		[2, 1],
+		[3, 2],
+		[4, 1],
+	])
+	const held = buildTelemetry(makeTick(2, cars), session, EMPTY_NOTE, ranks, null, gaps, finish)
+	assert.equal(held.ahead?.driverName, 'A. Nielsen')
+	assert.equal(held.ahead?.position, 3)
+	assert.equal(held.ahead?.gap, '-0.432')
+	assert.equal(held.behind?.driverName, 'C. Berg')
+	assert.equal(held.behind?.position, 2)
+	assert.equal(held.behind?.gap, '+1.205')
+
+	const live = buildTelemetry(makeTick(2, cars), session, EMPTY_NOTE, ranks, null, gaps, null)
+	assert.equal(live.ahead, null)
+	assert.equal(live.behind?.driverName, 'C. Berg')
+
+	const lead = new Map([[1, { aheadCarIdx: null, behindCarIdx: 2 }]])
+	const leader = buildTelemetry(makeTick(1, cars), session, EMPTY_NOTE, ranks, null, gaps, lead)
+	assert.equal(leader.ahead, null)
+	assert.equal(leader.behind?.driverName, 'Vit Salomon')
+	assert.equal(leader.behind?.gap, '+0.432')
+
+	const practice = buildTelemetry(
+		makeTick(2, cars),
+		practiceSession(),
+		EMPTY_NOTE,
+		null,
+		null,
+		null,
+		finish,
+	)
+	assert.equal(practice.ahead?.driverName, 'A. Nielsen')
+	assert.equal(practice.ahead?.gap, '-1.200')
+	assert.equal(practice.behind?.driverName, 'C. Berg')
+})
+
 function practiceSession(multi = true, fastest?: Partial<Record<number, number>>): SessionSnapshot {
 	const drivers = [
 		driver(1, 'A. Nielsen', '2', 100, 'GTP', 14747136),

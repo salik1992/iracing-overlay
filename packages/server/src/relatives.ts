@@ -1,17 +1,28 @@
+import type { FinishNeighbor } from './sector-gaps.js'
 import type { StandingRow, TelemetryNeighbor } from './types.js'
 
 /**
  * Cars immediately ahead of and behind the player in standings class order.
  * A race shows the interval to the player. Practice and qualifying show the
  * best-lap gap to the player's own lap. Ahead is negative and behind is positive.
+ * After the player's checkered start/finish crossing, the two cars stay the
+ * ones from that line. Their gaps keep the standings finish-line values.
  */
 export function classRelatives(
 	rows: readonly StandingRow[],
 	race: boolean,
+	finish: FinishNeighbor | null = null,
 ): { ahead: TelemetryNeighbor | null; behind: TelemetryNeighbor | null } {
 	const player = rows.find((row) => row.isPlayer)
 	if (!player) {
 		return { ahead: null, behind: null }
+	}
+	const multi = new Set(rows.map((row) => row.classId)).size > 1
+	if (race && finish) {
+		return {
+			ahead: heldNeighbor(rows, player, finish.aheadCarIdx, 'ahead', multi),
+			behind: heldNeighbor(rows, player, finish.behindCarIdx, 'behind', multi),
+		}
 	}
 	const classmates = rows
 		.filter((row) => row.classId === player.classId)
@@ -19,11 +30,24 @@ export function classRelatives(
 	const index = classmates.findIndex((row) => row.isPlayer)
 	const ahead = index > 0 ? classmates[index - 1] : undefined
 	const behind = index >= 0 && index < classmates.length - 1 ? classmates[index + 1] : undefined
-	const multi = new Set(rows.map((row) => row.classId)).size > 1
 	return {
 		ahead: ahead ? toNeighbor(ahead, player, 'ahead', race, multi) : null,
 		behind: behind ? toNeighbor(behind, player, 'behind', race, multi) : null,
 	}
+}
+
+function heldNeighbor(
+	rows: readonly StandingRow[],
+	player: StandingRow,
+	carIdx: number | null,
+	side: 'ahead' | 'behind',
+	multi: boolean,
+): TelemetryNeighbor | null {
+	if (carIdx === null) {
+		return null
+	}
+	const row = rows.find((item) => item.carIdx === carIdx)
+	return row ? toNeighbor(row, player, side, true, multi) : null
 }
 
 function toNeighbor(

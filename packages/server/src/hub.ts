@@ -4,7 +4,7 @@ import { buildGarage, buildHeader, buildStandings, buildTelemetry } from './fram
 import { LiveOrder } from './live-order.js'
 import { PostedLaps, type PostedLap } from './posted-laps.js'
 import { EMPTY_NOTE, RaceMemory, type RaceNote } from './race-memory.js'
-import { SectorGaps, type CountedGap } from './sector-gaps.js'
+import { SectorGaps, type CountedGap, type FinishNeighbor } from './sector-gaps.js'
 import type { TelemetrySource } from './sources/telemetry-source.js'
 import type { Tick } from './tick.js'
 import type { ServerMessage, SessionSnapshot, SourceStatus, WidgetServe } from './types.js'
@@ -28,6 +28,7 @@ export class Hub {
 	private postedLaps: ReadonlyMap<number, PostedLap> = new Map()
 	private readonly sectors = new SectorGaps()
 	private sectorGaps: ReadonlyMap<number, CountedGap> = new Map()
+	private finishNeighbors: ReadonlyMap<number, FinishNeighbor> = new Map()
 	private delivered = 0
 
 	constructor(private readonly widgets: readonly WidgetServe[]) {}
@@ -92,6 +93,7 @@ export class Hub {
 		this.liveRanks = this.live.note(tick, this.session)
 		this.postedLaps = this.posted.note(tick)
 		this.sectorGaps = this.sectors.note(tick, this.session, this.liveRanks)
+		this.finishNeighbors = this.sectors.finishNeighbors()
 		this.delivered += 1
 		for (const client of this.clients) {
 			const widget = client.widget
@@ -110,6 +112,7 @@ export class Hub {
 				this.liveRanks,
 				this.postedLaps,
 				this.sectorGaps,
+				this.finishNeighbors,
 			)
 			if (message) {
 				this.send(client.socket, message)
@@ -153,6 +156,7 @@ export class Hub {
 				this.liveRanks,
 				this.postedLaps,
 				this.sectorGaps,
+				this.finishNeighbors,
 			)
 			if (message) {
 				this.send(client.socket, message)
@@ -194,12 +198,21 @@ function frameMessage(
 	liveClassPosition: ReadonlyMap<number, number> | null,
 	postedLaps: ReadonlyMap<number, PostedLap>,
 	sectorGaps: ReadonlyMap<number, CountedGap>,
+	finishNeighbors: ReadonlyMap<number, FinishNeighbor>,
 ): ServerMessage | null {
 	if (widget.id === 'telemetry') {
 		return {
 			type: 'telemetry',
 			tick: tick.sessionTick,
-			frame: buildTelemetry(tick, session, note, liveClassPosition, postedLaps, sectorGaps),
+			frame: buildTelemetry(
+				tick,
+				session,
+				note,
+				liveClassPosition,
+				postedLaps,
+				sectorGaps,
+				finishNeighbors,
+			),
 		}
 	}
 	if (widget.id === 'standings') {

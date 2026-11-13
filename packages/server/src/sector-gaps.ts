@@ -20,6 +20,12 @@ export interface CountedGap {
 	lapsDown?: number
 }
 
+/** Cars immediately ahead of and behind one car at its checkered start/finish crossing. */
+export interface FinishNeighbor {
+	aheadCarIdx: number | null
+	behindCarIdx: number | null
+}
+
 interface Place {
 	pct: number
 	lap: number
@@ -40,6 +46,9 @@ export class SectorGaps {
 	private shown = new Map<number, CountedGap>()
 	private frozen = new Map<number, CountedGap>()
 	private done = new Set<number>()
+	private finishedNeighbors = new Map<number, FinishNeighbor>()
+	/** Class order on the previous sample. A crossing tick has already moved the lap. */
+	private lastAhead: ReadonlyMap<number, number | null> = new Map()
 
 	note(
 		tick: Tick,
@@ -53,12 +62,15 @@ export class SectorGaps {
 			this.shown = new Map()
 			this.frozen = new Map()
 			this.done = new Set()
+			this.finishedNeighbors = new Map()
+			this.lastAhead = new Map()
 		}
 		const finished =
 			tick.sessionState === STATE_CHECKERED || tick.sessionState === STATE_COOLDOWN
 		if (!finished) {
 			this.frozen = new Map()
 			this.done = new Set()
+			this.finishedNeighbors = new Map()
 		}
 		const ahead = raceClassAhead(tick, session, liveClassPosition)
 		if (
@@ -84,16 +96,26 @@ export class SectorGaps {
 			}
 		}
 		const checkered = tick.sessionState === STATE_CHECKERED
+		// The lap counter on this sample can already reorder the field. The cars at the
+		// line are the ones from the sample before the crossing.
+		const atLine = this.lastAhead.size > 0 ? this.lastAhead : ahead
 		for (const carIdx of crossed) {
 			if (this.done.has(carIdx)) {
 				continue
 			}
 			const previous = this.shown.get(carIdx)
-			this.count(carIdx, ahead)
-			if (!checkered || !finishers.has(carIdx)) {
+			const finish = checkered && finishers.has(carIdx)
+			this.count(carIdx, finish ? atLine : ahead)
+			if (!finish) {
 				continue
 			}
 			this.done.add(carIdx)
+			if (!this.finishedNeighbors.has(carIdx)) {
+				this.finishedNeighbors.set(carIdx, {
+					aheadCarIdx: atLine.get(carIdx) ?? null,
+					behindCarIdx: carBehind(atLine, carIdx),
+				})
+			}
 			const gap = this.shown.get(carIdx) ?? previous
 			if (!gap) {
 				continue
@@ -101,7 +123,7 @@ export class SectorGaps {
 			const frozen: CountedGap = {
 				aheadCarIdx: gap.aheadCarIdx,
 				sec: gap.sec,
-				lapsDown: this.finishLaps(tick, ahead, carIdx),
+				lapsDown: this.finishLaps(tick, atLine, carIdx),
 			}
 			this.frozen.set(carIdx, frozen)
 			this.shown.set(carIdx, frozen)
@@ -111,11 +133,21 @@ export class SectorGaps {
 				continue
 			}
 			const gap = this.shown.get(carIdx)
-			if (!gap || ahead.get(carIdx) !== gap.aheadCarIdx) {
+			// Once the car ahead has taken the flag, keep this interval until our own finish line.
+			if (
+				!gap ||
+				(ahead.get(carIdx) !== gap.aheadCarIdx && !this.done.has(gap.aheadCarIdx))
+			) {
 				this.shown.delete(carIdx)
 			}
 		}
+		this.lastAhead = ahead
 		return this.publish()
+	}
+
+	/** Empty until that car crosses the start/finish line under checkered. */
+	finishNeighbors(): ReadonlyMap<number, FinishNeighbor> {
+		return this.finishedNeighbors
 	}
 
 	private publish(): ReadonlyMap<number, CountedGap> {
@@ -196,6 +228,15 @@ export class SectorGaps {
 		}
 		this.shown.set(carIdx, { aheadCarIdx: leader, sec })
 	}
+}
+
+function carBehind(ahead: ReadonlyMap<number, number | null>, carIdx: number): number | null {
+	for (const [other, leader] of ahead) {
+		if (leader === carIdx) {
+			return other
+		}
+	}
+	return null
 }
 
 function onTrackPct(car: CarSample): boolean {
