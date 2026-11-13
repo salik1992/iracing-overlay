@@ -23,15 +23,20 @@ export function formatWeather(frame: HeaderWire): string {
  * Lap counter, remaining clock, or both.
  * A single published limit is shown on its own. When the session sets both,
  * the race best lap estimates which one the leader reaches first.
+ * Qualifying always shows both, and the lap is the player's.
  */
 export function sessionCounter(session: HeaderSession, frame: HeaderWire): string {
 	const laps = lapLimit(session.laps)
 	const timed = timedSession(session.time)
+	const qualifying = isQualifying(session.type)
+	if (laps !== null && timed && qualifying) {
+		return qualifyingBoth(laps, frame)
+	}
 	if (laps !== null && timed) {
 		return bothLimits(laps, frame)
 	}
 	if (laps !== null) {
-		return lapText(laps, frame, true)
+		return lapText(laps, frame, true, qualifying ? frame.playerLap : frame.leaderLap)
 	}
 	if (!timed) {
 		return ''
@@ -75,6 +80,18 @@ function bothLimits(laps: number, frame: HeaderWire): string {
 		return lapsShown
 	}
 	return `${lapsShown} (${clock})`
+}
+
+/** Qualifying keeps the lap and the clock together for the whole session. */
+function qualifyingBoth(laps: number, frame: HeaderWire): string {
+	const clock = formatRemain(frame.sessionTimeRemainSec)
+	const lapsShown = lapText(laps, frame, false, frame.playerLap)
+	return `${lapsShown} (${clock === '' ? '0:00' : clock})`
+}
+
+/** Lone Qualify, Open Qualify, and any other qualify session type. */
+function isQualifying(type: string): boolean {
+	return type.trim().toLowerCase().includes('qualify')
 }
 
 /**
@@ -135,13 +152,18 @@ function finishedChoice(laps: number, frame: HeaderWire): 'laps' | 'time' | 'bot
 	return 'laps'
 }
 
-function lapText(laps: number, frame: HeaderWire, completed: boolean): string {
+function lapText(
+	laps: number,
+	frame: HeaderWire,
+	completed: boolean,
+	lap = frame.leaderLap,
+): string {
 	// The finish line starts an extra lap, and climbing out sets the lap to -1.
 	if (completed && finishedSession(frame.sessionState)) {
 		return `${laps}/${laps}`
 	}
 	// CarIdxLap is -1 while the field is still gridding.
-	const current = Math.min(laps, Math.max(0, frame.leaderLap))
+	const current = Math.min(laps, Math.max(0, lap))
 	return `${current}/${laps}`
 }
 

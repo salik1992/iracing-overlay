@@ -189,7 +189,7 @@ export function buildStandings(
 	}
 }
 
-/** The lap counter uses the same overall leader the standings tower shows. */
+/** Leader lap for the race counter. Player lap for the qualifying counter. */
 export function buildHeader(
 	tick: Tick,
 	session: SessionSnapshot | null,
@@ -200,10 +200,12 @@ export function buildHeader(
 ): HeaderFrame {
 	const standings = buildStandings(tick, session, note, liveClassPosition, postedLaps, sectorGaps)
 	const leader = standings.rows.find((row) => row.position === 1)
+	const player = standings.rows.find((row) => row.isPlayer)
 	return {
 		sessionState: standings.sessionState,
 		sessionTimeRemainSec: standings.sessionTimeRemainSec,
 		leaderLap: leader?.lap ?? 0,
+		playerLap: player?.lap ?? tick.lap,
 		bestLapSec: fastestLap(standings.rows),
 		airTempC: finiteOrNull(tick.airTempC),
 		trackTempC: finiteOrNull(tick.trackTempC),

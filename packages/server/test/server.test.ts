@@ -63,6 +63,7 @@ test('fixture publishes a joined standings frame', async () => {
 		if (header[2]?.type === 'header' && messages[2]?.type === 'standings') {
 			const leader = messages[2].frame.rows.find((row) => row.position === 1)
 			assert.equal(header[2].frame.leaderLap, leader?.lap ?? 0)
+			assert.equal(header[2].frame.playerLap, player?.lap ?? 0)
 			const posted = messages[2].frame.rows.flatMap((row) =>
 				row.bestLapSec !== null && row.bestLapSec > 0 ? [row.bestLapSec] : [],
 			)

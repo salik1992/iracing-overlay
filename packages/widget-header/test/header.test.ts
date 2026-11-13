@@ -140,6 +140,66 @@ test('both limits follow the one the best lap says arrives first', () => {
 	)
 })
 
+test('qualifying shows both limits and counts the player lap', () => {
+	const both = { laps: '2', time: '480.000 sec' }
+	assert.equal(
+		sessionCounter(
+			session({ type: 'Lone Qualify', ...both }),
+			frame({ leaderLap: 2, playerLap: 1, remain: 300, bestLapSec: 90 }),
+		),
+		'1/2 (5:00)',
+	)
+	assert.equal(
+		sessionCounter(
+			session({ type: 'Open Qualify', laps: '99', time: '1200.000 sec' }),
+			frame({ leaderLap: 8, playerLap: 1, remain: 900, bestLapSec: 90 }),
+		),
+		'1/99 (15:00)',
+	)
+	assert.equal(
+		sessionCounter(
+			session({ type: 'open qualify', laps: '20', time: '3600.000 sec' }),
+			frame({ leaderLap: 14, playerLap: 3, remain: 3600, bestLapSec: 80 }),
+		),
+		'3/20 (1:00:00)',
+	)
+	assert.equal(
+		sessionCounter(
+			session({ type: 'Lone Qualify', ...both }),
+			frame({ leaderLap: 2, playerLap: 5, remain: 12 }),
+		),
+		'2/2 (0:12)',
+	)
+	assert.equal(
+		sessionCounter(
+			session({ type: 'Lone Qualify', ...both }),
+			frame({ leaderLap: 2, playerLap: -1, remain: -1, state: 'checkered' }),
+		),
+		'0/2 (0:00)',
+	)
+	assert.equal(
+		sessionCounter(
+			session({ type: 'Qualify', laps: '2', time: 'unlimited' }),
+			frame({ leaderLap: 2, playerLap: 1 }),
+		),
+		'1/2',
+	)
+	assert.equal(
+		sessionCounter(
+			session({ type: 'Qualify', laps: '2', time: 'unlimited' }),
+			frame({ leaderLap: 1, playerLap: 1, state: 'checkered' }),
+		),
+		'2/2',
+	)
+	assert.equal(
+		sessionCounter(
+			session({ type: 'Lone Qualify', laps: 'unlimited', time: '480.000 sec' }),
+			frame({ leaderLap: 4, playerLap: 1, remain: 120 }),
+		),
+		'2:00',
+	)
+})
+
 test('weather prints air, track, and wind', () => {
 	const direction = (241 * Math.PI) / 180
 	assert.equal(
@@ -223,6 +283,7 @@ test('the page reads the session and the weather', () => {
 				sessionState: 'racing',
 				sessionTimeRemainSec: 12,
 				leaderLap: 23,
+				playerLap: 7,
 				airTempC: 27,
 				trackTempC: 41,
 				windVelMps: 4,
@@ -238,6 +299,7 @@ test('the page reads the session and the weather', () => {
 			sessionState: 'racing',
 			sessionTimeRemainSec: 12,
 			leaderLap: 23,
+			playerLap: 7,
 			bestLapSec: 80.5,
 			airTempC: 27,
 			trackTempC: 41,
@@ -250,6 +312,7 @@ test('the page reads the session and the weather', () => {
 	assert.equal(missing?.type, 'header')
 	if (missing?.type === 'header') {
 		assert.equal(missing.frame.leaderLap, 0)
+		assert.equal(missing.frame.playerLap, 0)
 		assert.equal(missing.frame.bestLapSec, null)
 		assert.equal(missing.frame.sessionState, '')
 		assert.equal(missing.frame.airTempC, null)
@@ -269,6 +332,7 @@ function session(patch: Partial<HeaderSession>): HeaderSession {
 
 function frame(patch: {
 	leaderLap: number
+	playerLap?: number
 	remain?: number
 	state?: string
 	bestLapSec?: number | null
@@ -281,6 +345,7 @@ function frame(patch: {
 		...(patch.state === undefined ? {} : { sessionState: patch.state }),
 		sessionTimeRemainSec: patch.remain ?? 0,
 		leaderLap: patch.leaderLap,
+		playerLap: patch.playerLap ?? 0,
 		bestLapSec: patch.bestLapSec === undefined ? null : patch.bestLapSec,
 		airTempC: patch.airTempC ?? null,
 		trackTempC: patch.trackTempC ?? null,

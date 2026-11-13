@@ -9,6 +9,8 @@ export interface HeaderWire {
 	sessionTimeRemainSec: number
 	/** Lap of the standings row at overall position 1. -1 while the field is gridding. */
 	leaderLap: number
+	/** CarIdxLap of the player. Qualifying counts this. 0 when the player is absent. */
+	playerLap: number
 	/**
 	 * Fastest posted lap in the field, in seconds.
 	 * Null until someone sets one. Used when a session publishes both limits.

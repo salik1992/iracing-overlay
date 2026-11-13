@@ -63,6 +63,7 @@ function parseHeader(frame: unknown): Incoming | null {
 			sessionState: asText(record.sessionState),
 			sessionTimeRemainSec: asFiniteOr(record.sessionTimeRemainSec, 0),
 			leaderLap: asFiniteOr(record.leaderLap, 0),
+			playerLap: asFiniteOr(record.playerLap, 0),
 			bestLapSec: asFinite(record.bestLapSec),
 			airTempC: asFinite(record.airTempC),
 			trackTempC: asFinite(record.trackTempC),

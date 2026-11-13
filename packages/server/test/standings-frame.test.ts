@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
-import { buildStandings } from '../src/frames.js'
+import { buildHeader, buildStandings } from '../src/frames.js'
 import { PostedLaps } from '../src/posted-laps.js'
 import { RaceMemory } from '../src/race-memory.js'
 import { normalizeSession } from '../src/session.js'
@@ -539,6 +539,23 @@ test('the start position waits for racing and resets with the session', () => {
 	assert.equal(reset.pitStops.get(7), undefined)
 	assert.equal(reset.startClassPosition.get(4), 1)
 	assert.equal(reset.pitStops.get(4), undefined)
+})
+
+test('the header keeps the leader lap and the player lap apart', () => {
+	const session = practiceSession('Lone Qualify', [1, 2], [])
+	const player = sample(1, 2, 2, 1, 0.2, 0, 0)
+	player.bestLapSec = 90
+	const leader = sample(2, 1, 1, 4, 0.5, 0, 0)
+	leader.bestLapSec = 70
+	const tick = makeTick([player, leader])
+	const frame = buildHeader(tick, session)
+	assert.equal(frame.leaderLap, 4)
+	assert.equal(frame.playerLap, 1)
+
+	const missing = makeTick([leader])
+	missing.playerCarIdx = 99
+	missing.lap = 3
+	assert.equal(buildHeader(missing, session).playerLap, 3)
 })
 
 function makeTick(
